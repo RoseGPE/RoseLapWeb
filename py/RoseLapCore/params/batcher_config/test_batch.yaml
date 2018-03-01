@@ -1,0 +1,42 @@
+##### BATCH CONFIGURATION EXAMPLE ####
+
+##### INPUT SPECIFICATION #####
+vehicle: example_vehicle.yaml
+model: point_mass
+tracks:
+  - dxf: acceleration.dxf
+    segment_distance: 0.2
+    steady_state: false
+  - dxf: skidpad_loop.dxf
+    segment_distance: 0.2
+    steady_state: false
+
+##### TEST SPECIFICATION #####
+tests:
+  - axis:
+    - target: mass
+      operation: replace # only replace and product
+      test_vals:
+        - 500
+        - 520
+        - 540
+        - 570
+        - 600
+        - 650
+  - axis:
+    - target: downforce_35mph
+      operation: replace
+      test_vals:
+        range_start: 0
+        range_end: 80
+        range_step: 10
+    - target: drag_35mph
+      operation: replace
+      test_vals:
+        range_start: 10
+        range_end: 50
+        range_step: 5
+
+##### OUTPUT SPECIFICATION #####
+filename: test_batch_results
+data_percentage: 0 # 0 -> just plot points

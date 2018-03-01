@@ -1,0 +1,1 @@
+basepath = "C:/Users/maquelea/Documents/GPE/RoseLapWeb/"
