@@ -1,0 +1,61 @@
+# example vehicle
+# units are lbf, ft, s
+# _bias values are calculated as fractions from the front of the vehicle.
+
+# Aerodynamic values- drag and downforce measured at 35 mph. Coefficients are calculated separately.
+downforce_35mph: 65.0
+drag_35mph: 44.0
+cp_height: 0.9
+cp_bias: 0.7
+
+# Tire parameters- coefficient of friction and tire radius
+mu: 2.0
+tire_radius: 0.75
+
+# Mass of vehicle (in lbm; this gets converted to slugs in the program)
+mass: 550
+# CG position (height in ft, bias is % rear)
+cg_height: 0.8
+weight_bias: 0.55
+# Wheelbase length (in ft)
+wheelbase_length: 5.1666667
+
+brake_bias: 0.5
+perfect_brake_bias: false
+
+# Torque curve. This will be linearly interpolated and rev-limited to the highest RPM value.
+engine_rpms:
+  - 3500
+  - 4500
+  - 5500
+  - 6500
+  - 7500
+  - 8500
+  - 9500
+engine_torque: 
+  - 24.3
+  - 26.2
+  - 27.4
+  - 26.5
+  - 25.5
+  - 23.8
+  - 23.9
+
+# Gear reduction applied to all gears, internal to the engine
+engine_reduction: 2.81
+# Gear reductions for each gear
+gears:
+  - 2.416
+  - 1.92
+  - 1.562
+  - 1.277
+  - 1.05
+# How long it takes to shift (in s)
+shift_time: 0.2
+
+# Gear reduction from engine output to differential/wheels
+final_drive_reduction: 2.7692
+
+# Efficiency parameters. For gasoline. E_factor is roughly correlated to actual efficiency event scores.
+co2_factor: 2.31 #kg/L
+e_factor: 2271700 #ft*lbf/L
