@@ -19,6 +19,7 @@
 		}
 
 		if (isset($_POST["saveandrun"])) {
+			$_SESSION["msg"] = shell_exec("python ../testcomms.py");
 			header("Location: ../waiting.php");
 		}
 	}
