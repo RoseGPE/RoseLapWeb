@@ -1,5 +1,7 @@
 import sys, os
-sys.path.append("C:\\Users\\maquelea\\Documents\\GPE\\RoseLap")
+import config
+
+sys.path.append(config.basepath.replace("/", "\\"))
 
 from highcharts import Highchart
 from RoseLapCore import *
