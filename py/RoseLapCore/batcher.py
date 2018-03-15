@@ -83,13 +83,21 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
 			permutation = permutations[p]
 			p += 1
 
+			if type(permutation) == float:
+				permutation = (int(permutation),)
+			
+
+			print(permutation)
+
 			vehicle = set_values(vehicle, targets, permutation)
 			data = model.steady_solve(vehicle, segments) if steady_state else model.solve(vehicle, segments)
 
-			times.append((index[0], index[1], float(data[-1, 0])))
+			args = index + (float(data[-1, 0]),)
+			#times.append((*index, float(data[-1, 0])))
+			times.append(args)
 			
 			if include_output:
-				outputs.append((index[0], index[1], data.tolist()))
+				outputs.append(index + (data.tolist(),))
 
 		track_data["times"] = times
 		track_data["outputs"] = outputs
