@@ -16,7 +16,7 @@ def makeLabel(d):
     return (str([k for k in list(d.keys())])[1:-1], label)
 
 def writeHTML(H, filename):
-    with open(filename + ".html", "w") as chart:
+    with open("../graph/" + filename + ".html", "w") as chart:
         chart.write(H.htmlcontent)
 
 def makeHeatmap(data, times):
@@ -88,7 +88,7 @@ def makeChart(absolutePath, filename):
     writeHTML(H, filename)
 
 if __name__ == "__main__":
-    absolutePath = 'C:/Users/maquelea/Documents/GPE/RoseLap/RoseLapCore/out/test_batch_results-1519607492/test_batch_results-1519607492.rslp'
+    absolutePath = config.basepath + 'RoseLapCore/out/test_batch_results-1519607492/test_batch_results-1519607492.rslp'
     filename = "test_batch_results-1519607492"
 
     makeChart(absolutePath, filename)

@@ -7,6 +7,8 @@
 	if (!empty($errors)) {
         echo $errors;
     } else {
+    	$name = isset($_POST['configname']) ? $_POST['configname'] : "iamnotreal";
+
 		if (isset($_POST['pastName'])) {
 			$past = $_POST['pastName'];
 		    $name = $_POST['editName'];
@@ -14,13 +16,16 @@
 
 	    	$query = sprintf("CALL con_Edit_Batch_Config('%s', %s, '%s', '%s')", $past, $_SESSION['userid'], $name, $text);
 	    	$edit = mysqli_query($conn, $query);
-
-			header("Location: ../secretpage.php");
+	    	echo "ey";
 		}
 
-		if (isset($_POST["saveandrun"])) {
-			$_SESSION["msg"] = shell_exec("python ../testcomms.py");
+		if (isset($_POST["run"])) {
+			// set up run
+			// run the run
+			// go to waiting page and send runid
 			header("Location: ../waiting.php");
 		}
+
+		header("Location: ../secretpage.php");
 	}
 ?>
