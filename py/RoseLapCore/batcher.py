@@ -84,6 +84,9 @@ def run_permutation(thread_data):
 def batch_run(targets, permutations, contents, vehicle, tracks, model, include_output):
 	test_data = []
 	n_threads = partitions(len(permutations))
+	
+	if type(permutations[0]) != list:
+		permutations = [[p] for p in permutations]
 
 	print "threading...", n_threads
 
