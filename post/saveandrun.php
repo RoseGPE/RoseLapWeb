@@ -16,14 +16,19 @@
 
 	    	$query = sprintf("CALL con_Edit_Batch_Config('%s', %s, '%s', '%s')", $past, $_SESSION['userid'], $name, $text);
 	    	$edit = mysqli_query($conn, $query);
-	    	echo "ey";
 		}
 
 		if (isset($_POST["run"])) {
-			// set up run
-			// run the run
-			// go to waiting page and send runid
+			$query = sprintf("CALL run_Queue_Batch_Run(%s, '%s')", $_SESSION['userid'], $name);
+	    	$run = mysqli_query($conn, $query);
+
+	    	if ($run) {
+	    		$WshShell = new COM("WScript.Shell");
+				$oExec = $WshShell->Run("python c:/wamp/www/RoseLap/py/RoseLapCore/webrunner.py", 0, false);
+	    	}
+
 			header("Location: ../waiting.php");
+			die();
 		}
 
 		header("Location: ../secretpage.php");

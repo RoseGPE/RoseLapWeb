@@ -12,7 +12,6 @@
 	<?php  
 		if ($loggedin) {
 			echo "Congrats you ran a batch configuration! This might take a while. Or not.";
-			include 'display/emailwhendone.php';
 		} else {
 			echo "Please make sure to log in";
 		}

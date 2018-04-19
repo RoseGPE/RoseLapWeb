@@ -7,7 +7,6 @@ def pack(results, filename):
 	filename = toRslpFilename(filename)
 	os.makedirs(os.path.dirname(base + "/out/" + filename + "/"))
 	filename = base + "/out/" + filename + "/" + filename + ".rslp"
-	print(filename)
 
 	r = shelve.open(filename)
 	r["data"] = results

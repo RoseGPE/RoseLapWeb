@@ -17,35 +17,16 @@ tests:
     - target: mass
       operation: replace # only replace and product
       test_vals:
+        - 400
+        - 430
+        - 480
         - 500
-        - 510
         - 520
-        - 530
         - 540
-        - 550
-        - 560
         - 570
-        - 580
-        - 590
         - 600
-        - 610
-        - 620
-        - 630
-        - 640
         - 650
-  - axis:
-    - target: downforce_35mph
-      operation: replace
-      test_vals:
-        range_start: 0
-        range_end: 80
-        range_step: 10
-    - target: drag_35mph
-      operation: replace
-      test_vals:
-        range_start: 10
-        range_end: 50
-        range_step: 5
+        - 700
 
 ##### OUTPUT SPECIFICATION #####
 filename: test_batch_results
