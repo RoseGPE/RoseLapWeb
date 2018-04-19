@@ -3,6 +3,7 @@ import itertools
 import multiprocessing
 from multiprocessing import Pool as ThreadPool
 import time
+import copy as shallow
 
 def batch(tests, vehicle, tracks, model, include_output):
 	batch = {}
@@ -137,11 +138,13 @@ def generateIndicies(contents):
 	return list(inds)
 
 def set_values(vehicle, targets, permutation):
-	for i, target in enumerate(targets):
-		setattr(vehicle, target, permutation[i])
+	v = shallow.copy(vehicle)
 
-	vehicle.prep()
-	return vehicle
+	for i, target in enumerate(targets):
+		setattr(v, target, permutation[i])
+
+	v.prep()
+	return v
 
 def stretch(i):
 	while i < 2**25:
