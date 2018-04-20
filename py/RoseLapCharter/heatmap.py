@@ -5,19 +5,7 @@ sys.path.append(config.basepath.replace("/", "\\"))
 
 from highcharts import Highchart
 from RoseLapCore import *
-
-def makeLabel(d):
-    data = list(d.values())
-    label = []
-
-    for i in range(len(data[0])):
-        label.append(str([v[i] for v in data])[1:-1])
-
-    return (str([k for k in list(d.keys())])[1:-1], label)
-
-def writeHTML(H, filename):
-    with open("../graph/" + filename, "w") as chart:
-        chart.write(H.htmlcontent)
+from charting_tools.py import *
 
 def makeHeatmap(data, times):
     H = Highchart()
@@ -83,12 +71,8 @@ def makeChart(absolutePath, filename):
     times = data["track_data"][0]["times"]
     times = [(t[0], t[1], str(t[2])[0:6]) for t in times]
 
-    H = makeHeatmap(data, times)
+    filename + ".html"H = makeHeatmap(data, times)
+    
+
     
     writeHTML(H, filename + ".html")
-
-if __name__ == "__main__":
-    absolutePath = config.basepath + 'RoseLapCore/out/test_batch_results-1521589378/test_batch_results-1521589378.rslp'
-    filename = "test_batch_results-1521589378"
-
-    makeChart(absolutePath, filename)
