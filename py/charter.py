@@ -88,7 +88,7 @@ def makeChart(absolutePath, filename):
     writeHTML(H, filename)
 
 if __name__ == "__main__":
-    absolutePath = config.basepath + 'RoseLapCore/out/test_batch_results-1519607492/test_batch_results-1519607492.rslp'
-    filename = "test_batch_results-1519607492"
+    absolutePath = config.basepath + 'RoseLapCore/out/test_batch_results-1521588335/test_batch_results-1521588335.rslp'
+    filename = "test_batch_results-1521588335"
 
     makeChart(absolutePath, filename)
