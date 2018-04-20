@@ -6,13 +6,13 @@ class ObjectDict:
     def __init__(self, **entries):
         self.__dict__.update(entries)
 
-def syntax_expand(o):
+def syntax_expand(o, parse_vehicle):
 	if isinstance(o, int):
 		return float(o)
 
 	if isinstance(o, list):
 		for i in range(len(o)):
-			o[i] = syntax_expand(o[i])
+			o[i] = syntax_expand(o[i], parse_vehicle)
 
 		return o
 
@@ -28,10 +28,13 @@ def syntax_expand(o):
 			elif key == 'range_step':
 				rd = o[key]
 			elif key == 'vehicle':
-				with open('./params/vehicles/' + o[key]) as v:
-					o[key] = Vehicle(load(v))
+				if parse_vehicle:
+					with open('./params/vehicles/' + o[key]) as v:
+						o[key] = Vehicle(load(v, False))
+				else:
+					o[key] = str(o[key])
 			else:
-				o[key] = syntax_expand(o[key])
+				o[key] = syntax_expand(o[key], parse_vehicle)
 
 		if rs != None and re != None and rd != None:
 			return list(np.arange(rs,re+rd, rd))
@@ -39,7 +42,7 @@ def syntax_expand(o):
 		return ObjectDict(**o)
 	return o
 
-def load(stream):
+def load(stream, parse_vehicle):
   out = ruamel.yaml.safe_load(stream)
-  s = syntax_expand(out)
+  s = syntax_expand(out, parse_vehicle)
   return s

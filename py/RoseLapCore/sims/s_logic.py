@@ -12,6 +12,12 @@ class Simulation:
 		else:
 			raise ValueError("Please provide a valid simulation model.")
 
+	def copy(self):
+		if self.name == "point_mass":
+			return sim_pointmass()
+		elif self.name == "two_tires":
+			return sim_twotires()
+
 	def solve(self, vehicle, segments):
 		return self.model.solve(vehicle, segments)
 

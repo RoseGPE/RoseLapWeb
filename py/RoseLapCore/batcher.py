@@ -1,5 +1,9 @@
 import numpy as np
 import itertools
+import multiprocessing
+from multiprocessing import Pool as ThreadPool
+import time
+import copy as shallow
 
 def batch(tests, vehicle, tracks, model, include_output):
 	batch = {}
@@ -64,40 +68,60 @@ def permutation_extend(base, extensions):
 
 	return permutation_extend(res, extensions[1 :])
 
+def run_permutation(thread_data):
+	index, prepped_vehicle, solver, steady_state, include_output, segments = thread_data
+
+	data = solver.steady_solve(prepped_vehicle, segments) if steady_state else solver.solve(prepped_vehicle, segments)
+
+	args = index + (float(data[-1, 0]),)
+	#times.append((*index, float(data[-1, 0])))
+	#times.append(args)
+	
+	if include_output:
+		return (args, (index + (data.tolist(),)))
+	else:
+		return args
+
 def batch_run(targets, permutations, contents, vehicle, tracks, model, include_output):
 	test_data = []
+	n_threads = partitions(len(permutations))
+	
+	if type(permutations[0]) != list:
+		permutations = [[p] for p in permutations]
+
+	print "threading...", n_threads
+
+	pool = ThreadPool(n_threads)
+	pool.map(stretch, [i for i in range(n_threads)])
+
+	print "running..."
 
 	for track in tracks:
 		segments, steady_state, name = track
+
+		t0 = time.time()
 
 		track_data = {}
 		track_data["name"] = name
 		track_data["ss"] = steady_state
 
+		indicies = generateIndicies(contents)
+		thread_data = [(indicies[i], set_values(vehicle, targets, permutations[i]), model.copy(), steady_state, include_output, segments) for i in range(len(indicies))]
+
+		thread_results = pool.map(run_permutation, thread_data)
+
+		print "\ttrack completed in:", time.time() - t0, "seconds"
+
 		times = []
 		outputs = []
-		indicies = generateIndexer(contents)
-		p = 0
 
-		for index in indicies():
-			permutation = permutations[p]
-			p += 1
-
-			if type(permutation) == float:
-				permutation = (int(permutation),)
-			
-
-			print(permutation)
-
-			vehicle = set_values(vehicle, targets, permutation)
-			data = model.steady_solve(vehicle, segments) if steady_state else model.solve(vehicle, segments)
-
-			args = index + (float(data[-1, 0]),)
-			#times.append((*index, float(data[-1, 0])))
-			times.append(args)
-			
+		for result in thread_results:
 			if include_output:
-				outputs.append(index + (data.tolist(),))
+				t, output = result
+				times.append(t)
+				outputs.append(output)
+			else:
+				times.append(result)
 
 		track_data["times"] = times
 		track_data["outputs"] = outputs
@@ -106,20 +130,25 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
 
 	return test_data
 
-def generateIndexer(contents):
+def generateIndicies(contents):
 	lens = [len(list(d.values())[0]) for d in contents]
 	ints = [[i for i in range(x)] for x in lens]
 	inds = itertools.product(*ints)
 
-	def indexer():
-		for index in inds:
-			yield index
-
-	return indexer
+	return list(inds)
 
 def set_values(vehicle, targets, permutation):
-	for i, target in enumerate(targets):
-		setattr(vehicle, target, permutation[i])
+	v = shallow.copy(vehicle)
 
-	vehicle.prep()
-	return vehicle
+	for i, target in enumerate(targets):
+		setattr(v, target, permutation[i])
+
+	v.prep()
+	return v
+
+def stretch(i):
+	while i < 2**25:
+		i += 1
+
+def partitions(n):
+	return int(np.min([np.floor(np.sqrt(n)) / 2, multiprocessing.cpu_count()]))

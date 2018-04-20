@@ -1,34 +1,34 @@
 <div class="container">
 <div class = "table-container">
-<table class="table">
-<thead>
-<tr>
-<th class="col-xs-2">Configuration Name</th>
-<th class="col-xs-2">Date Created</th>
-<th class="col-xs-2">Created By</th>
-<th class="col-xs-2">Last Edited By</th>
-<th class="col-xs-2">Last Edited On</th>
-</tr>
-</thead>
-<tbody>
-<?php
-	$query = "SELECT * FROM Batch_Config_View";
-	$config_table = mysqli_query($conn, $query);
+	<table class="table">
+	<thead>
+	<tr>
+	<th class="col-xs-2">Configuration Name</th>
+	<th class="col-xs-2">Date Created</th>
+	<th class="col-xs-2">Created By</th>
+	<th class="col-xs-2">Last Edited By</th>
+	<th class="col-xs-2">Last Edited On</th>
+	</tr>
+	</thead>
+	<tbody>
+	<?php
+		$query = "SELECT * FROM Batch_Config_View";
+		$config_table = mysqli_query($conn, $query);
 
-	while ($row = mysqli_fetch_array($config_table)) {
-		echo "<tr>";
-		echo "<td class=\"col-xs-2\">
-				<a href=\"#\" onclick=\"launchBatchEditModal('" . $row[0] . "')\">". $row[0] . "</a>
-		 	  </td>";
-		echo "<td class=\"col-xs-2\">". $row[1] . "</td>";
-		echo "<td class=\"col-xs-2\">". $row[2] . "</td>";
-		echo "<td class=\"col-xs-2\">". $row[3] . "</td>";
-		echo "<td class=\"col-xs-2\">". $row[4] . "</td>";
-		echo "</tr>";
-	}
-?>
-</tbody>
-</table>
+		while ($row = mysqli_fetch_array($config_table)) {
+			echo "<tr>";
+			echo "<td class=\"col-xs-2\">
+					<a href=\"#\" onclick=\"launchBatchEditModal('" . $row[0] . "')\">". $row[0] . "</a>
+			 	  </td>";
+			echo "<td class=\"col-xs-2\">". $row[1] . "</td>";
+			echo "<td class=\"col-xs-2\">". $row[2] . "</td>";
+			echo "<td class=\"col-xs-2\">". $row[3] . "</td>";
+			echo "<td class=\"col-xs-2\">". $row[4] . "</td>";
+			echo "</tr>";
+		}
+	?>
+	</tbody>
+	</table>
 </div>
 
 <br>
@@ -74,11 +74,11 @@
 		      	<div class="modal-body">
 				    <div class="form-group">
 					    <label for="editName">Name</label><br/>
-					    <input class="form-control" type="text" maxlength="50" name="editName" id="editName"/><br/>
-					    <input class="form-control" type="hidden" maxlength="50" name="pastName" id="pastName"/><br/>
+					    <input class="form-control" type="text" maxlength="50" name="editName" id="editNameBC"/><br/>
+					    <input class="form-control" type="hidden" maxlength="50" name="pastName" id="pastNameBC"/><br/>
 
 					    <label for="editText">Text</label><br/>
-					    <textarea class="form-control" rows="30" name="editText" id="editText"></textarea><br/>
+					    <textarea class="form-control mono-box" rows="30" name="editText" id="editTextBC"></textarea><br/>
 				    </div>
 				</div>
 
@@ -94,23 +94,12 @@
 
 </div>
 
-<style type="text/css">
-	.table-container {
-		height: 400px;
-		overflow-y: auto;
-	}
-
-	#editText {
-		font-family: monospace;
-	}
-</style>
-
 <script type="text/javascript">
 	function launchBatchEditModal(batchName) {
 		my_post(batchName, 'post/getBCText.php', function(text) {
-			document.getElementById("editName").value = batchName;
-			document.getElementById("pastName").value = batchName;
-			document.getElementById("editText").value = text;
+			document.getElementById("editNameBC").value = batchName;
+			document.getElementById("pastNameBC").value = batchName;
+			document.getElementById("editTextBC").value = text;
 			$('#editConfigModal').modal('show');
 		});
 	}

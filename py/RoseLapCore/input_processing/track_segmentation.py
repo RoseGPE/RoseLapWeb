@@ -212,7 +212,7 @@ def plot_segments(segments):
 
 def dxf_to_segments(filename, dl):
   # The function you came here for. Hand it a filename and desired segment distance, you get segments of the track.
-  dxf_geometry,connectivity,open_ended = load_dxf('./params/DXFs/' + filename)
+  dxf_geometry,connectivity,open_ended = load_dxf(filename)
   points,intermediates = pointify_dxf(dxf_geometry,connectivity,dl)
   #print (connectivity)
   segs = seg_points(points,intermediates,open_ended)

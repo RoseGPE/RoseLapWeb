@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <link href="https://www.highcharts.com/highslide/highslide.css" rel="stylesheet" />
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/highcharts.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/highcharts-more.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/modules/heatmap.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/modules/exporting.js"></script>
+    </head>
+    <body style="margin:0;padding:0">
+                <div id="container" style="width:500px;height:500px;">Loading....</div>
+
+
+    <script>
+        $(function(){
+
+
+
+
+
+            Highcharts.setOptions({"lang": {}, "global": {}});
+            var option = {"loading": {}, "subtitle": {}, "xAxis": {"categories": ["500.0", "520.0", "540.0", "570.0", "600.0", "650.0"], "title": {"text": "'mass'"}}, "title": {"text": "Track Times: 'mass' vs. 'drag_35mph', 'downforce_35mph'"}, "series": {}, "labels": {}, "chart": {"width": 500, "renderTo": "container", "marginTop": 40, "marginBottom": 80, "type": "heatmap", "plotBorderWidth": 1, "height": 500}, "tooltip": {"formatter": function () {return this.point.value + '<br>mass of ' + this.series.xAxis.categories[this.point.x] +'<br>aero stuff of ' + this.series.yAxis.categories[this.point.y];}}, "plotOptions": {}, "yAxis": {"categories": ["10, 0", "15, 10", "20, 20", "25, 30", "30, 40", "35, 50", "40, 60", "45, 70", "50, 80"], "title": {"text": "'drag_35mph', 'downforce_35mph'"}}, "credits": {"enabled": false}, "colors": {}, "pane": {}, "exporting": {}, "drilldown": {}, "navigation": {}, "legend": {"symbolHeight": 280, "layout": "vertical", "y": 25, "verticalAlign": "top", "align": "right", "margin": 0}, "colorAxis": {"max": 4.9, "maxColor": "#000000", "minColor": "#FFFFFF", "min": 4.4}};
+
+
+ 
+
+            var chart = new Highcharts.Chart(option);
+
+            var data = [{"data": [[0, 0, "4.3984"], [0, 1, "4.4174"], [0, 2, "4.4389"], [0, 3, "4.4595"], [0, 4, "4.4805"], [0, 5, "4.4987"], [0, 6, "4.5195"], [0, 7, "4.5400"], [0, 8, "4.5589"], [1, 0, "4.4535"], [1, 1, "4.4737"], [1, 2, "4.4927"], [1, 3, "4.5131"], [1, 4, "4.5326"], [1, 5, "4.5525"], [1, 6, "4.5710"], [1, 7, "4.5906"], [1, 8, "4.6094"], [2, 0, "4.5078"], [2, 1, "4.5273"], [2, 2, "4.5457"], [2, 3, "4.5657"], [2, 4, "4.5844"], [2, 5, "4.6040"], [2, 6, "4.6216"], [2, 7, "4.6408"], [2, 8, "4.6593"], [3, 0, "4.5873"], [3, 1, "4.6058"], [3, 2, "4.6227"], [3, 3, "4.6421"], [3, 4, "4.6607"], [3, 5, "4.6794"], [3, 6, "4.6959"], [3, 7, "4.7144"], [3, 8, "4.7326"], [4, 0, "4.6642"], [4, 1, "4.6819"], [4, 2, "4.7005"], [4, 3, "4.7172"], [4, 4, "4.7345"], [4, 5, "4.7525"], [4, 6, "4.7689"], [4, 7, "4.7860"], [4, 8, "4.8036"], [5, 0, "4.7881"], [5, 1, "4.8052"], [5, 2, "4.8222"], [5, 3, "4.8393"], [5, 4, "4.8551"], [5, 5, "4.8714"], [5, 6, "4.8881"], [5, 7, "4.9029"], [5, 8, "4.9192"]], "type": "heatmap", "name": "Track Times"}];
+            var dataLen = data.length;
+            for (var ix = 0; ix < dataLen; ix++) {
+                chart.addSeries(data[ix]);
+            }
+ 
+
+
+
+
+
+
+
+        
+    });
+        </script>
+
+    </body>
+</html>
