@@ -39,8 +39,9 @@ if __name__ == "__main__":
 
 	print('packing...')
 	result_path = packer.pack(results, out[0])
+	display_path = "http://rosegpe.ddns.net/RoseLap/graph/" + str(time.time()).split(".")[0]
 
-	cur.execute("CALL run_Finish_Batch_Run(%s, %s)", [runID, result_path])
+	cur.execute("CALL run_Finish_Batch_Run(%s, %s, %s)", [runID, result_path, display_path])
 	print runID
 	print cur.fetchall()
 	db.commit()
