@@ -1,5 +1,6 @@
 import fancyyaml as yaml
 import numpy as np
+import math
 
 g = 32.2 # ft/s^2
 
@@ -42,6 +43,14 @@ class Vehicle(object):
         besti = i
     return besti
 
+  def f_long_remain(self, n_tires, f_norm, f_lat):
+    # Force that one of the tires in this set produces
+    f_grip = self.tire_mu*(f_norm/n_tires) + self.tire_offset
+    if f_grip < abs(f_lat):
+      return -1
+    f_long = self.tire_beta*math.sqrt(f_grip**2 - f_lat**2)
+    return f_long*n_tires
+
   def prep(self):
     self.mass /= self.g
 
@@ -64,7 +73,7 @@ def v_load(filename):
 def v_getOriginalVal(name):
   return v.v_OBJ[name]
 
-def v_setVar(name, val):
-  if name == 'mass':
-    val /= g
-  exec("v." + name + " = " + str(val)) # jank in preparation for even better code structure
+# def v_setVar(name, val):
+#   if name == 'mass':
+#     val /= g
+#   exec("v." + name + " = " + str(val)) # jank in preparation for even better code structure

@@ -29,12 +29,14 @@ class sim_pointmass:
 
     Ftire_lat = segment.curvature*vehicle.mass*v0**2
     
-    Ftire_lim = (vehicle.mu*N) 
+    Ftire_lim = vehicle.f_long_remain(4,N,0)
 
     if Ftire_lat > Ftire_lim:
       return None
 
-    Ftire_remaining = np.sqrt(Ftire_lim**2 - Ftire_lat**2)
+    Ftire_remaining = vehicle.f_long_remain(4, N, Ftire_lat)
+    if Ftire_remaining < 0:
+      return None
 
     Ftire_engine_limit, eng_rpm = vehicle.eng_force(v0, int(gear))
 
