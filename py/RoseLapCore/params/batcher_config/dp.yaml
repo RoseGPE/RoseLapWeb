@@ -1,0 +1,22 @@
+##### INPUT SPECIFICATION #####
+vehicle: example_vehicle.yaml
+model: dp_nd
+tracks:
+  - dxf: test_ax.DXF
+    segment_distance: 0.2
+    steady_state: false
+  - dxf: test_track.DXF
+    segment_distance: 0.2
+    steady_state: false
+
+##### TEST SPECIFICATION #####
+tests:
+  - axis:
+    - target: mass
+      operation: replace # only replace and product
+      test_vals:
+        - 550
+
+##### OUTPUT SPECIFICATION #####
+filename: dp_circle_results
+data_percentage: 100 # 0 -> just plot points
