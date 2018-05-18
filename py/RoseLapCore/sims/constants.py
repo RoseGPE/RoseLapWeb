@@ -32,3 +32,21 @@ O_MATRIX_COLS = 15
 IN_PROGRESS = 0
 JUST_FINISHED = 1
 NOT_SHIFTING = 2
+
+
+# Decision constants for DP
+D_SHIFT_UP = 3
+D_ACCELERATE = 0
+D_SHIFT_DOWN = 4
+D_SUSTAIN = 2
+D_BRAKE = 1
+
+# State Tuple Items for DP
+G_ID = 0 # int
+G_INDEX = 1 # list of ints of length p
+G_STEP = 2 # int
+G_PARENT_ID = 3 # int
+G_DECISION = 4 # int
+G_COST = 5 # float
+G_VELOCITY = 6 # float
+G_GEAR_DATA = 7 # tuple(int, int, float)

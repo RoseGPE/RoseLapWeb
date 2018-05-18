@@ -1,11 +1,11 @@
 import sys, os
 import config
 
-sys.path.append(config.basepath.replace("/", "\\"))
+sys.path.append('C:\wamp\www\RoseLap\py')
 
 from highcharts import Highchart
 from RoseLapCore import *
-from charting_tools.py import *
+from charting_tools import *
 
 def makeHeatmap(data, times):
     H = Highchart()
@@ -68,18 +68,19 @@ def makeHeatmap(data, times):
 
 def makeChart(absolutePath, filename):
     data = packer.unpack(absolutePath)
-    times = data["track_data"][0]["times"]
-    times = [(t[0], t[1], str(t[2])[0:6]) for t in times]
+    makeGraphFolder(filename)
+    print(data)
 
-    filename + ".html"H = makeHeatmap(data, times)
-    
+    for td in data["track_data"]:
+        times = td["times"]
+        name = td["name"].split("\\")[-1].split(".")[0] # don't worry about this, I'm just parsing the track name in the data into something nicer since the "track name" for some of the data is a path lol
+        print(times)
 
-    writeHTML(H, filename)
+        H = makeHeatmap(data, times)
+        writeHTML(H, filename + "/" + filename + "-" + name + ".html")
 
 if __name__ == "__main__":
-    absolutePath = config.basepath + 'RoseLapCore/out/test_batch_results-1521588335/test_batch_results-1521588335.rslp'
-    filename = "test_batch_results-1521588335"
+    absolutePath = 'C:/wamp/www/RoseLap/py/RoseLapCore/out/test_batch_results-1525219799/test_batch_results-1525219799.rslp'
+    filename = "1525219799"
 
-
-    
-    writeHTML(H, filename + ".html")
+    makeChart(absolutePath, filename)

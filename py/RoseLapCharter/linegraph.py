@@ -5,12 +5,12 @@ import json
 # Decide wether to make a line graph or heat map (Line map only taking two variables).
 # Time is an implicit variable
 
-sys.path.append(config.basepath.replace("/", "\\"))
+sys.path.append('C:\wamp\www\RoseLap\py')
 print(sys.path)
 
 from highcharts import Highchart
-from io import StringIO
-import RoseLapCore.packer
+from RoseLapCore import packer
+from charting_tools import *
 # from RoseLapCore import *
 
 # def makeLabel(d):
@@ -60,46 +60,65 @@ import RoseLapCore.packer
 # def makeChart(absolutePath, filename):
 # 	data = packer.unpack(absolutePath)
 # 	times = data["track_data"][0]["times"]
-def writeHTML(Boi, filename):
-	with open("../graph/" + filename + ".html", "w") as chart:
-		chart.write(Boi.htmlcontent)
 
-def makeLineGraph(data, times):
-	Boi = Highcart()
-	 #Have to do Boi.add_data sets with data sets I make
-	Boi.add_data_set(times, name='Track Times', type="linegraph")
+# def makeLineGraph(data, times):
+def makeLineGraphTrial(data):
 
-	Boi.set_options('yAxis',{'title': { 'text': 'Lap-Times'},
+	u = 'track_data'
+	s = 'times'
+	data_y = [data[u][0][s][0][1], data[u][0][s][1][1], data[u][0][s][2][1], data[u][0][s][3][1], data[u][0][s][4][1], data[u][0][s][5][1]]
+	a='axiscontents'
+	data_x = [data[a][0]['mass'][0], data[a][0]['mass'][1], data[a][0]['mass'][2], data[a][0]['mass'][3], data[a][0]['mass'][4], data[a][0]['mass'][5]]
+
+	H = Highchart()
+
+	H.add_data_set(data_x, 'line', 'Mass')
+
+	 #Have to do H.add_data sets with data sets I make
+	# H.add_data_set(times, name='Track Times', type="linegraph")
+	#I don't know why I'd need to take in times for a line-graph
+
+	H.set_options('yAxis',{'title': { 'text': 'Lap-Times'},
 	 	'plotLines': {'value': 0, 'width':1, 'color': '#808080'}})
 
-	Boi.set_options('legend', {'layout': 'vertical','align': 'right',
+	# H.set_options('xAxis', {'categories': })
+
+	H.set_options('legend', {'layout': 'vertical','align': 'right',
 		'verticalAlign': 'middle','borderWidth': 0})
 
-	Boi.set_options('colors',{})
+	H.set_options('colors',{})
 
-	Boi.set_options('plotOptions',{'line': {'dataLabels': {
+	H.set_options('plotOptions',{'line': {'dataLabels': {
 		'enabled': True}}})
 
-	return Boi
+	return H
 
 def makeChart(absolutePath, filename):
+
 	data = packer.unpack(absolutePath)
 	times = data["track_data"][0]["times"]
 	times = [(t[0], t[1], str(t[2])[0:6]) for t in times]
 
-	Boi = makeLineGraph(data, times)
+	# filename += ".html"
 
-	writeHTML(Boi, filename)
+	# H = makeLineGraph(data, times)
+	H = makeLineGraphTrial(data)
+
+	writeHTML(H, filename)
 
 if __name__ == "__main__":
 
 	data = json.load(open('1axissample.fakedata'))
 
-	absolutePath = config.basepath + 'RoseLapCore/out/test_batch_results-1521588335/test_batch_results-1521588335.rslp'
-	filename = "test_batch_results-1521588335"
+	absolutePath = 'C:/wamp/www/RoseLap/py/RoseLapCore/out/test_batch_results-1525219799/test_batch_results-1525219799.rslp'
+	filename = "test_batch_results-linegraph"
 	
 	makeChart(absolutePath, filename)
 
+
+
+	# makeLineGraph(data, times)
+	H = makeLineGraphTrial(data)
+
 	print(data)
 
-#From there, add in element of using highcharts output
