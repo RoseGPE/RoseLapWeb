@@ -5,7 +5,7 @@ import matplotlib.cm as cmx
 import matplotlib.colors as colors
 from sims.constants import *
 
-def plot_velocity_and_events(output, axis='time', title='Velocity and Events'):
+def plot_velocity_and_events(output, axis='time', title='Velocity and Events', saveimg=False, imgname="broken.png"):
   fig, ax = plt.subplots(3, sharex=True)
   fig.canvas.set_window_title(title)
 
@@ -69,6 +69,10 @@ def plot_velocity_and_events(output, axis='time', title='Velocity and Events'):
     a.legend()
 
   plt.draw()
+
+  if saveimg:
+    plt.savefig(imgname)
+
   plt.show()
 
 

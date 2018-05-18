@@ -11,4 +11,5 @@ d = r['track_data'][0]['outputs'][0][1]
 
 for di in d:
 	print(di)
-plotter.plot_velocity_and_events(np.array(d))
+# plotter.plot_velocity_and_events(np.array(d))
+plotter.plot_velocity_and_events(np.array(d), saveimg=True, imgname="testunpack.png")
