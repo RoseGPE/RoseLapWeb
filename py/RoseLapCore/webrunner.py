@@ -47,7 +47,7 @@ if __name__ == "__main__":
 	print('charting...')
 
 	print(display_name)
-	# heatmap.makeChart(result_path, display_name)
+	heatmap.makeChart(result_path, display_name)
 
 	print('done!')
 

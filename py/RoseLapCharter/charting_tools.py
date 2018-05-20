@@ -10,8 +10,17 @@ def makeLabel(d):
     return (str([k for k in list(d.keys())])[1:-1], label)
 
 def makeGraphFolder(foldername):
-	os.makedirs("../../graph/" + foldername)
+	os.makedirs("C:\wamp\www\RoseLap\graph\\" + foldername)
 
 def writeHTML(H, filename):
-    with open("../../graph/" + filename, "w") as chart:
-        chart.write(H.htmlcontent)
+    with open("C:\wamp\www\RoseLap\graph\\" + filename, "w") as chart:
+    	html_head = '''
+    	'''
+
+    	html_foot = '''
+    	'''
+
+    	html = H.htmlcontent
+    	chart.write(html_head)
+        chart.write(html)
+        chart.write(html_foot)

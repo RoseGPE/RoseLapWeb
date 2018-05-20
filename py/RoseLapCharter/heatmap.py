@@ -6,10 +6,15 @@ sys.path.append('C:\wamp\www\RoseLap\py')
 from highcharts import Highchart
 from RoseLapCore import *
 from charting_tools import *
+import plotter
+import numpy as np
 
-def makeHeatmap(data, times):
+def makeHeatmap(data, times, pathname, output=False):
+    raw_times = [time[2] for time in times]
+
     H = Highchart()
     H.add_data_set(times, name='Track Times', type="heatmap")
+
 
     labels = [makeLabel(d) for d in data["axiscontents"]]
     print(labels)
@@ -42,10 +47,10 @@ def makeHeatmap(data, times):
     })
 
     H.set_options('colorAxis', {
-        'min': 4.4,
-        'max': 4.9,
-        'minColor': '#FFFFFF',
-        'maxColor': '#000000'
+        'min': min(raw_times),
+        'max': max(raw_times),
+        'minColor': '#E0FF4F',
+        'maxColor': '#FF2ECC'
     })
 
     H.set_options('legend', {
@@ -57,26 +62,51 @@ def makeHeatmap(data, times):
         'symbolHeight': 280
     })
 
-    H.set_options('tooltip', {
-        'formatter': "function () {" + 
-                    "return this.point.value + '<br>mass of ' + this.series.xAxis.categories[this.point.x] +" +
-                        "'<br>aero stuff of ' + this.series.yAxis.categories[this.point.y];" +
-                "}"
-    })
+    if output:
+        H.set_options('tooltip', {
+            'style': {
+                        'padding': 0,
+                        'pointerEvents': 'auto'
+                    },
+            'formatter': '''function() {
+                                return this.point.value +
+                                '<br><a style="color:blue; text-decoration:underline;" target="_blank" href="''' + pathname + '''/' + parseInt(this.point.x) + '-' + parseInt(this.point.y) + '.png">details</a>';
+                            }'''
+        })
+    else:
+        H.set_options('tooltip', {
+            'style': {
+                        'padding': 0,
+                        'pointerEvents': 'auto'
+                    },
+            'formatter': '''function() {
+                                return this.point.value;
+                            }'''
+        })
 
     return H
 
 def makeChart(absolutePath, filename):
     data = packer.unpack(absolutePath)
     makeGraphFolder(filename)
-    print(data)
 
     for td in data["track_data"]:
         times = td["times"]
         name = td["name"].split("\\")[-1].split(".")[0] # don't worry about this, I'm just parsing the track name in the data into something nicer since the "track name" for some of the data is a path lol
-        print(times)
 
-        H = makeHeatmap(data, times)
+        outputs = td['outputs']
+        if len(outputs) > 0:
+            makeGraphFolder(filename + "\\" + filename + "-" + name)
+            out = True
+
+            for output in outputs:
+                x, y, outdata = output
+                iname = 'C:\wamp\www\RoseLap\graph\\' + filename + "\\" + filename + "-" + name + "\\" + str(x) + "-" + str(y) + ".png"
+                plotter.plot_velocity_and_events(np.array(outdata), saveimg=True, imgname=iname)
+        else:
+            out = False
+
+        H = makeHeatmap(data, times, filename + "-" + name, output=out)
         writeHTML(H, filename + "/" + filename + "-" + name + ".html")
 
 if __name__ == "__main__":

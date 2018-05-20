@@ -8,7 +8,7 @@ class sim_dp_nd_template:
 	def __init__(self):
 		self.axes = 3
 		self.policies = [None for x in range(self.axes)]
-		self.pre_pop = []
+		self.pre_pop = {}
 		
 		# self.done = set()
 		# self.done.add(0)
@@ -56,8 +56,8 @@ class sim_dp_nd_template:
 				else:
 					S[G_ID] = iS
 					S[G_INDEX] = list(index)
-					self.sg.set_element(iS, tuple(S))
-					self.pre_pop.append(S[G_INDEX])
+					# self.sg.set_element(iS, tuple(S))
+					self.pre_pop[S[G_ID]] = tuple(S)
 					# self.done.add(iS)
 
 	def compute_RT(self, S, d):
@@ -178,7 +178,9 @@ class sim_dp_nd_template:
 		i = self.n - 1
 
 		while min_S > 0:
-			min_S = self.sg.get_element(min_S)
+			parents = self.sg.load_obj("parents" + str(i))
+			# min_S = self.sg.get_element(min_S)
+			min_S = parents.get(min_S)
 
 			path.append(min_S[G_DECISION])
 
@@ -237,59 +239,72 @@ class sim_dp_nd_template:
 
 		self.fill_axes()
 
+		c_queue = Queue()
 		g_queue = Queue()
-		for pi in self.pre_pop:
-			for c in self.sg.get_children(pi):
+		for pi in self.pre_pop.values():
+			for c in self.sg.get_children(pi[G_INDEX]):
 				g_queue.put(c)
+
+		pDict = self.pre_pop
 
 		processed = 1
 		
 		end_states = []
 
-		while(not g_queue.empty()):
-			spid = g_queue.get()
+		while(True):
+			while(not g_queue.empty()):
+				spid = g_queue.get()
 
-			if self.sg.exists(spid):
-				continue
+				if self.sg.exists(spid):
+					continue
 
-			processed += 1
-			if processed % 10000 == 0:
-				print processed
+				processed += 1
+				if processed % 10000 == 0:
+					print processed
 
-			spindex = self.sg.convert_to_list(spid)
+				spindex = self.sg.convert_to_list(spid)
 
-			sp = init_state
-			min_cost = np.inf
+				sp = init_state
+				min_cost = np.inf
 
-			parents = self.sg.get_parents(spindex)
+				parents = self.sg.get_parents(spindex)
 
-			for parent in parents:
-				d, sid = parent
+				for parent in parents:
+					d, sid = parent
 
-				if self.sg.exists(sid):
-					cost, pSp = self.compute_RT(self.sg.get_element(sid), d)
+					if self.sg.exists(sid):
+						cost, pSp = self.compute_RT(pDict.get(sid), d)
 
-					if pSp != None and cost < min_cost:
-						min_cost = cost
-						sp = pSp
+						if pSp != None and cost < min_cost:
+							min_cost = cost
+							sp = pSp
 
-						sp[G_PARENT_ID] = sid
-						sp[G_DECISION] = d
+							sp[G_PARENT_ID] = sid
+							sp[G_DECISION] = d
+						else:
+							continue
+
+				if min_cost < np.inf:
+					sp[G_ID] = spid
+					sp[G_INDEX] = spindex
+
+					if sp[G_STEP] == self.n - 1:
+						end_states.append(spid)
 					else:
-						continue
+						children = self.sg.get_children(spindex)
+						for child in children:
+							c_queue.put(child)
 
-			if min_cost < np.inf:
-				sp[G_ID] = spid
-				sp[G_INDEX] = spindex
+					#self.sg.set_element(spid, tuple(sp))
+					pDict[spid] = tuple(sp)
 
-				if sp[G_STEP] == self.n - 1:
-					end_states.append(spid)
-				else:
-					children = self.sg.get_children(spindex)
-					for child in children:
-						g_queue.put(child)
+			if c_queue.empty():
+				break
 
-				self.sg.set_element(spid, tuple(sp))
+			g_queue = c_queue
+			c_queue = Queue()
+
+			self.sg.save_obj(parents, "parents" + str((processed % 10000) - 1))
 
 		path, output = self.find_optimum(end_states)
 

@@ -91,8 +91,8 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
 
 	print "threading...", n_threads
 
-	pool = ThreadPool(n_threads)
-	pool.map(stretch, [i for i in range(n_threads)])
+	# pool = ThreadPool(n_threads)
+	# pool.map(stretch, [i for i in range(n_threads)])
 
 	print "running..."
 

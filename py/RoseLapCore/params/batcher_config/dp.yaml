@@ -2,10 +2,10 @@
 vehicle: example_vehicle.yaml
 model: dp_nd
 tracks:
-  - dxf: test_ax.DXF
+  - name: test_ax.dxf
     segment_distance: 0.2
     steady_state: false
-  - dxf: test_track.DXF
+  - name: test_track.dxf
     segment_distance: 0.2
     steady_state: false
 

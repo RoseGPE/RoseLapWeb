@@ -1,6 +1,7 @@
 import numpy as np
 from itertools import permutations
 import time
+import pickle
 
 class nd_structure:
 	def __init__(self, n, p):
@@ -110,3 +111,11 @@ class nd_structure:
 			i = (i - iS[-1]) / self.n
 
 		return iS
+
+	def save_obj(obj, name):
+	    with open('temp/'+ name + '.pkl', 'wb') as f:
+	        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+	def load_obj(name):
+	    with open('temp/' + name + '.pkl', 'rb') as f:
+	        return pickle.load(f)
