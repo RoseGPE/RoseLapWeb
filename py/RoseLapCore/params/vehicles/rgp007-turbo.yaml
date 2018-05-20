@@ -9,12 +9,15 @@ drag_35mph: 40.0
 cp_height: 0.9
 cp_bias: 0.6
 
-# CORRELLATED: from cornering tests
-mu: 1.5
+tire_mu_x: 2.635
+tire_offset_x: 75.0
+tire_mu_y: 1.553
+tire_offset_y: 73.0
+
 tire_radius: 0.75
 
-# CORRECT: 370 lb car and 180 lb driver
-mass: 550
+# CORRECT: 370 lb car and 180 lb driver and 20 lb turbo
+mass: 570
 # FIXME: No idea if ballpark. Also VARIABLE
 cg_height: 0.8
 

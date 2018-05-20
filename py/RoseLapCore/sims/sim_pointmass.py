@@ -28,17 +28,13 @@ class sim_pointmass:
     N = vehicle.mass*vehicle.g+Fdown
 
     Ftire_lat = segment.curvature*vehicle.mass*v0**2
-    
-    Ftire_lim = vehicle.f_long_remain(4,N,0)
 
-    if Ftire_lat > Ftire_lim:
-      return None
-
-    Ftire_remaining = vehicle.f_long_remain(4, N, Ftire_lat)
+    Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, N, Ftire_lat)
     if Ftire_remaining < 0:
       return None
 
     Ftire_engine_limit, eng_rpm = vehicle.eng_force(v0, int(gear))
+    
 
     
 
@@ -51,8 +47,12 @@ class sim_pointmass:
       Ftire_long = 0
       gear = np.nan
     else:
-      status = S_ENG_LIM_ACC
-      Ftire_long = Ftire_engine_limit
+      if segment.curvature > 0 and (prior_result[O_STATUS] == S_BRAKING  or (abs(prior_result[O_CURVATURE] - segment.curvature)<=0.03 and prior_result[O_STATUS] == S_SUSTAINING)):
+        status = S_SUSTAINING
+        Ftire_long = Fdrag
+      else:
+        status = S_ENG_LIM_ACC
+        Ftire_long = Ftire_engine_limit
       if Ftire_long > Ftire_remaining:
         status = S_TIRE_LIM_ACC
         Ftire_long = Ftire_remaining
@@ -66,15 +66,17 @@ class sim_pointmass:
       a_long=0
       vf=0
 
-    if abs(F_longitudinal) < 1e-3 and shifting != IN_PROGRESS:
+    if status!=S_SUSTAINING and abs(F_longitudinal) < 1e-3 and shifting != IN_PROGRESS:
       status = S_DRAG_LIM
+
     if eng_rpm > vehicle.engine_rpms[-1]:
       status = S_TOPPED_OUT
+    
 
     vavg = ((v0+vf)/2)
-    try:
+    if vavg > 0:
       tf = t0 + segment.length/vavg
-    except:
+    else:
       tf = t0
     xf = x0 + segment.length
 

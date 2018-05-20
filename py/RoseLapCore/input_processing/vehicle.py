@@ -45,14 +45,20 @@ class Vehicle(object):
 
   def f_long_remain(self, n_tires, f_norm, f_lat):
     # Force that one of the tires in this set produces
-    f_grip = self.tire_mu*(f_norm/n_tires) + self.tire_offset
-    if f_grip < abs(f_lat):
-      return -1
-    f_long = self.tire_beta*math.sqrt(f_grip**2 - f_lat**2)
-    return f_long*n_tires
+    f_x_max = self.tire_mu_x*(f_norm/n_tires) + self.tire_offset_x
+    f_y_max = self.tire_mu_y*(f_norm/n_tires) + self.tire_offset_y
+
+    if f_y_max < abs(f_lat/n_tires):
+      return (-1, f_x_max)
+    f_long = math.sqrt(1-(f_lat/n_tires)**2/f_y_max/f_y_max)*f_x_max
+    print('%f, %f, %f, %f, %f' % (f_norm, f_lat, f_x_max, f_y_max, f_long))
+    return (f_long*n_tires, f_x_max)
+    # if f_norm*self.tire_mu_x < abs(f_lat):
+    #   return (-1, f_norm*self.tire_mu_x)
+    # return (math.sqrt((f_norm*self.tire_mu_x)**2 - f_lat**2), f_norm*self.tire_mu_x)
 
   def prep(self):
-    self.mass /= self.g
+    self.mass = self.mass / self.g
 
   def __init__(self, v_OBJ):
     self.g = g
