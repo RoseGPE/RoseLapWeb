@@ -1,5 +1,7 @@
 import numpy as np
 import math
+from sympy.solvers import solve
+import sympy
 
 from constants import *
 class sim_pointmass:
@@ -22,16 +24,29 @@ class sim_pointmass:
     status = S_TOPPED_OUT;
     co2_elapsed = prior_result[O_CO2];
 
-    Fdown = vehicle.alpha_downforce()*v0**2;
-    Fdrag = vehicle.alpha_drag()*v0**2;
-
-    N = vehicle.mass*vehicle.g+Fdown
+    
 
     Ftire_lat = segment.curvature*vehicle.mass*v0**2
 
-    Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, N, Ftire_lat)
-    if Ftire_remaining < 0:
-      return None
+    aero_mode = AERO_FULL
+
+    if not brake:
+      aero_mode = AERO_DRS
+      Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
+      if Ftire_remaining < 0:
+        aero_mode = AERO_FULL
+        Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
+        if Ftire_remaining < 0:
+          return None
+    else:
+      aero_mode = AERO_BRK
+      Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
+      if Ftire_remaining < 0:
+        aero_mode = AERO_FULL
+        Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
+        if Ftire_remaining < 0:
+          return None
+
 
     Ftire_engine_limit, eng_rpm = vehicle.eng_force(v0, int(gear))
     
@@ -49,7 +64,7 @@ class sim_pointmass:
     else:
       if segment.curvature > 0 and (prior_result[O_STATUS] == S_BRAKING  or (abs(prior_result[O_CURVATURE] - segment.curvature)<=0.03 and prior_result[O_STATUS] == S_SUSTAINING)):
         status = S_SUSTAINING
-        Ftire_long = Fdrag
+        Ftire_long = vehicle.drag(v0, aero_mode)
       else:
         status = S_ENG_LIM_ACC
         Ftire_long = Ftire_engine_limit
@@ -57,7 +72,7 @@ class sim_pointmass:
         status = S_TIRE_LIM_ACC
         Ftire_long = Ftire_remaining
 
-    F_longitudinal = Ftire_long - Fdrag
+    F_longitudinal = Ftire_long - vehicle.drag(v0, aero_mode)
     a_long = F_longitudinal / vehicle.mass
 
     try:
@@ -71,7 +86,32 @@ class sim_pointmass:
 
     if eng_rpm > vehicle.engine_rpms[-1]:
       status = S_TOPPED_OUT
-    
+
+
+    if self.compute_excess(vehicle,segment,vf,aero_mode) < 0:
+      vfu = vf*2
+      vfb = 0
+      vfc = vf
+      excess = self.compute_excess(vehicle, segment, vfc, aero_mode)
+      # print(excess)
+
+      while excess<0 or excess>1e-2:
+        if (excess<0):
+          vfu = vfc
+        else:
+          vfb = vfc
+        vfc = (vfu+vfb)/2
+        excess = self.compute_excess(vehicle, segment, vfc, aero_mode)
+      vf = vfc
+      
+
+      # vs = sympy.Symbol('vs');
+      # n_tires = 4
+      # print('thinking')
+      # eq = -vehicle.alpha_drag()**2*vs**4 + (1-(vehicle.alpha_drag()*vs**2/n_tires)**2/(vehicle.tire_mu_x*((vehicle.mass*vehicle.g+vehicle.alpha_downforce()*vs**2)/n_tires) + vehicle.tire_offset_x)**2)**2*vehicle.tire_mu_y**2*((vehicle.mass*vehicle.g+vehicle.alpha_downforce()*vs**2)/n_tires)**2 + vehicle.tire_offset_y**2
+      # print(eq)
+      # vf = solve(eq, vs, numerical=True)
+      # print(vf)
 
     vavg = ((v0+vf)/2)
     if vavg > 0:
@@ -87,7 +127,7 @@ class sim_pointmass:
       tf,
       xf,
       vf,
-      N,
+      vehicle.mass*vehicle.g + vehicle.downforce(v0,aero_mode),
       0,
       segment.sector,
       status,
@@ -98,11 +138,15 @@ class sim_pointmass:
       0,
       segment.curvature,
       eng_rpm,
-
-      co2_elapsed
+      co2_elapsed,
+      aero_mode
     ])
 
     return output
+
+  def compute_excess(self, vehicle, segment, vf, aero_mode):
+    return vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(vf, aero_mode), vehicle.mass*vf**2*segment.curvature)[0] - vehicle.drag(vf, aero_mode)
+    #return vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.alpha_downforce()*vf**2, vehicle.mass*vf**2*segment.curvature)[0] - vehicle.alpha_drag()*vf**2;
 
   def solve(self, vehicle, segments, output_0 = None):
     # set up initial stuctures

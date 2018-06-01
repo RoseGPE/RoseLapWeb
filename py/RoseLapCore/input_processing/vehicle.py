@@ -5,11 +5,11 @@ import math
 g = 32.2 # ft/s^2
 
 class Vehicle(object):
-  def alpha_downforce(self):
-    return self.downforce_35mph / (51.33333 ** 2); # lbf/(ft/s)^2
+  def downforce(self, v, aero_mode):
+    return self.downforce_35mph[aero_mode] / (51.33333 ** 2) * v**2
 
-  def alpha_drag(self):
-    return self.drag_35mph / (51.33333 ** 2); # lbf/(ft/s)^2
+  def drag(self, v, aero_mode):
+    return self.downforce_35mph[aero_mode] / (51.33333 ** 2) * v**2
 
   def front_brake_bias(self):
     return self.brake_bias
@@ -43,6 +43,15 @@ class Vehicle(object):
         besti = i
     return besti
 
+  def f_lat_remain(self, n_tires, f_norm, f_long):
+    f_x_max = self.tire_mu_x*(f_norm/n_tires) + self.tire_offset_x
+    f_y_max = self.tire_mu_y*(f_norm/n_tires) + self.tire_offset_y
+
+    if f_x_max < abs(f_long/n_tires):
+      return (-1, f_y_max)
+    f_lat = math.sqrt(1-(f_long/n_tires)**2/f_x_max/f_x_max)*f_y_max
+    return (f_lat*n_tires, f_y_max)
+
   def f_long_remain(self, n_tires, f_norm, f_lat):
     # Force that one of the tires in this set produces
     f_x_max = self.tire_mu_x*(f_norm/n_tires) + self.tire_offset_x
@@ -51,7 +60,7 @@ class Vehicle(object):
     if f_y_max < abs(f_lat/n_tires):
       return (-1, f_x_max)
     f_long = math.sqrt(1-(f_lat/n_tires)**2/f_y_max/f_y_max)*f_x_max
-    print('%f, %f, %f, %f, %f' % (f_norm, f_lat, f_x_max, f_y_max, f_long))
+    # print('%f, %f, %f, %f, %f' % (f_norm, f_lat, f_x_max, f_y_max, f_long))
     return (f_long*n_tires, f_x_max)
     # if f_norm*self.tire_mu_x < abs(f_lat):
     #   return (-1, f_norm*self.tire_mu_x)
