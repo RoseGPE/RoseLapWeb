@@ -1,7 +1,5 @@
 import numpy as np
 import math
-from sympy.solvers import solve
-import sympy
 
 from constants import *
 class sim_pointmass:
@@ -111,9 +109,14 @@ class sim_pointmass:
 
     try:
       vf = math.sqrt(v0**2 + 2*a_long*segment.length)
+      vfmax = math.sqrt(v0**2 + 2*(Ftire_engine_limit - vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
+      vfmin = math.sqrt(v0**2 + 2*(Ftire_remaining - vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
     except:
       a_long=0
       vf=0
+      vfmax=0
+
+
 
     if status!=S_SUSTAINING and abs(F_longitudinal) < 1e-3 and shifting != IN_PROGRESS:
       status = S_DRAG_LIM
@@ -121,22 +124,34 @@ class sim_pointmass:
     if eng_rpm > vehicle.engine_rpms[-1]:
       status = S_TOPPED_OUT
 
-    # Bisection to generate sustaining
-    if self.compute_excess(vehicle,segment,vf,aero_mode) < 0:
-      vfu = vf*2
-      vfb = 0
-      vfc = vf
-      excess = self.compute_excess(vehicle, segment, vfc, aero_mode)
+    # Bisection to generate tire limit
+    if self.compute_excess(vehicle,segment_next,vf,aero_mode) < 0 or status==S_SUSTAINING:
+      # print('leggo')
+      # print(x0,vf,vfmax)
+      vfu = min(vf*1.3, vfmax)
+      vfb = max(vf*0.5, vfmin)
+      vfc = min(vf, vfmax)
+      excess = self.compute_excess(vehicle, segment_next, vfc, aero_mode)
       # print(excess)
 
-      while excess<0 or excess>1e-2:
+      n = 50
+      while excess<1e-3 or excess>1e-1:
+        # print excess
         if (excess<0):
           vfu = vfc
         else:
           vfb = vfc
         vfc = (vfu+vfb)/2
-        excess = self.compute_excess(vehicle, segment, vfc, aero_mode)
+        n-=1
+        if n <= 0:
+          if excess<0:
+            return None
+          else:
+            break
+        excess = self.compute_excess(vehicle, segment_next, vfc, aero_mode)
+        
       vf = vfc
+      # print(vf)
       status = S_SUSTAINING
 
       # vs = sympy.Symbol('vs');
@@ -147,6 +162,7 @@ class sim_pointmass:
       # vf = solve(eq, vs, numerical=True)
       # print(vf)
 
+    a_long = (vf**2-v0**2)/2/segment.length
     vavg = ((v0+vf)/2)
     if vavg > 0:
       tf = t0 + segment.length/vavg

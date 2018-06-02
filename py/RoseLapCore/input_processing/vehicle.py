@@ -49,7 +49,7 @@ class Vehicle(object):
 
     if f_x_max < abs(f_long/n_tires):
       return (-1, f_y_max)
-    f_lat = math.sqrt(1-(f_long/n_tires)**2/f_x_max/f_x_max)*f_y_max
+    f_lat = math.sqrt(max(1-(abs(f_long)/n_tires)**2/f_x_max/f_x_max,0))*f_y_max
     return (f_lat*n_tires, f_y_max)
 
   def f_long_remain(self, n_tires, f_norm, f_lat):
@@ -59,7 +59,7 @@ class Vehicle(object):
 
     if f_y_max < abs(f_lat/n_tires):
       return (-1, f_x_max)
-    f_long = math.sqrt(1-(f_lat/n_tires)**2/f_y_max/f_y_max)*f_x_max
+    f_long = math.sqrt(max(1-(abs(f_lat)/n_tires)**2/f_y_max/f_y_max,0))*f_x_max
     # print('%f, %f, %f, %f, %f' % (f_norm, f_lat, f_x_max, f_y_max, f_long))
     return (f_long*n_tires, f_x_max)
     # if f_norm*self.tire_mu_x < abs(f_lat):

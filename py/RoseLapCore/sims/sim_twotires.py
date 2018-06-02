@@ -6,8 +6,41 @@ from constants import *
 class sim_twotires:
   def __init__(self):
     pass
-    
+
   def step(self, vehicle, prior_result, segment, segment_next, brake, shifting, gear):
+    return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    # if brake:
+    #   out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
+    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    #   if out_nor is not None:
+    #     if out_brk is not None:
+    #       if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
+    #         return out_brk
+    #       else:
+    #         return out_nor
+    #     else:
+    #       return out_nor
+    #   elif out_brk is not None:
+    #     return out_brk
+    #   else:
+    #     return None
+    # else:
+    #   out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
+    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    #   if out_nor is not None:
+    #     if out_drs is not None:
+    #       if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
+    #         return out_drs
+    #       else:
+    #         return out_nor
+    #     else:
+    #       return out_nor
+    #   elif out_drs is not None:
+    #     return out_drs
+    #   else:
+    #     return None
+    
+  def substep(self, vehicle, prior_result, segment, segment_next, brake, shifting, gear, aero_mode):
     """
     Takes a vehicle step. Returns (see last line) if successful, returns None if vehicle skids off into a wall.
     @param v0 the initial vehicle speed for this step
@@ -28,21 +61,16 @@ class sim_twotires:
 
     Ff_lat = (1-vehicle.weight_bias)*segment.curvature*vehicle.mass*v0**2
     Fr_lat = vehicle.weight_bias*segment.curvature*vehicle.mass*v0**2
-    
-    Fr_lim = (vehicle.mu*Nr)
-    Ff_lim = (vehicle.mu*Nf) 
 
-    if Fr_lat > Fr_lim or Ff_lat > Ff_lim :
+    Ff_remaining, Ff_max_long = vehicle.f_long_remain(2, Nf, Ff_lat)
+    Fr_remaining, Fr_max_long = vehicle.f_long_remain(2, Nr, Fr_lat)
+    if Ff_remaining < 0 or Fr_remaining < 0:
       return None
 
-    Fr_remaining = np.sqrt(Fr_lim**2 - Fr_lat**2)
+    Fr_engine_limit, eng_rpm = vehicle.eng_force(v0, int(gear))
 
-    Fr_engine_limit,eng_rpm = vehicle.eng_force(v0, int(gear))
-
-    Ff_remaining = np.sqrt(Ff_lim**2 - Ff_lat**2)
-
-    Fdown = vehicle.alpha_downforce()*v0**2;
-    Fdrag = vehicle.alpha_drag()*v0**2;
+    Ff_long = 0
+    Fr_long = 0
 
     if brake:
       status = S_BRAKING
@@ -53,8 +81,6 @@ class sim_twotires:
         F_brake = min(Ff_remaining/vehicle.front_brake_bias(), Fr_remaining/vehicle.rear_brake_bias())
         Fr_long = -F_brake*vehicle.rear_brake_bias()
         Ff_long = -F_brake*vehicle.front_brake_bias()
-      # Fr_long = -Fr_remaining
-      # Ff_long = -Ff_remaining
       gear = np.nan
     elif shifting:
       status = S_SHIFTING
@@ -62,18 +88,26 @@ class sim_twotires:
       Ff_long = 0
       gear = np.nan
     else:
-      status = S_ENG_LIM_ACC
-      Fr_long = Fr_engine_limit
+      if segment.curvature > 0 and (prior_result[O_STATUS] == S_BRAKING  or (abs(prior_result[O_CURVATURE] - segment.curvature)<=0.03 and prior_result[O_STATUS] == S_SUSTAINING)):
+        status = S_SUSTAINING
+        Fr_long = vehicle.drag(v0, aero_mode)
+      else:
+        status = S_ENG_LIM_ACC
+        Fr_long = Fr_engine_limit
       if Fr_long > Fr_remaining:
         status = S_TIRE_LIM_ACC
         Fr_long = Fr_remaining
-      Ff_long = 0
+
+      # status = S_ENG_LIM_ACC
+      # Fr_long = Fr_engine_limit
+      # if Fr_long > Fr_remaining:
+      #   status = S_TIRE_LIM_ACC
+      #   Fr_long = Fr_remaining
+      # Ff_long = 0
 
 
-    a_long = (Fr_long+Ff_long-Fdrag)/vehicle.mass
-
-    F_longitudinal = Ff_long+Fr_long - Fdrag
-    a = F_longitudinal / vehicle.mass
+    F_longitudinal = Ff_long + Fr_long - vehicle.drag(v0, aero_mode)
+    a_long = F_longitudinal / vehicle.mass
 
     try:
       vf = math.sqrt(v0**2 + 2*a_long*segment.length)
@@ -86,71 +120,110 @@ class sim_twotires:
     if eng_rpm > vehicle.engine_rpms[-1]:
       status = S_TOPPED_OUT
 
+      
+
     Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
-        - Fdown*vehicle.weight_bias
+        - vehicle.downforce(vf,aero_mode)*vehicle.weight_bias
         - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
         + vehicle.mass*vehicle.g
-        + Fdown
-        - Fdrag*vehicle.cp_height/vehicle.wheelbase_length )
+        + vehicle.downforce(vf,aero_mode)
+        - vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
 
     Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
-        + Fdown*vehicle.cp_bias
+        + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
         + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-        + Fdrag*vehicle.cg_height/vehicle.wheelbase_length )
+        + vehicle.drag(vf,aero_mode)*vehicle.cg_height/vehicle.wheelbase_length )
 
     Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
     Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
-    
-    Fr_lim = (vehicle.mu*Nr)
-    Ff_lim = (vehicle.mu*Nf) 
 
-    a_long_start = a_long
-    
-    nmax = 10
-    n = 0
-    while Fr_lat > Fr_lim-1e-2 or Ff_lat > Ff_lim-1e-2 :
-      #return None
-      a_long-=a_long_start*1/nmax
-      vf = math.sqrt(v0**2 + 2*a_long*segment.length)
+    excess = min(vehicle.f_long_remain(2, Nr, Fr_lat)[0] - vehicle.drag(vf, aero_mode), vehicle.f_long_remain(2, Nf, Ff_lat)[0])
 
-      Fdown = vehicle.alpha_downforce()*vf**2;
-      Fdrag = vehicle.alpha_drag()*vf**2;
-
-      Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
-        - Fdown*vehicle.weight_bias
-        - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-        + vehicle.mass*vehicle.g
-        + Fdown
-        - Fdrag*vehicle.cp_height/vehicle.wheelbase_length )
-
-      Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
-          + Fdown*vehicle.cp_bias
-          + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-          + Fdrag*vehicle.cg_height/vehicle.wheelbase_length )
-
-      Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
-      Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
+    # n = 100;
+    # if excess < 0:
+    #   vfu = vf*2
+    #   vfb = 0
+    #   vfc = vf
+    #   excess = (vehicle.f_long_remain(2, Nr, Fr_lat)[0] - vehicle.drag(vfc, aero_mode), vehicle.f_long_remain(2, Nf, Ff_lat)[0])
       
-      Fr_lim = (vehicle.mu*Nr)
-      Ff_lim = (vehicle.mu*Nf)
+    #   while min(excess)<0 or max(excess)>1:
 
-      # back calculate outputs
-      if not (brake or shifting):
-        Fr_long = a_long*vehicle.mass+Fdrag
-        status = S_TIRE_LIM_ACC
-      elif brake:
-        F_brake = -a_long*vehicle.mass-Fdrag
-        if vehicle.perfect_brake_bias:
-          Fr_long = -F_brake*Fr_remaining/(Ff_remaining+Fr_remaining)
-          Ff_long = -F_brake*Ff_remaining/(Ff_remaining+Fr_remaining)
-        else:
-          Fr_long = -F_brake*vehicle.rear_brake_bias()
-          Ff_long = -F_brake*vehicle.front_brake_bias()
+    #     if (min(excess)<0):
+    #       vfu = vfc
+    #     else:
+    #       vfb = vfc
+    #     vfc = (vfu+vfb)/2
+    #     Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
+    #         - vehicle.downforce(vfc,aero_mode)*vehicle.weight_bias
+    #         - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+    #         + vehicle.mass*vehicle.g
+    #         + vehicle.downforce(vfc,aero_mode)
+    #         - vehicle.drag(vfc,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
+
+    #     Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
+    #         + vehicle.downforce(vfc,aero_mode)*vehicle.cp_bias
+    #         + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+    #         + vehicle.drag(vfc,aero_mode)*vehicle.cg_height/vehicle.wheelbase_length )
+
+    #     Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vfc**2
+    #     Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vfc**2
+
+    #     excess =(vehicle.f_long_remain(2, Nr, Fr_lat)[0] - vehicle.drag(vfc, aero_mode),vehicle.f_long_remain(2, Nf, Ff_lat)[0])
+    #     n-=1
+    #     if n <= 0:
+    #       if min(excess) < 0:
+    #         return None
+    #       else:
+    #         print('kill')
+    #         break
+    #   vf = vfc
+    #   status = S_SUSTAINING
+    
+    # nmax = 10
+    # n = 0
+    # while Fr_lat > Fr_lim-1e-2 or Ff_lat > Ff_lim-1e-2 :
+    #   #return None
+    #   a_long-=a_long_start*1/nmax
+    #   vf = math.sqrt(v0**2 + 2*a_long*segment.length)
+
+    #   Fdown = vehicle.alpha_downforce()*vf**2;
+    #   Fdrag = vehicle.alpha_drag()*vf**2;
+
+    #   Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
+    #     - Fdown*vehicle.weight_bias
+    #     - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+    #     + vehicle.mass*vehicle.g
+    #     + Fdown
+    #     - Fdrag*vehicle.cp_height/vehicle.wheelbase_length )
+
+    #   Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
+    #       + Fdown*vehicle.cp_bias
+    #       + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+    #       + Fdrag*vehicle.cg_height/vehicle.wheelbase_length )
+
+    #   Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
+    #   Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
+      
+    #   Fr_lim = (vehicle.mu*Nr)
+    #   Ff_lim = (vehicle.mu*Nf)
+
+    #   # back calculate outputs
+    #   if not (brake or shifting):
+    #     Fr_long = a_long*vehicle.mass+Fdrag
+    #     status = S_TIRE_LIM_ACC
+    #   elif brake:
+    #     F_brake = -a_long*vehicle.mass-Fdrag
+    #     if vehicle.perfect_brake_bias:
+    #       Fr_long = -F_brake*Fr_remaining/(Ff_remaining+Fr_remaining)
+    #       Ff_long = -F_brake*Ff_remaining/(Ff_remaining+Fr_remaining)
+    #     else:
+    #       Fr_long = -F_brake*vehicle.rear_brake_bias()
+    #       Ff_long = -F_brake*vehicle.front_brake_bias()
 
 
-      n+=1
-      if n > nmax:
-        return None
+    #   n+=1
+    #   if n > nmax:
+    #     return None
 
 
 
@@ -179,7 +252,8 @@ class sim_twotires:
       segment.curvature,
       eng_rpm,
 
-      co2_elapsed
+      co2_elapsed,
+      aero_mode
     ])
 
     return output
