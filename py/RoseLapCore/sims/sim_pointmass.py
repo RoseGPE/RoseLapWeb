@@ -7,8 +7,40 @@ from constants import *
 class sim_pointmass:
   def __init__(self):
     pass
-    
+
   def step(self, vehicle, prior_result, segment, segment_next, brake, shifting, gear):
+    if brake:
+      out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
+      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+      if out_nor is not None:
+        if out_brk is not None:
+          if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
+            return out_brk
+          else:
+            return out_nor
+        else:
+          return out_nor
+      elif out_brk is not None:
+        return out_brk
+      else:
+        return None
+    else:
+      out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
+      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+      if out_nor is not None:
+        if out_drs is not None:
+          if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
+            return out_drs
+          else:
+            return out_nor
+        else:
+          return out_nor
+      elif out_drs is not None:
+        return out_drs
+      else:
+        return None
+    
+  def substep(self, vehicle, prior_result, segment, segment_next, brake, shifting, gear, aero_mode):
     """
     Takes a vehicle step. Returns (see last line) if successful, returns None if vehicle skids off into a wall.
     @param v0 the initial vehicle speed for this step
@@ -28,24 +60,26 @@ class sim_pointmass:
 
     Ftire_lat = segment.curvature*vehicle.mass*v0**2
 
-    aero_mode = AERO_FULL
+    Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
+    if Ftire_remaining < 0:
+      return None
 
-    if not brake:
-      aero_mode = AERO_DRS
-      Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
-      if Ftire_remaining < 0:
-        aero_mode = AERO_FULL
-        Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
-        if Ftire_remaining < 0:
-          return None
-    else:
-      aero_mode = AERO_BRK
-      Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
-      if Ftire_remaining < 0:
-        aero_mode = AERO_FULL
-        Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
-        if Ftire_remaining < 0:
-          return None
+    # if not brake:
+    #   aero_mode = AERO_DRS
+    #   Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
+    #   if Ftire_remaining < 0:
+    #     aero_mode = AERO_FULL
+    #     Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
+    #     if Ftire_remaining < 0:
+    #       return None
+    # else:
+    #   aero_mode = AERO_BRK
+    #   Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
+    #   if Ftire_remaining < 0:
+    #     aero_mode = AERO_FULL
+    #     Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
+    #     if Ftire_remaining < 0:
+    #       return None
 
 
     Ftire_engine_limit, eng_rpm = vehicle.eng_force(v0, int(gear))
@@ -87,7 +121,7 @@ class sim_pointmass:
     if eng_rpm > vehicle.engine_rpms[-1]:
       status = S_TOPPED_OUT
 
-
+    # Bisection to generate sustaining
     if self.compute_excess(vehicle,segment,vf,aero_mode) < 0:
       vfu = vf*2
       vfb = 0
@@ -103,7 +137,7 @@ class sim_pointmass:
         vfc = (vfu+vfb)/2
         excess = self.compute_excess(vehicle, segment, vfc, aero_mode)
       vf = vfc
-      
+      status = S_SUSTAINING
 
       # vs = sympy.Symbol('vs');
       # n_tires = 4

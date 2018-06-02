@@ -9,7 +9,7 @@ class Vehicle(object):
     return self.downforce_35mph[aero_mode] / (51.33333 ** 2) * v**2
 
   def drag(self, v, aero_mode):
-    return self.downforce_35mph[aero_mode] / (51.33333 ** 2) * v**2
+    return self.drag_35mph[aero_mode] / (51.33333 ** 2) * v**2
 
   def front_brake_bias(self):
     return self.brake_bias
