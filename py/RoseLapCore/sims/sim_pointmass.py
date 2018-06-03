@@ -2,6 +2,12 @@ import numpy as np
 import math
 
 from constants import *
+
+def floor_sqrt(x):
+  if x > 0:
+    return math.sqrt(x)
+  return 0
+
 class sim_pointmass:
   def __init__(self):
     pass
@@ -37,6 +43,8 @@ class sim_pointmass:
         return out_drs
       else:
         return None
+
+
     
   def substep(self, vehicle, prior_result, segment, segment_next, brake, shifting, gear, aero_mode):
     """
@@ -108,9 +116,10 @@ class sim_pointmass:
     a_long = F_longitudinal / vehicle.mass
 
     try:
-      vf = math.sqrt(v0**2 + 2*a_long*segment.length)
-      vfmax = math.sqrt(v0**2 + 2*(Ftire_engine_limit - vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
-      vfmin = math.sqrt(v0**2 + 2*(Ftire_remaining - vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
+      vf = floor_sqrt(v0**2 + 2*a_long*segment.length)
+      vfmax = floor_sqrt(v0**2 + 2*(Ftire_engine_limit - vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
+      vfmin = floor_sqrt(v0**2 + 2*(-Ftire_remaining - vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
+      # print('calc')
     except:
       a_long=0
       vf=0
@@ -131,6 +140,7 @@ class sim_pointmass:
       vfu = min(vf*1.3, vfmax)
       vfb = max(vf*0.5, vfmin)
       vfc = min(vf, vfmax)
+      # print(vfu, vfb, vfc)
       excess = self.compute_excess(vehicle, segment_next, vfc, aero_mode)
       # print(excess)
 

@@ -3,42 +3,47 @@ import math
 
 from constants import *
 
+def floor_sqrt(x):
+  if x > 0:
+    return math.sqrt(x)
+  return 0
+
 class sim_twotires:
   def __init__(self):
     pass
 
   def step(self, vehicle, prior_result, segment, segment_next, brake, shifting, gear):
-    return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    # if brake:
-    #   out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
-    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    #   if out_nor is not None:
-    #     if out_brk is not None:
-    #       if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
-    #         return out_brk
-    #       else:
-    #         return out_nor
-    #     else:
-    #       return out_nor
-    #   elif out_brk is not None:
-    #     return out_brk
-    #   else:
-    #     return None
-    # else:
-    #   out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
-    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    #   if out_nor is not None:
-    #     if out_drs is not None:
-    #       if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
-    #         return out_drs
-    #       else:
-    #         return out_nor
-    #     else:
-    #       return out_nor
-    #   elif out_drs is not None:
-    #     return out_drs
-    #   else:
-    #     return None
+    # return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    if brake:
+      out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
+      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+      if out_nor is not None:
+        if out_brk is not None:
+          if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
+            return out_brk
+          else:
+            return out_nor
+        else:
+          return out_nor
+      elif out_brk is not None:
+        return out_brk
+      else:
+        return None
+    else:
+      out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
+      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+      if out_nor is not None:
+        if out_drs is not None:
+          if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
+            return out_drs
+          else:
+            return out_nor
+        else:
+          return out_nor
+      elif out_drs is not None:
+        return out_drs
+      else:
+        return None
     
   def substep(self, vehicle, prior_result, segment, segment_next, brake, shifting, gear, aero_mode):
     """
@@ -109,18 +114,16 @@ class sim_twotires:
     F_longitudinal = Ff_long + Fr_long - vehicle.drag(v0, aero_mode)
     a_long = F_longitudinal / vehicle.mass
 
-    try:
-      vf = math.sqrt(v0**2 + 2*a_long*segment.length)
-    except:
-      a_long=0
-      vf=0
+    vf = floor_sqrt(v0**2 + 2*a_long*segment.length)
+    vfmax = floor_sqrt(v0**2 + 2*(Fr_engine_limit - vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
+    vfmin = floor_sqrt(v0**2 + 2*(-Ff_remaining -Fr_remaining - vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
 
     if abs(F_longitudinal) < 1e-3 and shifting != IN_PROGRESS:
       status = S_DRAG_LIM
     if eng_rpm > vehicle.engine_rpms[-1]:
       status = S_TOPPED_OUT
 
-      
+    a_long = (vf**2-v0**2)/2/segment.length
 
     Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
         - vehicle.downforce(vf,aero_mode)*vehicle.weight_bias
@@ -137,54 +140,130 @@ class sim_twotires:
     Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
     Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
 
-    excess = min(vehicle.f_long_remain(2, Nr, Fr_lat)[0] - vehicle.drag(vf, aero_mode), vehicle.f_long_remain(2, Nf, Ff_lat)[0])
+    excess = min(vehicle.f_long_remain(2, Nr, Fr_lat)[0], vehicle.f_long_remain(2, Nf, Ff_lat)[0])
 
-    # n = 100;
-    # if excess < 0:
-    #   vfu = vf*2
-    #   vfb = 0
-    #   vfc = vf
-    #   excess = (vehicle.f_long_remain(2, Nr, Fr_lat)[0] - vehicle.drag(vfc, aero_mode), vehicle.f_long_remain(2, Nf, Ff_lat)[0])
-      
-    #   while min(excess)<0 or max(excess)>1:
+    N_ITERS = 50
+    n = 0;
+    if excess < 0:
+      vfu = vfmax
+      vfb = vfmin
+      vf = (vfu+vfb)/2
+      excess = (vehicle.f_long_remain(2, Nr, Fr_lat)[0], vehicle.f_long_remain(2, Nf, Ff_lat)[0])
+      valid_entries = []
+      if min(excess) >= 0 and sum(excess)>=abs(vehicle.mass*a_long):
+        valid_entries.append((n,vf,a_long))
+      # if x0 < 100:
+      #   print(x0,v0,vfu,vfb)
+      while min(excess)<0 or max(excess)>1:
+        
+        # if (min(excess)<0):
+        #   vfu = vf
+        # else:
+        #   vfb = vf
+        # vf = (vfu+vfb)/2
 
-    #     if (min(excess)<0):
-    #       vfu = vfc
-    #     else:
-    #       vfb = vfc
-    #     vfc = (vfu+vfb)/2
-    #     Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
-    #         - vehicle.downforce(vfc,aero_mode)*vehicle.weight_bias
-    #         - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-    #         + vehicle.mass*vehicle.g
-    #         + vehicle.downforce(vfc,aero_mode)
-    #         - vehicle.drag(vfc,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
+        vf = vfb + (vfu-vfb)/N_ITERS*n;
 
-    #     Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
-    #         + vehicle.downforce(vfc,aero_mode)*vehicle.cp_bias
-    #         + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-    #         + vehicle.drag(vfc,aero_mode)*vehicle.cg_height/vehicle.wheelbase_length )
+        a_long = (vf**2-v0**2)/2/segment.length
 
-    #     Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vfc**2
-    #     Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vfc**2
+        Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
+            - vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
+            - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+            + vehicle.mass*vehicle.g
+            + vehicle.downforce(vf,aero_mode)
+            - vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
 
-    #     excess =(vehicle.f_long_remain(2, Nr, Fr_lat)[0] - vehicle.drag(vfc, aero_mode),vehicle.f_long_remain(2, Nf, Ff_lat)[0])
-    #     n-=1
-    #     if n <= 0:
-    #       if min(excess) < 0:
-    #         return None
-    #       else:
-    #         print('kill')
-    #         break
-    #   vf = vfc
-    #   status = S_SUSTAINING
+        Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
+            + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
+            + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+            + vehicle.drag(vf,aero_mode)*vehicle.cg_height/vehicle.wheelbase_length )
+
+        Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
+        Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
+
+        excess =(vehicle.f_long_remain(2, Nr, Fr_lat)[0],vehicle.f_long_remain(2, Nf, Ff_lat)[0])
+
+        if min(excess) >= 0 and sum(excess)>=abs(vehicle.mass*a_long):
+          valid_entries.append((n,vf,a_long))
+
+        # if x0 < 100:
+        #   print(a_long,Nf,Nr,vf,n,excess)
+        
+        n+=1
+        if n > N_ITERS:
+          if len(valid_entries) < 1:
+            return None
+          else:
+            # if x0 < 100:
+            #   print("found")
+            #   print(valid_entries)
+            break
+      # we have found the range of workable solutions, let's hone in on those now
+
+      vfu = min(vfmax,valid_entries[-1][1])
+      vfb = max(vfmin,valid_entries[0][1])
+      vf = vfb if brake else vfu #(vfu+vfb)/2
+
+      a_long = (vf**2-v0**2)/2/segment.length
+
+      Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
+          - vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
+          - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+          + vehicle.mass*vehicle.g
+          + vehicle.downforce(vf,aero_mode)
+          - vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
+
+      Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
+          + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
+          + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+          + vehicle.drag(vf,aero_mode)*vehicle.cg_height/vehicle.wheelbase_length )
+
+      Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
+      Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
+
+      excess =(vehicle.f_long_remain(2, Nr, Fr_lat)[0],vehicle.f_long_remain(2, Nf, Ff_lat)[0])
+
+      # n=0;
+      # while min(excess)<0 or max(excess)>1:
+      #   if (min(excess)<0):
+      #     vfu = vf
+      #   else:
+      #     vfb = vf
+      #   vf = (vfu+vfb)/2
+
+      #   a_long = (vf**2-v0**2)/2/segment.length
+
+      #   Nf = ( -vehicle.weight_bias*vehicle.g*vehicle.mass
+      #       - vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
+      #       - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+      #       + vehicle.mass*vehicle.g
+      #       + vehicle.downforce(vf,aero_mode)
+      #       - vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
+
+      #   Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
+      #       + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
+      #       + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
+      #       + vehicle.drag(vf,aero_mode)*vehicle.cg_height/vehicle.wheelbase_length )
+
+      #   Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
+      #   Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
+
+      #   excess =(vehicle.f_long_remain(2, Nr, Fr_lat)[0],vehicle.f_long_remain(2, Nf, Ff_lat)[0])
+      #   n+=1
+      #   if n > N_ITERS:
+      #     if min(excess) < 0:
+      #       print("failure in post")
+      #       return None
+      #     else:
+      #       break
+
     
     # nmax = 10
     # n = 0
     # while Fr_lat > Fr_lim-1e-2 or Ff_lat > Ff_lim-1e-2 :
     #   #return None
     #   a_long-=a_long_start*1/nmax
-    #   vf = math.sqrt(v0**2 + 2*a_long*segment.length)
+    #   vf = floor_sqrt(v0**2 + 2*a_long*segment.length)
 
     #   Fdown = vehicle.alpha_downforce()*vf**2;
     #   Fdrag = vehicle.alpha_drag()*vf**2;
