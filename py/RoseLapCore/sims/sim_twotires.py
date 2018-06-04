@@ -408,7 +408,7 @@ class sim_twotires:
 
     # step loop set up
     i = 1
-    backup_amount = 1 #int(7.0/segments[0].length)
+    backup_amount = 3 #int(7.0/segments[0].length)
     bounds_found = False
     failpt = -1
     middle_brake_bound = -1
