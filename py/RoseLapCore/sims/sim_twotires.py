@@ -135,7 +135,7 @@ class sim_twotires:
     Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
         + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
         + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-        + vehicle.drag(vf,aero_mode)*vehicle.cg_height/vehicle.wheelbase_length )
+        + vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
 
     Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
     Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
@@ -145,12 +145,14 @@ class sim_twotires:
     N_ITERS = 50
     n = 0;
     if excess < 0:
+      if shifting == IN_PROGRESS and not brake:
+        return None
       vfu = vfmax
       vfb = vfmin
       vf = (vfu+vfb)/2
-      excess = (vehicle.f_long_remain(2, Nr, Fr_lat)[0], vehicle.f_long_remain(2, Nf, Ff_lat)[0])
+      excess = [vehicle.f_long_remain(2, Nr, Fr_lat)[0], vehicle.f_long_remain(2, Nf, Ff_lat)[0]]
       valid_entries = []
-      if min(excess) >= 0 and sum(excess)>=abs(vehicle.mass*a_long):
+      if min(excess) >= 0: # and sum(excess)>=abs(vehicle.mass*a_long):
         valid_entries.append((n,vf,a_long))
       # if x0 < 100:
       #   print(x0,v0,vfu,vfb)
@@ -176,15 +178,32 @@ class sim_twotires:
         Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
             + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
             + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-            + vehicle.drag(vf,aero_mode)*vehicle.cg_height/vehicle.wheelbase_length )
+            + vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
 
         Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
         Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
 
-        excess =(vehicle.f_long_remain(2, Nr, Fr_lat)[0],vehicle.f_long_remain(2, Nf, Ff_lat)[0])
+        excess = [vehicle.f_long_remain(2, Nr, Fr_lat)[0],vehicle.f_long_remain(2, Nf, Ff_lat)[0]]
+        F_req_long = a_long*vehicle.mass+vehicle.drag(vf,aero_mode)
+        if F_req_long < 0:
+          status = S_BRAKING
+          if vehicle.perfect_brake_bias:
+            if excess[0] > -F_req_long:
+              excess[1] -= (-F_req_long-excess[0])
+              excess[0] = 0
+            else:
+              excess[1] -= -F_req_long
+          else:
+            F_brake = -F_req_long/vehicle.front_brake_bias()
+            excess[0] -= F_brake*vehicle.rear_brake_bias()
+            excess[1] -= F_brake*vehicle.front_brake_bias()
+        else:
+          status = S_TIRE_LIM_ACC
+          excess[0]-=F_req_long
 
-        if min(excess) >= 0 and sum(excess)>=abs(vehicle.mass*a_long):
+        if min(excess) >= 0:
           valid_entries.append((n,vf,a_long))
+        # print(a_long, F_req_long, excess)
 
         # if x0 < 100:
         #   print(a_long,Nf,Nr,vf,n,excess)
@@ -192,6 +211,8 @@ class sim_twotires:
         n+=1
         if n > N_ITERS:
           if len(valid_entries) < 1:
+            # print('bad news', x0, v0)
+            # raw_input()
             return None
           else:
             # if x0 < 100:
@@ -216,12 +237,33 @@ class sim_twotires:
       Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
           + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
           + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-          + vehicle.drag(vf,aero_mode)*vehicle.cg_height/vehicle.wheelbase_length )
+          + vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
 
       Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
       Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
 
-      excess =(vehicle.f_long_remain(2, Nr, Fr_lat)[0],vehicle.f_long_remain(2, Nf, Ff_lat)[0])
+
+      excess = [vehicle.f_long_remain(2, Nr, Fr_lat)[0],vehicle.f_long_remain(2, Nf, Ff_lat)[0]]
+      F_req_long = a_long*vehicle.mass+vehicle.drag(vf,aero_mode)
+      if F_req_long < 0:
+        status = S_BRAKING
+        if vehicle.perfect_brake_bias:
+          if excess[0] > -F_req_long:
+            excess[1] -= (-F_req_long-excess[0])
+            excess[0] = 0
+          else:
+            excess[1] -= -F_req_long
+          # print(excess)
+        else:
+          F_brake = -F_req_long/vehicle.front_brake_bias()
+          excess[0] -= F_brake*vehicle.rear_brake_bias()
+          excess[1] -= F_brake*vehicle.front_brake_bias()
+      else:
+        status = S_TIRE_LIM_ACC
+        excess[0]-=F_req_long
+
+      Fr_remaining = vehicle.f_long_remain(2, Nr, Fr_lat)[0]
+      Ff_remaining = vehicle.f_long_remain(2, Nf, Ff_lat)[0]
 
       # n=0;
       # while min(excess)<0 or max(excess)>1:
@@ -243,7 +285,7 @@ class sim_twotires:
       #   Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
       #       + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
       #       + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-      #       + vehicle.drag(vf,aero_mode)*vehicle.cg_height/vehicle.wheelbase_length )
+      #       + vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
 
       #   Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
       #   Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
@@ -342,6 +384,8 @@ class sim_twotires:
     output = np.zeros((len(segments), O_MATRIX_COLS))
     precrash_output = np.zeros((len(segments), O_MATRIX_COLS))
     shifting = NOT_SHIFTING
+    STALLED_SPEED = 2
+    launched = False
     
     if output_0 is None:
       output[0,O_NF] = vehicle.mass*(1-vehicle.weight_bias)*vehicle.g
@@ -352,6 +396,7 @@ class sim_twotires:
       output[0,O_TIME] = 0
       output[0,O_DISTANCE] = 0
       gear = vehicle.best_gear(output_0[O_VELOCITY], output_0[O_FR_REMAINING])
+      launched = True
 
     brake = False
     shiftpt = -1
@@ -363,7 +408,7 @@ class sim_twotires:
 
     # step loop set up
     i = 1
-    backup_amount = int(7.0/segments[0].length)
+    backup_amount = 1 #int(7.0/segments[0].length)
     bounds_found = False
     failpt = -1
     middle_brake_bound = -1
@@ -379,7 +424,7 @@ class sim_twotires:
 
       step_result = self.step(vehicle,output[i-1,:], segments[i], (segments[i+1] if i+1<len(segments) else segments[i]), brake, shiftpt>=0, gear)
       if step_result is None:
-        #print('crash at',i)
+        print('crash at %d (%f)' % (i,output[i-1,O_DISTANCE]))
         if not brake:
           # Start braking
 
@@ -387,11 +432,8 @@ class sim_twotires:
           precrash_output = np.copy(output)
           brake = True
           bounds_found = False
-          failpt = i
-          lower_brake_bound = i
-          i = lower_brake_bound
-          #plot_velocity_and_events(output)
-          #plt.show()
+          failpt = i-1
+          lower_brake_bound = failpt
         elif bounds_found:
           upper_brake_bound = middle_brake_bound
 
@@ -400,6 +442,7 @@ class sim_twotires:
           
           i = middle_brake_bound
           output = np.copy(precrash_output)
+          print('found', i, lower_brake_bound, upper_brake_bound)
         else:
           # Try again from an earlier point
           
@@ -408,6 +451,7 @@ class sim_twotires:
 
           i = lower_brake_bound
           output = np.copy(precrash_output)
+          print('finding', i)
         # reset shifting params
         gear = None
         shiftpt = -1
@@ -419,16 +463,16 @@ class sim_twotires:
         gear = None
         shiftpt = -1
         shift_v_req = 0
-      elif failpt>=0 and not bounds_found:
-        #print('nailed it', lower_brake_bound)
-        bounds_found = True
+      # elif failpt>=0 and not bounds_found:
+      #   print('nailed it', step_result[O_VELOCITY], lower_brake_bound)
+      #   bounds_found = True
 
-        upper_brake_bound = failpt-1 #lower_brake_bound+backup_amount
+      #   upper_brake_bound = failpt-1 #lower_brake_bound+backup_amount
 
-        middle_brake_bound = (upper_brake_bound+lower_brake_bound)/2
+      #   middle_brake_bound = (upper_brake_bound+lower_brake_bound)/2
         
-        i = middle_brake_bound
-        output = np.copy(precrash_output)
+      #   i = middle_brake_bound
+      #   output = np.copy(precrash_output)
       elif failpt>=0 and bounds_found and abs(lower_brake_bound - upper_brake_bound) > 1:
         lower_brake_bound = middle_brake_bound
 
