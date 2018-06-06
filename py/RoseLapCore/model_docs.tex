@@ -40,7 +40,7 @@ Blah blah dxfs and YAML
 
 \section{Component Models}
 
-\subsection{Tire Models}
+\subsection{Tires}
 
 Tire models are extremely complicated if they are to be accurate- but this complexity can be a distraction from the major characteristics of tires that concern us. This behavior is that tires do not have a constant coefficient of friction- it decreases with additional normal force. Alternatively, we can model the tires as having some baseline, or 'offset' grip at zero normal force, and as normal force increases, maximum grip increases linearly.
 
@@ -70,54 +70,65 @@ We can solve, then, for the 'remaining' lateral or longitudinal force given the 
 	F_{tire,remaining,long} = F_{tire,max,long} \sqrt{1-(\frac{F_{tire,lateral}}{n_{tires} F_{tire,max,lat}})^2} 
 \end{align}
 
-\subsection{Powertrain Models}
+\subsection{Aerodynamics}
+
+Aerodynamic forces on the vehicle obey a square law relationship:
 
 \begin{align}
-    F_{long,tire,acceleration} = min
-    \begin{cases}
-        HP(v)/v \\
-        F_{tire,long,remaining}
-    \end{cases}.\label{eq_accel_engine}
+	F_{down} = \alpha_{down} v^2, \\
+	F_{drag} = \alpha_{down} v^2, \\
 \end{align}
 
-The $HP(v)$ function is a linear interpolation of a power curve to represent the nonlinear nature of internal combustion engines, and gives the output power of the engine. This is maximized over the gears of the car, so time taken to shift gears is neglected (which is a bad assumption). If the velocity is less than the lowest specified RPM on the curve, the torque out of the engine is prescribed to be the same as at the lowest specified RPM, simulating the clutch on the car in some fashion. This behavior should be scrutinized, and maybe even omitted in favor of starting the vehicle simulation at a speed within the dynamometer curve.
+where $\alpha$'s are scaling constants computed from the aerodynamic forces at 35 miles per hour:
 
-An alternative method of dealing with launch is to run the simulation twice, and feed in the final velocity from the first run of a simulation as the initial velocity for the final one. This model should be sufficient if there are ever braking events or speed-limiting turns. Since it should result in a single lap of a driver running a course continuously, this will be referred to as a steady state solution. This is a poor and nonsensical modeling technique for drag races, but suffices when evaluating a vehicles' performance in longer events with multiple laps. This steady state solution is what will be implemented.
+\begin{align}
+	\alpha = \frac{F_{35 MPH}}{(35 MPH)^2}
+\end{align}
 
+The drag and downforce can be defined for three different aerodynamic 'modes': Full, Drag-Reduced (acceleration), and Airbrake (braking).
 
-For velocities that cause the engine to hit its 'rev limiter', the engine is modeled as producing zero power.
+\subsection{Powertrain}
+
+The force developed by the powertrain at the tires is modeled as a function of vehicle velocity and current gear.
+
+\begin{align}
+	\omega_{crank} = \frac{v}{r_{tire}} N_{final} N_{transmission,i_{gear}}, \\
+	F_{long,engine,limit} = T_{engine}(\omega_{crank}) N_{final} N_{transmission,i_{gear}},
+\end{align}
+
+Where $N$ is a gear ratio, $i_{gear}$ is the gear number, and $\omega_{crank}$ is the angular velocity of the crankshaft. $T_{engine}$ is a linear interpolation representing the torque curve of the engine. For velocities that cause the engine to hit its 'rev limiter', the engine is modeled as producing zero power. For velocities that are below the lowest datapoint specified in the torque curve, the engine is modeled as producing the torque at the lowest specified RPM.
+
+It takes a finite amount of time, $t_shift$ in order for a shift to occur. During this time, the powertrain produces no power. Another gear is chosen with a different gear than the currently selected one will yield a higher $F_{tire}$. When this happens, the driver shifts in the direction of this gear (the transmission is sequential, not fully manual). When the vehicle brakes, the gear is 'reset', and when the powertrain is used again, the best available gear is used, regardless of what was engaged prior.
+
+\subsection{Driver}
+
+The driver we assume (with some noted exceptions) is one which seeks to follow the ideal that racing is about maximizing acceleration in the correct direction. They use all available tire grip or engine power whenever possible, and brake as late and hard as possible. This driver does not exist in reality, but is a useful model allowing us to push the bounds for what the car can be driven to.
 
 \section{Single-Tire, Point-Mass Model}
-Everything comes from Newton's laws:
 
-\begin{equation}
-    \label{newtons}
-    \Sigma F = m a
-\end{equation}
+The physics behind a racecar are rather complicated. However, they can be simplified with the point mass assumption. This is the assumption that the car acts as a single point where all loads are applied, with no suspension to complicate tire grip and steering or tire characteristics.
 
-The physics behind a racecar are rather complicated. However, they can be simplified with one main assumption: the point mass assumption. This is the assumption that the car acts as a single point where all loads are applied, and there is no suspension to complicate tire grip and steering characteristics. In addition, we assume a perfect driver- one that pushes the limits of the vehicle to their absolute maximum. This driver does not exist, but this is a useful model as it allows us to push the bounds to which a driver can handle the car. However, we must be sure to evaluate the feasability of the driving style that is found to be "perfect". If it involves constant gear shifting or oscillatory throttle and braking, we may need to re-evaluate our model. Perhaps, in the future, a stochastic model of driver may be applied to assess a design's ease of modeling.
-
-Now, we can begin the vehicle physics. The forces in the vertical direction, with no vertical acceleration are:
+Now, we can begin the vehicle physics. The forces in the vertical direction, with no vertical acceleration (I.E. perfectly flat ground) are:
 
 \begin{align}
     -F_{down} -m g + N = m a_{z} = 0, \\
     N = m g + F_{down} \label{eq_z}
 \end{align}
 
-where $F_{down}$ is the downforce due to aerodynamic effects, $m$ is the vehicle mass, $g$ is the local acceleration due to gravity, and $N$ is the normal force of the track on the tires.
+where $m$ is the vehicle mass, $g$ is the local acceleration due to gravity, and $N$ is the normal force of the track on the tires.
 
 Given a specific vehicle path, we will prescribe a curvature the vehicle must pass through. The sum of forces in the lateral direction is, then,
 
 \begin{align}
-    \Sigma F_{lateral} = m a_{lateral} \\
+    \Sigma F_{lat} = m a_{lat} \\
     F_{tire,lat} = m v^2 k, \label{eq_lateral}
 \end{align}
 
-where $a_{lateral}$ is lateral acceleration, $v$ is instantaneous vehicle velocity, and $k$ is curvature.
+where $a_{lat}$ is lateral acceleration, $v$ is instantaneous vehicle velocity, and $k$ is curvature.
 
 %By combining Equations \ref{eq_tire} and \ref{eq_lateral}, we can determine that the remaining longitudinal tire grip is:
 
-%\begin{align}
+%\begin{align}  
 %    \Sigma F_{lateral} = m a_{lateral} \\
 %    F_{tire,long,available} = \sqrt{ (\mu N)^2 - (m v^2 k)^2}, \label{eq_lateral}
 %\end{align}
@@ -131,29 +142,16 @@ The longitudinal forces acting on the vehicle are that of the tire and drag:
     a_{longitudinal} = \frac{F_{long,tire} - F_{drag} }{m} \label{eq_accel}
 \end{align}
 
-The force of the tire is, though, can vary. In the case of braking, we assume the driver has the ability to lock up the tires, but does not; i.e., the tires apply all remaining grip: 
+The force of the tire, though, can vary. In the case of braking, we assume the driver has the ability to lock up the tires, but does not; i.e., the tires apply all remaining grip: 
 \begin{align}
 F_{long,tire,braking} = -F_{tire,long,remaining}. \label{eq_accel_brake}
 \end{align}
 
 Acceleration, though, is more complicated, as the vehicle could be limited by either tire grip or engine power:
 
-
-
-The aerodynamic effects of the car have been discussed but not modeled thus far. These are:
 \begin{align}
-    F_{down} = \alpha_{down} v^2 \\
-    F_{drag} = \alpha_{drag} v^2
+	F_{long,tire,accel} = min(F_{tire,long,remaining}, F_{engine,limit})
 \end{align}
-
-While not a perfect model, this captures the ideal relationship between velocity and downforce.
-
-%\begin{figure}
-%    \centering
-%    \includegraphics[width=3.0in]{myfigure}
-%    \caption{Simulation Results}
-%    \label{simulationfigure}
-%\end{figure}
 
 \section{Dual-Tire, Point-Mass Model}
 2 tirez = more better
