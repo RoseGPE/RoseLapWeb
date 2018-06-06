@@ -10,6 +10,8 @@
 \usepackage{indentfirst}
 
 \addtolength{\topmargin}{-1.00in}
+\addtolength{\leftmargin}{-0.75in}
+\addtolength{\leftmargin}{-0.75in}
 \addtolength{\textheight}{1.5in}
 
 
@@ -52,8 +54,8 @@ Tire models are extremely complicated if they are to be accurate- but this compl
 The parameters here are only for one tire. If we wish to look at the lumped characteristics of multiple tires, we will need to do some simple division, and at the end of it all, multiply by the number of tires.
 
 \begin{align}
-	F_{tire,max,lat} = F_{tire,offset,lat} + \mu_{tire,lat} N/n_{tires} \\
-	F_{tire,max,long} = F_{tire,offset,long} + \mu_{tire,long} N/n_{tires}
+	F_{tire,max,lat} = F_{tire,offset,lat} + \mu_{tire,lat} \frac{N}{n_{tires}} \\
+	F_{tire,max,long} = F_{tire,offset,long} + \mu_{tire,long} \frac{N}{n_{tires}}
 \end{align}
 
 The parameters ($\mu$ and $F_{tire,offset}$) can be found from experimental tire data for various tires. The easiest method is to find lines that meet the outer capabilities of the tires, which will be at optimal operating conditions (camber, toe, slip rate, slip angle, and temperature).
@@ -61,7 +63,7 @@ The parameters ($\mu$ and $F_{tire,offset}$) can be found from experimental tire
 Of course, a racecar tire is rarely purely in one of these conditions- we must determine the limits in a multi-axis loading. At a given normal force, a 'friction ellipse' can be produced that intercepts these limits. This can be written as
 
 \begin{align}
-	\frac{F_{tire,lat}^2}{F_{tire,max,lat}^2} + \frac{F_{tire,long}^2}{F_{tire,max,long}^2} = 1
+	\frac{F_{tire,lat}^2}{F_{tire,max,lat}^2} + \frac{F_{tire,long}^2}{F_{tire,max,long}^2} <= 1
 \end{align}
 
 We can solve, then, for the 'remaining' lateral or longitudinal force given the other (this is still for one tire, but the lateral force is for the vehicle as a whole).
@@ -104,7 +106,12 @@ It takes a finite amount of time, $t_shift$ in order for a shift to occur. Durin
 
 The driver we assume (with some noted exceptions) is one which seeks to follow the ideal that racing is about maximizing acceleration in the correct direction. They use all available tire grip or engine power whenever possible, and brake as late and hard as possible. This driver does not exist in reality, but is a useful model allowing us to push the bounds for what the car can be driven to.
 
+\subsection{Code Implementation}
+These physics which are reused throughout different overall vehicle models are implemented in \texttt{vehicle.py}, which defines the \texttt{Vehicle} object type which contains methods to access this physics and has the attributes of the vehicle. Explanation of implementation is relatively straightforward and is left to the documentation in this file.
+
 \section{Single-Tire, Point-Mass Model}
+
+\subsection{Physics}
 
 The physics behind a racecar are rather complicated. However, they can be simplified with the point mass assumption. This is the assumption that the car acts as a single point where all loads are applied, with no suspension to complicate tire grip and steering or tire characteristics.
 
@@ -153,18 +160,80 @@ Acceleration, though, is more complicated, as the vehicle could be limited by ei
 	F_{long,tire,accel} = min(F_{tire,long,remaining}, F_{engine,limit})
 \end{align}
 
+\subsection{Code Implementation}
+
 \section{Dual-Tire, Point-Mass Model}
-2 tirez = more better
+
+\subsection{Physics}
+
+A slight improvement can be made by accounting for the longitudinal load transfer induced by acceleration and heave of the vehicle. This enables us to study the effect of center-of-gravity (CG) and center-of-pressure (CP) locations, as well as brake biasing, and any other parameter that would effect or be effected by longitudinal load transfer.
+
+The vehicle physics begin with the summation of forces and moments in the vertical, longitudinal, and lateral directions.
+
+\begin{align}
+	\Sigma F_{vert} = N_{f} + N_{r} - m g - F_{down}(v_0) = m a_{vert} = 0 \\
+	\Sigma F_{lat}  = F_{tire,lat,f} + F_{tire,lat,f} = m a_{lat} = m v^2 k \\
+	\Sigma F_{long} = F_{tire,long,f} + F_{tire,long,f} - F_{drag}(v_0) = m a_{long} \\	
+	\Sigma M_{vert} = F_{tire,lat,f} l_{wheelbase} = m a_{lat} l_{CG} = m v^2 k l_{CG}\\
+	\Sigma M_{lat}  = N_{f} l_{wheelbase} + F_{drag}(v_0) h_{CP} - F_{down}(v_0) l_{CP} - m g l_{CG} = m a_{long} h_{CG}
+\end{align}
+
+where subscripts $f$ denote relation to the front tires, and $r$ denote relation to the rear tires. $l{CG}$ and $l_{CP}$ are the longitudinal distance from the rear tires to the CG and CP, respectively. $h_{CG}$ and $h_{CP}$ are the vertical height from the ground to the CG and CP, respectively. $l_{wheelbase}$ is the distance from the rear to front tires.
+
+It should be noted that the summation of forces about the longitudinal axis results in the inertial force of the vehicle being the only thing to produce a moment, and as such, this is ignored, understanding that lateral load transfer is not modeled by this set of equations.
+
+Solution of this is somewhat ugly, and most importantly, cannot be done explicitly. As such, the solution is attempted at first in a marginal fashion; this will be discussed later.
+
+\subsection{The Marginal Physics}
+This method begins by computing the required lateral force for each tire. $N_f, N_r, v0$ are presumed to be known from the previous iteration.
+
+\begin{align}
+	F_{tire,lat,f} = \frac{l_{CG}}{l_{wheelbase}} m v^2 k \\ 
+	F_{tire,lat,r} = (1-\frac{l_{CG}}{l_{wheelbase}}) m v^2 k
+\end{align}
+
+The remaining longitudinal forces $F_{tire,remaining,long}$ are computed as discussed previously (normal forces are presumed to be known). 
+
+Two models of braking may be employed: perfect brake biasing, and fixed brake biasing. Perfect brake biasing is simple:
+
+\begin{align}
+	F_{tire,long,f} = -F_{tire,remaining,long,f} \\
+	F_{tire,long,r} = -F_{tire,remaining,long,r}
+\end{align}
+
+Fixed brake biasing is less so. First, the maximum total braking force must be found:
+
+\begin{align}
+	F_{brake} = min(\frac{F_{tire,remaining,long,f}}{X_{f}}, \frac{F_{tire,remaining,long,r}}{X_{r}}),
+\end{align}
+
+where $X$ is the brake bias for the front or rear tires ($X_f + X_r = 1$). Then, the brake force can be applied to the front and rear tires in the corresponding amount:
+
+\begin{align}
+	F_{tire,long,f} = - F_{brake} X_{f} \\
+	F_{tire,long,r} = - F_{brake} X_{r}
+\end{align}
+
+Acceleration is the same as the point-mass model, but it is important to note that the rear-wheel tires are considered; assuming RWD rather than FWD or AWD. The overall longitudinal force acting on the car is then:
+
+\begin{align}
+	\Sigma F_{longitudinal} = F_{tire,long,f} + F_{tire,long,r} - F_{drag}(v_0)
+\end{align}
+
+\subsection{Code Implementation}
 
 \section{Point Simulations}
-We plug times into these formulas and bam
+
+\subsection{Competition Formulae}
+
+\subsection{Code Implementation}
 
 \section{Post-Processing}
-Blah Blah web and graphs
 
 \section{Future Plans}
 Write your conclusion here.
 
 Tire temps would be interesting???
+CVTs maybe yo
 
 \end{document}
