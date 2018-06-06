@@ -1,0 +1,56 @@
+\documentclass{article}
+\usepackage{graphicx}
+
+\begin{document}
+
+\title{RoseLap v4: Lap Time and Point Simulation}
+\author{Thaddeus Hughes}
+
+\maketitle
+
+\begin{abstract}
+RoseGPE is a student design competition team at Rose-Hulman that competes in the Formula SAE competitions, typically at the Lincoln and Michigan events. RoseGPE is driven by students learning and gaining work experience, and does this by aiming to score high at competition. To do this, the team builds a new prototype vehicle every year.
+
+The competition is historically composed of ⅜ ‘static’ events (cost judging, design judging, business case judging) and ⅝ ‘dynamic’ events (acceleration, skidpad, autocross, endurance, and fuel economy)- meaning there are many facets to earning points and doing well.
+
+Lap Time Simulation can be utilized to determine the configuration of vehicle which can produce the most points at competition. Determining points outcome from the acceleration, skipad, autocross, and endurance events is largely straightforward.
+\end{abstract}
+
+\section{Problem Introduction}
+Lap Time Simulation is a numerical process. The general premise is to apply simplistic physics models to a car traveling over a small, finite stretch of track with given curvature to determine the next vehicle state. By stitching these segments together, with a strategy of when to brake, shift, or otherwise drive the vehicle, the operation of a racecar under idealized conditions can be simulated with useful accuracy.
+
+These simulation results can be useful, potentially, to assist a driver in training for a track. They can also be useful and motivating for an engineer to understand how a vehicle drives around the track in detail, monitoring grip. The real value, however, lies in the ability to vary parameters and see how they impact lap times (and fuel consumption).
+
+These lap times can be used with point formulas and other data to determine the overall point limit of a car at a particular competition.
+
+\section{Pre-Processing and Input Data}
+Blah blah dxfs and YAML
+
+\subsection{Single-Tire, Point-Mass Model}
+Everything comes from Newton's laws:
+
+\begin{equation}
+    \label{newtons}
+    \Sigma F = m a
+\end{equation}
+
+%\begin{figure}
+%    \centering
+%    \includegraphics[width=3.0in]{myfigure}
+%    \caption{Simulation Results}
+%    \label{simulationfigure}
+%\end{figure}
+
+\section{Dual-Tire, Point-Mass Model}
+2 tirez = more better
+
+\section{Point Simulations}
+We plug times into these formulas and bam
+
+\section{Post-Processing}
+Blah Blah web and graphs
+
+\section{Future Plans}
+Write your conclusion here.
+
+\end{document}
