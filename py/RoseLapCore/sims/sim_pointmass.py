@@ -3,7 +3,15 @@ import math
 
 from constants import *
 
+"""
+Point mass model
+It's a unicycle! Fast, right?
+"""
+
 def floor_sqrt(x):
+  """
+  Like sqrt but with a floor. If x <= 0, return 0.
+  """
   if x > 0:
     return math.sqrt(x)
   return 0
@@ -13,6 +21,10 @@ class sim_pointmass:
     pass
 
   def step(self, vehicle, prior_result, segment, segment_next, brake, shifting, gear):
+    """
+    Takes a vehicle step. Picks the aerodynamic strategy that works out to be the best.
+    See substep for return value. If no aero strategy is valid, returns None, else returns the best.
+    """
     if brake:
       out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
       out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
@@ -55,7 +67,7 @@ class sim_pointmass:
     @param shifting a shifting status code
     """
 
-    # init values
+    # Initialize values to those from the previous step
     v0 = prior_result[O_VELOCITY];
     x0 = prior_result[O_DISTANCE];
     t0 = prior_result[O_TIME];
@@ -63,35 +75,16 @@ class sim_pointmass:
     co2_elapsed = prior_result[O_CO2];
 
     
-
+    # How much grip is needed to keep the car from skidding away
     Ftire_lat = segment.curvature*vehicle.mass*v0**2
 
+    # Determine the remaining longitudinal grip. If there isn't any, then we're out of luck.
     Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
     if Ftire_remaining < 0:
       return None
 
-    # if not brake:
-    #   aero_mode = AERO_DRS
-    #   Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
-    #   if Ftire_remaining < 0:
-    #     aero_mode = AERO_FULL
-    #     Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
-    #     if Ftire_remaining < 0:
-    #       return None
-    # else:
-    #   aero_mode = AERO_BRK
-    #   Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
-    #   if Ftire_remaining < 0:
-    #     aero_mode = AERO_FULL
-    #     Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
-    #     if Ftire_remaining < 0:
-    #       return None
-
-
+    # Determine how much force the engine can produce.
     Ftire_engine_limit, eng_rpm = vehicle.eng_force(v0, int(gear))
-    
-
-    
 
     if brake:
       status = S_BRAKING
@@ -102,16 +95,24 @@ class sim_pointmass:
       Ftire_long = 0
       gear = np.nan
     else:
+      # This logic helps absorb simulation oscillations (brake-accel oscillation on corners)
+      # If there's curvature, and we were braking before (we are not anymore) or we were sustaining before with negligible curvature change, continue sustaining
       if segment.curvature > 0 and (prior_result[O_STATUS] == S_BRAKING  or (abs(prior_result[O_CURVATURE] - segment.curvature)<=0.03 and prior_result[O_STATUS] == S_SUSTAINING)):
         status = S_SUSTAINING
         Ftire_long = vehicle.drag(v0, aero_mode)
       else:
         status = S_ENG_LIM_ACC
         Ftire_long = Ftire_engine_limit
+        if Ftire_long > vehicle.drag(v0, aero_mode):
+          status = S_DRAG_LIM
+
       if Ftire_long > Ftire_remaining:
         status = S_TIRE_LIM_ACC
         Ftire_long = Ftire_remaining
+      if eng_rpm > vehicle.engine_rpms[-1]:
+        status = S_TOPPED_OUT
 
+    # Determine the longitudinal force and resulting vehicle acceleration
     F_longitudinal = Ftire_long - vehicle.drag(v0, aero_mode)
     a_long = F_longitudinal / vehicle.mass
 
@@ -119,60 +120,37 @@ class sim_pointmass:
       vf = floor_sqrt(v0**2 + 2*a_long*segment.length)
       vfmax = floor_sqrt(v0**2 + 2*(Ftire_engine_limit - vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
       vfmin = floor_sqrt(v0**2 + 2*(-Ftire_remaining - vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
-      # print('calc')
     except:
+      # This try-except block probably isn't needed
       a_long=0
       vf=0
       vfmax=0
 
-
-
-    if status!=S_SUSTAINING and abs(F_longitudinal) < 1e-3 and shifting != IN_PROGRESS:
-      status = S_DRAG_LIM
-
-    if eng_rpm > vehicle.engine_rpms[-1]:
-      status = S_TOPPED_OUT
-
-    # Bisection to generate tire limit
-    if self.compute_excess(vehicle,segment_next,vf,aero_mode) < 0 or status==S_SUSTAINING:
-      # print('leggo')
-      # print(x0,vf,vfmax)
+    # Use bisection to generate tire limit for sustaining, since there is no explicit solution
+    if not brake and shifting != IN_PROGRESS and self.compute_excess(vehicle,segment_next,vf,aero_mode) < 0 or status==S_SUSTAINING:
       vfu = min(vf*1.3, vfmax)
       vfb = max(vf*0.5, vfmin)
-      vfc = min(vf, vfmax)
-      # print(vfu, vfb, vfc)
-      excess = self.compute_excess(vehicle, segment_next, vfc, aero_mode)
-      # print(excess)
+      vf = min(vf, vfmax)
+      excess = self.compute_excess(vehicle, segment_next, vf, aero_mode)
 
       n = 50
       while excess<1e-3 or excess>1e-1:
         # print excess
         if (excess<0):
-          vfu = vfc
+          vfu = vf
         else:
-          vfb = vfc
-        vfc = (vfu+vfb)/2
+          vfb = vf
+        vf = (vfu+vfb)/2
         n-=1
         if n <= 0:
           if excess<0:
             return None
           else:
             break
-        excess = self.compute_excess(vehicle, segment_next, vfc, aero_mode)
-        
-      vf = vfc
-      # print(vf)
+        excess = self.compute_excess(vehicle, segment_next, vf, aero_mode)
+
       status = S_SUSTAINING
-
-      # vs = sympy.Symbol('vs');
-      # n_tires = 4
-      # print('thinking')
-      # eq = -vehicle.alpha_drag()**2*vs**4 + (1-(vehicle.alpha_drag()*vs**2/n_tires)**2/(vehicle.tire_mu_x*((vehicle.mass*vehicle.g+vehicle.alpha_downforce()*vs**2)/n_tires) + vehicle.tire_offset_x)**2)**2*vehicle.tire_mu_y**2*((vehicle.mass*vehicle.g+vehicle.alpha_downforce()*vs**2)/n_tires)**2 + vehicle.tire_offset_y**2
-      # print(eq)
-      # vf = solve(eq, vs, numerical=True)
-      # print(vf)
-
-    a_long = (vf**2-v0**2)/2/segment.length
+      a_long = (vf**2-v0**2)/2/segment.length
     vavg = ((v0+vf)/2)
     if vavg > 0:
       tf = t0 + segment.length/vavg
@@ -205,8 +183,8 @@ class sim_pointmass:
     return output
 
   def compute_excess(self, vehicle, segment, vf, aero_mode):
+    # Returns how much tire grip there is after that needed to overcome drag
     return vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(vf, aero_mode), vehicle.mass*vf**2*segment.curvature)[0] - vehicle.drag(vf, aero_mode)
-    #return vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.alpha_downforce()*vf**2, vehicle.mass*vf**2*segment.curvature)[0] - vehicle.alpha_drag()*vf**2;
 
   def solve(self, vehicle, segments, output_0 = None):
     # set up initial stuctures
@@ -252,30 +230,22 @@ class sim_pointmass:
         #print('crash at',i)
         if not brake:
           # Start braking
-
-          #print('crash algo start at', i)
           precrash_output = np.copy(output)
           brake = True
           bounds_found = False
           failpt = i
           lower_brake_bound = i
           i = lower_brake_bound
-          #plot_velocity_and_events(output)
-          #plt.show()
         elif bounds_found:
           upper_brake_bound = middle_brake_bound
 
           middle_brake_bound = int((upper_brake_bound + lower_brake_bound) / 2)
-          #print('bisect down', lower_brake_bound, middle_brake_bound, upper_brake_bound)
           
           i = middle_brake_bound
           output = np.copy(precrash_output)
         else:
           # Try again from an earlier point
-          
           lower_brake_bound-=backup_amount
-          #print('push further', lower_brake_bound)
-
           i = lower_brake_bound
           output = np.copy(precrash_output)
         # reset shifting params
@@ -290,7 +260,6 @@ class sim_pointmass:
         shiftpt = -1
         shift_v_req = 0
       elif failpt>=0 and not bounds_found:
-        #print('nailed it', lower_brake_bound)
         bounds_found = True
 
         upper_brake_bound = failpt-1 #lower_brake_bound+backup_amount
@@ -303,7 +272,6 @@ class sim_pointmass:
         lower_brake_bound = middle_brake_bound
 
         middle_brake_bound = int((upper_brake_bound+lower_brake_bound)/2)
-        #print('bisect up', lower_brake_bound, middle_brake_bound, upper_brake_bound)
         
         i = middle_brake_bound
         output = np.copy(precrash_output)
@@ -335,8 +303,6 @@ class sim_pointmass:
           i-=1
         
         i+=1
-
-        
 
     #np.savetxt('dump.csv', output, delimiter=",")
     return output

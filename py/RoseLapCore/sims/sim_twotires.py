@@ -131,14 +131,12 @@ class sim_twotires:
         status = S_TIRE_LIM_ACC
         Fr_long = Fr_remaining
 
-
+      if eng_rpm > vehicle.engine_rpms[-1]:
+        status = S_TOPPED_OUT  
 
     # Determine the longitudinal force and resulting acceleration
     F_longitudinal = Ff_long + Fr_long - vehicle.drag(v0, aero_mode)
     a_long = F_longitudinal / vehicle.mass
-
-    if eng_rpm > vehicle.engine_rpms[-1]:
-      status = S_TOPPED_OUT    
 
     # Determine the vehicle velocity after said acceleration
     vf = floor_sqrt(v0**2 + 2*a_long*segment.length)
