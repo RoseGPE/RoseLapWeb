@@ -4,7 +4,7 @@
 
 # Aerodynamic values- drag and downforce measured at 35 mph. Coefficients are calculated separately.
 downforce_35mph: 65.0
-drag_35mph: 44.0
+drag_35mph: 0.0
 cp_height: 0.9
 cp_bias: 0.7
 

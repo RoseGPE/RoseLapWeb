@@ -91,8 +91,8 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
 
 	print "threading...", n_threads
 
-	pool = ThreadPool(n_threads)
-	pool.map(stretch, [i for i in range(n_threads)])
+	# pool = ThreadPool(n_threads)
+	# pool.map(stretch, [i for i in range(n_threads)])
 
 	print "running..."
 
@@ -108,7 +108,8 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
 		indicies = generateIndicies(contents)
 		thread_data = [(indicies[i], set_values(vehicle, targets, permutations[i]), model.copy(), steady_state, include_output, segments) for i in range(len(indicies))]
 
-		thread_results = pool.map(run_permutation, thread_data)
+		# thread_results = pool.map(run_permutation, thread_data)
+		thread_results = [run_permutation(d) for d in thread_data]
 
 		print "\ttrack completed in:", time.time() - t0, "seconds"
 
@@ -151,4 +152,4 @@ def stretch(i):
 		i += 1
 
 def partitions(n):
-	return int(np.min([np.floor(np.sqrt(n)) / 2, multiprocessing.cpu_count()]))
+	return int(np.max([np.min([np.floor(np.sqrt(n)) / 2, multiprocessing.cpu_count()]), 1]))

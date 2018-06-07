@@ -6,14 +6,11 @@
 # FIXME aero values are wrong, pls fix
 downforce_35mph: 61.0
 drag_35mph: 40.0
-cp_height: 2.0
+cp_height: 0.9
 cp_bias: 0.6
 
-tire_mu_x: 2.635
-tire_offset_x: 75.0
-tire_mu_y: 1.553
-tire_offset_y: 73.0
-
+# CORRELLATED: from cornering tests
+mu: 1.5
 tire_radius: 0.75
 
 # CORRECT: 370 lb car and 180 lb driver

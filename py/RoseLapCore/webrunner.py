@@ -1,10 +1,12 @@
 import sys,os
-sys.path.append(os.path.dirname(__file__))
+sys.path.append('C:\wamp\www\RoseLap\py')
 
 import input_processing
 import batcher
 import packer
 import MySQLdb as sql
+import time
+from RoseLapCharter import heatmap
 
 if __name__ == "__main__":
 	db = sql.connect("localhost", "rlapp", "gottagofast", "roselap")
@@ -29,8 +31,8 @@ if __name__ == "__main__":
 	conf.vehicle = cur.fetchall()[0][0]
 
 	for i, track in enumerate(conf.tracks):
-		cur.execute("SELECT Path FROM track_config WHERE Name = %s", [track.dxf])
-		conf.tracks[i].dxf = cur.fetchone()[0]
+		cur.execute("SELECT Path FROM track_config WHERE Name = %s", [track.name])
+		conf.tracks[i].name = cur.fetchone()[0]
 	
 	tests, vehicle, tracks, model, out = input_processing.process_web_input(conf)
 
@@ -39,15 +41,15 @@ if __name__ == "__main__":
 
 	print('packing...')
 	result_path = packer.pack(results, out[0])
-	display_path = "http://rosegpe.ddns.net/RoseLap/graph/" + str(time.time()).split(".")[0]
-
-	cur.execute("CALL run_Finish_Batch_Run(%s, %s, %s)", [runID, result_path, display_path])
-	print runID
-	print cur.fetchall()
-	db.commit()
+	display_name = str(time.time()).split(".")[0]
+	display_path = "http://rosegpe.ddns.net/RoseLap/graph/" + display_name
 
 	print('charting...')
 
-	# make charting work
+	print(display_name)
+	heatmap.makeChart(result_path, display_name)
 
 	print('done!')
+
+	cur.execute("CALL run_Finish_Batch_Run(%s, %s, %s)", [runID, result_path, display_path])
+	db.commit()

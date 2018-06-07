@@ -164,6 +164,12 @@ class Segment(object):
         area=0
 
       self.curvature = 4*area/(self.length_m*self.length_p*self.length_secant)
+
+class RLT(object):
+  def __init__(self, k, l, s):
+    self.curvature = k
+    self.length = l
+    self.sector = s
     
 
 def seg_points(points,intermediates,open_ended):
@@ -216,6 +222,21 @@ def dxf_to_segments(filename, dl):
   points,intermediates = pointify_dxf(dxf_geometry,connectivity,dl)
   #print (connectivity)
   segs = seg_points(points,intermediates,open_ended)
+  return segs
+
+def rlt_to_segments(filename):
+  with open(filename, "r") as rlt:
+    segs = []
+
+    for i, line in enumerate(rlt):
+      line = line.strip().split(",")
+      n = int(line[0])
+      k = float(line[1])
+      l = float(line[2])
+
+      for j in range(n):
+        segs.append(RLT(k, l, i))
+
   return segs
 
 if __name__ == '__main__':
