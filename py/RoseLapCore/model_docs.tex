@@ -160,7 +160,7 @@ Acceleration, though, is more complicated, as the vehicle could be limited by ei
 	F_{long,tire,accel} = min(F_{tire,long,remaining}, F_{engine,limit})
 \end{align}
 
-\subsection{Code Implementation}
+\subsection{Code Implementation and Solver}
 
 \section{Dual-Tire, Point-Mass Model}
 
@@ -214,13 +214,58 @@ where $X$ is the brake bias for the front or rear tires ($X_f + X_r = 1$). Then,
 	F_{tire,long,r} = - F_{brake} X_{r}
 \end{align}
 
-Acceleration is the same as the point-mass model, but it is important to note that the rear-wheel tires are considered; assuming RWD rather than FWD or AWD. The overall longitudinal force acting on the car is then:
+Acceleration is the same as the point-mass model, but it is important to note that the rear-wheel tires are considered; assuming RWD rather than FWD or AWD. The overall longitudinal force, longitudinal acceleration, and final velocity can then be computed.
 
 \begin{align}
-	\Sigma F_{longitudinal} = F_{tire,long,f} + F_{tire,long,r} - F_{drag}(v_0)
+	\Sigma F_{longitudinal} = F_{tire,long,f} + F_{tire,long,r} - F_{drag}(v_0) \\
+	a_{long} = \frac{ F_{tire,long,f} + F_{tire,long,r} - F_{drag}(v_0)}{m} \\
+	v_{final} = \sqrt(v_0^2 + 2 a_{long} x_{segment}
 \end{align}
 
-\subsection{Code Implementation}
+\subsection{Working Backwards}
+This method determines the forces on the vehicle given a prescribed $a_{long}$.
+
+The normal forces on the tires can be found by solving the summation of forces in the and vertical direction, and summation of moments about the lateral axis. This results in:
+
+\begin{align}
+	% Big gross equations, dump em here
+\end{align}
+
+The required lateral forces from the tires are also computed:
+
+\begin{align}
+	F_{tire,lat,f} = \frac{l_{CG}}{l_{wheelbase}} m v^2 k \\ 
+	F_{tire,lat,r} = (1-\frac{l_{CG}}{l_{wheelbase}}) m v^2 k
+\end{align}
+
+From here, the remaining longitudinal tire grip can be computed.
+\begin{align}
+	F_{tire,long,total,required} = \frac{a_{long}}{m} + F_{drag}(v)
+\end{align}
+
+We must then compute the required longitudinal tire grip to maintain the desired $a_{long}$ and counteract drag. For the acceleration case, this is straightforward:
+
+\begin{align}
+	F_{tire,long,r,required} = F_{tire,long,total,required}
+\end{align}
+
+For the braking case where fixed biasing is used, the process is very simple: distribute the required force between the tires.
+\begin{align}
+	F_{tire,long,r,required} = F_{tire,long,total,required} X_r \\
+	F_{tire,long,f,required} = F_{tire,long,total,required} X_f
+\end{align}
+
+For the braking case where perfect biasing is used, this requires some thinking. Since in this model, the front and rear braking forces are colinear, it makes no difference to where the braking force is distributed (provided that the maximum grip is not exceeded). We will use up all of the rear tire's grip before using the front tire's grip.
+
+\begin{align}
+	F_{tire,long,r,required} = F_{tire,long,total,required} \\
+	if F_{tire,long,remaining,r} < F_{tire,long,r,required} \\
+		F_{tire,long,remaining,f} = F_{tire,long,total,required} - F_{tire,long,r,required}
+\end{align}
+
+From here, checks may be performed to ensure that grip is used appropriately, and final velocity is calculated much like before.
+
+\subsection{Code Implementation and Solver}
 
 \section{Point Simulations}
 
