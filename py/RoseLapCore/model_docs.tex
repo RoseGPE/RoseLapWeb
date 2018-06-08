@@ -7,6 +7,7 @@
 \usepackage{textcomp}
 \usepackage{float}
 \usepackage{graphicx}
+\graphicspath{{./doc_imgs/}}
 \usepackage[utf8]{inputenc}
 
 \usepackage{indentfirst}
@@ -39,6 +40,31 @@ These lap times can be used with point formulas and other data to determine the 
 
 \section{Pre-Processing and Input Data}
 Blah blah dxfs and YAML
+
+\subsection{Tire Data Fitting}
+As discussed in the 'Tires' section, tire models used in RoseLap v4 are rather simplistic, but are more sophisticated than the constant COF presumed in v3 and prior. To determine the four parameters, some fitting must be done.
+
+Tire data is obtained through physical testing. We use the data purchased from the Milliken Tire Test Consortium (TTC). This contains drive-brake and combined loading, with sweeps over various conditions.
+
+With the python tool provided in \texttt{tire\_utility}, we examine the relationship between lateral and longitudinal force as it relates to normal force.
+
+\includegraphics[width=\textwidth]{fric_ellipses.png}
+
+The multiple colors indicate different normal forces. While imperfect, it is easy to see how fitting an ellipse to this would provide a reasonable model of tire behavior.
+
+The first step is to determine the bins to which tire data vertical loads fall into. This is accomplished with a histogram.
+
+\includegraphics[width=\textwidth]{fric_hist.png}
+
+Then, the data is analyzed in the Fz-Fx space and the Fz-Fy space. Outliers (outside of a 2-sigma confidence interval) are rejected. From here, the maximum grip datapoints from each bin are selected, and a linear regression is ran to fit these points.
+
+\includegraphics[width=\textwidth]{fric_regression.png}
+
+This provides us with the four parameters for the tire: the offset and slope, in both x- and y- directions. This model is then overlaid onto the Fx-Fy data from before for comparison.
+
+\includegraphics[width=\textwidth]{fric_ellipses_fit.png}
+
+User adjustments can be made by changing confidence intervals, bins, or even overriding the regression results and using the charts to produce a linear fit.
 
 \section{Component Models}
 
