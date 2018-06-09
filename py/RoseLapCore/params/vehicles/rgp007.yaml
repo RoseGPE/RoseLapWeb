@@ -4,8 +4,8 @@
 # updated 7/10/2017
 
 # FIXME aero values are wrong, pls fix
-downforce_35mph: 61.0
-drag_35mph: 40.0
+downforce_35mph: [61.0,61.0,61.0]
+drag_35mph: [40.0,40.0,40.0]
 cp_height: 0.9
 cp_bias: 0.6
 

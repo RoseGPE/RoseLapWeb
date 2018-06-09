@@ -123,7 +123,7 @@ class sim_twotires:
       else:
         status = S_ENG_LIM_ACC
         Fr_long = Fr_engine_limit
-        if Fr_long > vehicle.drag(v0, aero_mode):
+        if Fr_long <= vehicle.drag(v0, aero_mode):
           status = S_DRAG_LIM
 
       # Still not allowed to use more force than your tire can provide
@@ -148,14 +148,14 @@ class sim_twotires:
     
     # Calculate normal force on each tire
     Nf = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
-        + (1 - vehicle.downforce(vf,aero_mode))*vehicle.cp_bias
+        + (1 - vehicle.downforce(vf,aero_mode))*vehicle.cp_bias[aero_mode]
         - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-        - vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
+        - vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
     Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
-        + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
+        + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias[aero_mode]
         + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-        + vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
+        + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
     # Determine lateral force requirements
     Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
@@ -181,14 +181,14 @@ class sim_twotires:
 
         # Calculate normal force on each tire
         Nf = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
-            + (1 - vehicle.downforce(vf,aero_mode))*vehicle.cp_bias
+            + (1 - vehicle.downforce(vf,aero_mode))*vehicle.cp_bias[aero_mode]
             - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-            - vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
+            - vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
         Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
-            + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
+            + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias[aero_mode]
             + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-            + vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
+            + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
         # Calculate required lateral forces
         Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
@@ -238,14 +238,14 @@ class sim_twotires:
 
       # Calculate normal force on each tire
       Nf = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
-          + (1 - vehicle.downforce(vf,aero_mode))*vehicle.cp_bias
+          + (1 - vehicle.downforce(vf,aero_mode))*vehicle.cp_bias[aero_mode]
           - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-          - vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
+          - vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
       Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
-          + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias
+          + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias[aero_mode]
           + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
-          + vehicle.drag(vf,aero_mode)*vehicle.cp_height/vehicle.wheelbase_length )
+          + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
       Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
       Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2

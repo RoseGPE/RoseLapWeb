@@ -26,7 +26,10 @@ O_ENG_RPM = 13
 
 O_CO2 = 14
 
-O_MATRIX_COLS = 15
+O_AERO_MODE = 15
+
+O_MATRIX_COLS = 16
+
 
 # Shifting status codes
 IN_PROGRESS = 0
@@ -50,3 +53,7 @@ G_DECISION = 4 # int
 G_COST = 5 # float
 G_VELOCITY = 6 # float
 G_GEAR_DATA = 7 # tuple(int, int, float)
+
+AERO_FULL = 0
+AERO_DRS = 1
+AERO_BRK = 2

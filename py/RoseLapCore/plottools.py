@@ -56,26 +56,20 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
   ax[4].plot(xaxis,output[:, sim.O_FR_REMAINING], lw=4,label='Remaining rear long. force')
   ax[4].set_ylim(-force_lim,force_lim)
 
-
-
-  
-
-
-
   lim = max(curv)
   alpha =  1
 
-  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_BRAKING,      facecolor='#e22030', alpha=alpha)
-  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_ENG_LIM_ACC,  facecolor='#50d21d', alpha=alpha)
-  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_TIRE_LIM_ACC, facecolor='#1d95d2', alpha=alpha)
-  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_SUSTAINING,   facecolor='#d2c81c', alpha=alpha)
-  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_DRAG_LIM,     facecolor='#e2952b', alpha=alpha)
-  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_SHIFTING,     facecolor='#454545', alpha=alpha)
-  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_TOPPED_OUT,   facecolor='#7637a2', alpha=alpha)
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_BRAKING,      facecolor='#e22030', alpha=alpha) #red
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_ENG_LIM_ACC,  facecolor='#50d21d', alpha=alpha) #green
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_TIRE_LIM_ACC, facecolor='#1d95d2', alpha=alpha) #blue
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_SUSTAINING,   facecolor='#d2c81c', alpha=alpha) #yellow
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_DRAG_LIM,     facecolor='#e2952b', alpha=alpha) #orange
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_SHIFTING,     facecolor='#454545', alpha=alpha) #gray
+  ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_TOPPED_OUT,   facecolor='#7637a2', alpha=alpha) #purple
 
-  ax[0].fill_between(xaxis, 0, 100, where= aero_status==sim.AERO_FULL,  facecolor='#e2952b', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, 100, where= aero_status==sim.AERO_DRS,   facecolor='#454545', alpha=alpha)
-  ax[0].fill_between(xaxis, 0, 100, where= aero_status==sim.AERO_BRK,   facecolor='#7637a2', alpha=alpha)
+  ax[0].fill_between(xaxis, 0, 100, where= aero_status==sim.AERO_FULL,  facecolor='#1d95d2', alpha=alpha) #blue
+  ax[0].fill_between(xaxis, 0, 100, where= aero_status==sim.AERO_DRS,   facecolor='#50d21d', alpha=alpha) #green
+  ax[0].fill_between(xaxis, 0, 100, where= aero_status==sim.AERO_BRK,   facecolor='#e22030', alpha=alpha) #red
 
   sector = sectors[0]
   for idx,sec in enumerate(sectors):

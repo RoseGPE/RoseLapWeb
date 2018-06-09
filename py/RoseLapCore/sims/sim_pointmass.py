@@ -103,7 +103,7 @@ class sim_pointmass:
       else:
         status = S_ENG_LIM_ACC
         Ftire_long = Ftire_engine_limit
-        if Ftire_long > vehicle.drag(v0, aero_mode):
+        if Ftire_long <= vehicle.drag(v0, aero_mode):
           status = S_DRAG_LIM
 
       if Ftire_long > Ftire_remaining:

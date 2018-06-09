@@ -6,7 +6,7 @@ import plottools
 
 sim = sims.Simulation("two_tires");
 
-vehicle  = vehicle.Vehicle(yaml.load(open('params/vehicles/tirecar.yaml','r'),True))
+vehicle  = vehicle.Vehicle(yaml.load(open('params/vehicles/rgp008_baseline.yaml','r'),True))
 vehicle.prep()
 segments = trackseg.dxf_to_segments('params/DXFs/NE_autocross_2015.DXF',0.3)
 
