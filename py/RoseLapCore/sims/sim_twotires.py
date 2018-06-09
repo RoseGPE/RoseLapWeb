@@ -148,7 +148,7 @@ class sim_twotires:
     
     # Calculate normal force on each tire
     Nf = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
-        + (1 - vehicle.downforce(vf,aero_mode))*vehicle.cp_bias[aero_mode]
+        + (1 - vehicle.cp_bias[aero_mode])*vehicle.downforce(vf,aero_mode)
         - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
         - vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
@@ -181,7 +181,7 @@ class sim_twotires:
 
         # Calculate normal force on each tire
         Nf = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
-            + (1 - vehicle.downforce(vf,aero_mode))*vehicle.cp_bias[aero_mode]
+            + (1 - vehicle.cp_bias[aero_mode])*vehicle.downforce(vf,aero_mode)
             - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
             - vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
@@ -238,7 +238,7 @@ class sim_twotires:
 
       # Calculate normal force on each tire
       Nf = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
-          + (1 - vehicle.downforce(vf,aero_mode))*vehicle.cp_bias[aero_mode]
+          + (1 - vehicle.cp_bias[aero_mode])*vehicle.downforce(vf,aero_mode)
           - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
           - vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 

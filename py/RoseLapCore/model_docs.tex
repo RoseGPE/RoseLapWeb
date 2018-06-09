@@ -383,6 +383,19 @@ Acceleration is the same as the point-mass model, but it is important to note th
 	v_{final} = \sqrt{v_0^2 + 2 a_{long} d_{segment}}
 \end{align}
 
+The normal force is computed for the next iteration, and for checks.
+
+\begin{align}
+	N_f = (1 - \frac{l_{CG}}{l_{wheelbase}}) m g 
+			+ (1 - \frac{l_{CP}}{l_{wheelbase}}) F_{down}
+			- m a_{long} \frac{h_{CG}}{l_{wheelbase}} 
+			- \frac{h_{CP}}{l_{wheelbase}} F_{drag} \\
+	N_r = \frac{l_{CG}}{l_{wheelbase}} m g 
+			+ \frac{l_{CP}}{l_{wheelbase}} F_{down}
+			+ m a_{long} \frac{h_{CG}}{l_{wheelbase}} 
+			+ \frac{h_{CP}}{l_{wheelbase}} F_{drag}
+\end{align}
+
 \subsection{Working Backwards}
 This method determines the forces on the vehicle given a prescribed $a_{long}$.
 
@@ -430,7 +443,19 @@ For the braking case where perfect biasing is used, this requires some thinking.
 
 From here, checks may be performed to ensure that grip is used appropriately, and final velocity is calculated much like before.
 
+
+
 \subsection{Code Implementation and Solver}
+
+\subsubsection{Take A Step}
+
+Taking a step is significantly more complicated in the two-tire model, because acceleration induces longitudinal load transfer. As mentioned before, it is difficult to solve the equations of motion. More complex checks must be employed. The equations described in "The Marginal Physics" are employed at first. After this, the remaining longitudinal grip is evaluated at the new vehicle velocity, and the next segment's curvature. If there is not sufficient grip on either of the tires, then we will need to iteratively solve for an acceleration that will work and still be optimal.
+
+To solve for an acceleration that will work and still be optimal, a simple loop is employed to scan over a range of vehicle velocities (which are the same as the bounds for bisection used in the point-mass model). The physics discussed in the "Working Backwards" section are employed to check. This was intended to be bisection at first, as this would enable more precision. How to make this work was not immediately self-evident though, but Thad does have some ideas on how to make it work. As it stands, the range of possible vehicle velocities is swept through, and then the 'best' (highest amplitude of acceleration, depending on if braking is desired) velocity is chosen.
+
+\subsection{Putting it Together}
+
+The overall solver for the two-tire model is identical to the point-mass model, save for the braking algorithm employed. The braking algorithm employed here does not use the bisection stage, but uses smaller steps backwards. This was done because of solution stability. Bisection is the ideal algorithm, but stability issues meant having to forgo the computational efficiency of the bisection algorithm.
 
 \section{Point Simulations}
 
