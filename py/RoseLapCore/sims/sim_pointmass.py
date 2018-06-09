@@ -97,7 +97,8 @@ class sim_pointmass:
     else:
       # This logic helps absorb simulation oscillations (brake-accel oscillation on corners)
       # If there's curvature, and we were braking before (we are not anymore) or we were sustaining before with negligible curvature change, continue sustaining
-      if segment.curvature > 0 and (prior_result[O_STATUS] == S_BRAKING  or (abs(prior_result[O_CURVATURE] - segment.curvature)<=0.03 and prior_result[O_STATUS] == S_SUSTAINING)):
+       # 
+      if segment.curvature > 0 and abs(prior_result[O_CURVATURE] - segment.curvature)<=1e-3 and (prior_result[O_STATUS] == S_BRAKING or prior_result[O_STATUS] == S_SUSTAINING):
         status = S_SUSTAINING
         Ftire_long = vehicle.drag(v0, aero_mode)
       else:
@@ -127,7 +128,7 @@ class sim_pointmass:
       vfmax=0
 
     # Use bisection to generate tire limit for sustaining, since there is no explicit solution
-    if not brake and shifting != IN_PROGRESS and self.compute_excess(vehicle,segment_next,vf,aero_mode) < 0 or status==S_SUSTAINING:
+    if (not brake and shifting != IN_PROGRESS and self.compute_excess(vehicle,segment_next,vf,aero_mode) < 0) or status==S_SUSTAINING:
       vfu = min(vf*1.3, vfmax)
       vfb = max(vf*0.5, vfmin)
       vf = min(vf, vfmax)

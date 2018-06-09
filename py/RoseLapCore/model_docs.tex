@@ -1,6 +1,13 @@
 \documentclass{article}
 \usepackage{amsmath}
 
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+\makeatletter
+\def\BState{\State\hskip-\ALG@thistlm}
+\makeatother
+
 \usepackage[letterpaper]{geometry}
 
 \usepackage{booktabs}
@@ -128,6 +135,8 @@ Where $N$ is a gear ratio, $i_{gear}$ is the gear number, and $\omega_{crank}$ i
 
 It takes a finite amount of time, $t_shift$ in order for a shift to occur. During this time, the powertrain produces no power. Another gear is chosen with a different gear than the currently selected one will yield a higher $F_{tire}$. When this happens, the driver shifts in the direction of this gear (the transmission is sequential, not fully manual). When the vehicle brakes, the gear is 'reset', and when the powertrain is used again, the best available gear is used, regardless of what was engaged prior.
 
+% FIXME: Efficiency (C02)
+
 \subsection{Driver}
 
 The driver we assume (with some noted exceptions) is one which seeks to follow the ideal that racing is about maximizing acceleration in the correct direction. They use all available tire grip or engine power whenever possible, and brake as late and hard as possible. This driver does not exist in reality, but is a useful model allowing us to push the bounds for what the car can be driven to.
@@ -187,6 +196,58 @@ Acceleration, though, is more complicated, as the vehicle could be limited by ei
 \end{align}
 
 \subsection{Code Implementation and Solver}
+
+After creating a vehicle with known parameters and a track made of segments, the process of solving can begin. 
+
+\subsection{Steps}
+
+We will first examine a 'step'- how to get from the start state to end state of a given segment. To begin, the final velocity and required accelerations, forces are calculated as described in the "Physics" section. If the tire grip is exceeded, an error is returned. The appropriate vehicle status is computed based on these values.
+
+To avoid oscillatory throttle-braking which also decreases cornering performance, a 'sustaining' strategy is utilized. If the vehicle is accelerating, running through a corner, and the prior status was braking, the next thing to do is sustain through the corner. If the vehicle was sustaining beforehand and curvature is relatively the same, continue to sustain.
+
+Sustaining is also triggered by running out of grip.
+
+Sustaining is simply solving for the steady-state velocity through a corner. Because of the nonlinearity of the equations, this is not a simple task. Something resembling bisection is employed. Luckily, the equations are simple enough that going faster will result in less remaining grip, and going slower will result in more.
+
+First, we will define remaining grip:
+
+\begin{align}
+	F_{excess} = F_{long,remaining}(n_{tires} = 4, N = m g + F_{down}(v_f), F_{lat} = m v_f^2 k) - F_{drag}(v_f)
+\end{align}
+
+We will also determine the initial range of velocities we can use.
+
+\begin{align}
+	a_{max} = \frac{min(F_{engine},F_{tire,long,remaining})-F_{drag}}{m} \\
+	a_{min} = \frac{-F_{tire,long,remaining}-F_{drag}}{m} \\
+	v_{f,upper} = \sqrt{v_0^2 + 2 a_{max} d} \\
+	v_{f,lower} = \sqrt{v_0^2 + 2 a_{min} d}
+\end{align}
+
+The bisection algorithm, from here, is fairly straightforward:
+
+\begin{algorithm}[H]
+\caption{Sustaining 'Bisection' Algorithm}
+\begin{algorithmic}[1]
+	\While{$excess < 0$ or $excess > \epsilon$}
+		\State $v_f \gets \frac{v_{f,upper}+v_{f,lower}}{2}$
+		\State $run$ $equations$ $of$ $motion$
+		\If{$F_{long,remaining}(n_{tires},N,F_{lat}) - F_{drag}(v_{f}) < 0$}
+			\State $v_{f,upper} \gets v_{f}$
+		\Else
+			\State $v_{f,lower} \gets v_{f}$
+		\EndIf
+	\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Aerodynamic Strategy}
+
+The aerodynamic strategy is also quite straightforward. Run a step with one aero configuration, and with another. If only one works, use that one. If both work, use the one with the better longitudinal acceleration. When braking, the choice is between 'full' or normal aero kit and an airbrake. When accelerating, the choice is between a DRS aero kit and the full aero kit.
+
+\subsection{Overarching Solver}
+
+With the strategy for determining the optimal (and feasible) acceleration around a corner determined, we can begin to determine the overall driving strategy to determine the optimal drive around a track.
 
 \section{Dual-Tire, Point-Mass Model}
 
