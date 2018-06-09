@@ -195,19 +195,33 @@ Acceleration, though, is more complicated, as the vehicle could be limited by ei
 	F_{long,tire,accel} = min(F_{tire,long,remaining}, F_{engine,limit})
 \end{align}
 
+We can now compute the overall acceleration of the vehicle and its final velocity.
+
+\begin{align}
+	a_{long} = \frac{F_{long,tire,...} - F_{drag}(v0)}{m} \\
+	v_{final} = \sqrt{v_0^2 + 2 a_{long} d_{segment}}
+\end{align}
+
+
 \subsection{Code Implementation and Solver}
 
 After creating a vehicle with known parameters and a track made of segments, the process of solving can begin. 
 
 \subsection{Steps}
 
-We will first examine a 'step'- how to get from the start state to end state of a given segment. To begin, the final velocity and required accelerations, forces are calculated as described in the "Physics" section. If the tire grip is exceeded, an error is returned. The appropriate vehicle status is computed based on these values.
+We will first examine a 'step'- how to get from the start state to end state of a given segment. The arguments for the 'step' function are as follows:
 
-To avoid oscillatory throttle-braking which also decreases cornering performance, a 'sustaining' strategy is utilized. If the vehicle is accelerating, running through a corner, and the prior status was braking, the next thing to do is sustain through the corner. If the vehicle was sustaining beforehand and curvature is relatively the same, continue to sustain.
+\begin{itemize}
+\item \texttt{vehicle}: The vehicle and all its parameters
+\item \texttt{prior\_result}: The simulation results from the previous step
+\item \texttt{segment}: The current segment properties
+\item \texttt{segment\_next}: The next segment's properties
+\item \texttt{brake}: A flag indicating if braking is required
+\item \texttt{shifting}: A flag indicating if the vehicle is currently shifting inbetween gears
+\item \texttt{gear}: The current gear the vehicle is in
+\end{itemize}
 
-Sustaining is also triggered by running out of grip.
-
-Sustaining is simply solving for the steady-state velocity through a corner. Because of the nonlinearity of the equations, this is not a simple task. Something resembling bisection is employed. Luckily, the equations are simple enough that going faster will result in less remaining grip, and going slower will result in more.
+To begin, the final velocity and required accelerations, forces are calculated as described in the "Physics" section. If the tire grip is exceeded, an error is returned. The appropriate vehicle status is computed based on these values. To avoid oscillatory throttle-braking which also decreases cornering performance, a 'sustaining' strategy is utilized. If the vehicle is accelerating, running through a corner, and the prior status was braking, the next thing to do is sustain through the corner. If the vehicle was sustaining beforehand and curvature is relatively the same, continue to sustain. Sustaining is also triggered by running out of grip. Sustaining is simply solving for the steady-state velocity through a corner. Because of the nonlinearity of the equations, this is not a simple task. Something resembling bisection is employed. Luckily, the equations are simple enough that going faster will result in less remaining grip, and going slower will result in more.
 
 First, we will define remaining grip:
 
@@ -248,6 +262,66 @@ The aerodynamic strategy is also quite straightforward. Run a step with one aero
 \subsection{Overarching Solver}
 
 With the strategy for determining the optimal (and feasible) acceleration around a corner determined, we can begin to determine the overall driving strategy to determine the optimal drive around a track.
+
+Each iteration of the solver begins by taking a step based on the previous conditions. If this fails, the braking algorithm is initialized. A shifting algorithm is also employed. Stitching these pieces together and managing the edge conditions results in a rather large loop.
+
+\subsubsection{Braking Algorithm}
+The braking algorithm runs inside the main solver. The overall strategy is to 'replay' the part of the track leading up to the failure (loss of grip), but not so far back that time is spent sustaining before a corner. The strategy to do this has two main stages. The first is a 'scanning' phase, where large steps backwards are made to find, roughly, a window in which braking can initialize. the second is the 'bisection' phase, where a bisection algorithm is used to find the point of optimal performance.
+
+\begin{algorithm}[H]
+\caption{Braking Algorithm Pseudocode}
+\begin{algorithmic}[1]
+	\State Backup Output matrix (deep copy)
+	\State $failure\_point \gets i$
+	\State $lower\_brake\_bound \gets i-stepback\_amount$
+	\State $upper\_brake\_bound \gets i$
+	
+	\While{True}
+		\State $i = lower\_brake\_bound$
+		\State Re-step from $i$, with \texttt{brake} on, til failure or $i > failure\_point$
+		\If{failure}
+			\State $lower\_brake\_bound \gets lower\_brake\_bound - stepback\_amount$
+			\State $upper\_brake\_bound \gets upper\_brake\_bound - stepback\_amount$
+		\Else
+			\State Break out of loop
+		\EndIf
+	\EndWhile
+	
+	\While{$lower\_brake\_bound <= upper\_brake\_bound$}
+		\State $i_{initial} = \frac{lower\_brake\_bound + upper\_brake\_bound}{2}$
+		\State $i = i_{initial}$
+		\State Re-step from $i$, with \texttt{brake} on, til failure or $i > failure\_point$
+		\If{failure}
+			\State $upper\_brake\_bound \gets i_{initial}$
+		\Else
+			\State $lower\_brake\_bound \gets i_{initial}$
+		\EndIf
+		\State Reset the Output matrix the the backup Output matrix from line 1
+	\EndWhile
+	
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Shifting Algorithm}
+
+Shifting seems like a simple matter of always keeping the transmission moving to the best gear. However, this ignores an issue presented by engines with ever-increasing power curves, and frictional forces that slow down the vehicle when not in gear. This slowing down of the vehicle means that by the time the next gear is ready, the gear that was previously selected is now the better gear. While we want to be in the best gear at all times, this marginal performance increase is obviously outweighed by the result that no power would be delivered to the wheels at any time.
+
+To combat this problem, we simply dictate that the previous speed must be exceeded with the new gear before any further shifting is allowed. The pseudocode for this can be summarized as follows, and is triggered by the best gear (as measured by theoretical force at the tires at the current vehicle velocity) being different than the current gear.
+
+\begin{algorithm}[H]
+\caption{Shifting Algorithm Pseudocode}
+\begin{algorithmic}[1]
+	\State Compute $bestgear$
+	\If{! \texttt{brake} and $bestgear \neq gear$ and $v > shift\_velocity$}
+	\State $gear \gets gear + signof(bestgear - gear)$
+	\State $shift\_velocity \gets v_i \times (1 + \epsilon)$
+	\State $t_{shift} \gets t_i$
+	\While{$t_i < t_{shift} + shift\_time$}
+	\State Run steps like normal, but disable engine power by setting the \texttt{shifting} to on.
+	\EndWhile
+	\EndIf
+\end{algorithmic}
+\end{algorithm}
 
 \section{Dual-Tire, Point-Mass Model}
 
@@ -306,7 +380,7 @@ Acceleration is the same as the point-mass model, but it is important to note th
 \begin{align}
 	\Sigma F_{longitudinal} = F_{tire,long,f} + F_{tire,long,r} - F_{drag}(v_0) \\
 	a_{long} = \frac{ F_{tire,long,f} + F_{tire,long,r} - F_{drag}(v_0)}{m} \\
-	v_{final} = \sqrt(v_0^2 + 2 a_{long} x_{segment}
+	v_{final} = \sqrt{v_0^2 + 2 a_{long} d_{segment}}
 \end{align}
 
 \subsection{Working Backwards}
@@ -344,11 +418,15 @@ For the braking case where fixed biasing is used, the process is very simple: di
 
 For the braking case where perfect biasing is used, this requires some thinking. Since in this model, the front and rear braking forces are colinear, it makes no difference to where the braking force is distributed (provided that the maximum grip is not exceeded). We will use up all of the rear tire's grip before using the front tire's grip.
 
-\begin{align}
-	F_{tire,long,r,required} = F_{tire,long,total,required} \\
-	if F_{tire,long,remaining,r} < F_{tire,long,r,required} \\
-		F_{tire,long,remaining,f} = F_{tire,long,total,required} - F_{tire,long,r,required}
-\end{align}
+\begin{algorithm}[H]
+\caption{Perfect Biasing Braking Algorithm}
+\begin{algorithmic}[1]
+	\State $F_{tire,long,r,required}$ = $F_{tire,long,total,required}$
+	\If{$F_{tire,long,remaining,r} < F_{tire,long,r,required}$}
+	\State	$F_{tire,long,remaining,f}$ = $F_{tire,long,total,required}$ - $F_{tire,long,r,required}$
+	\EndIf
+\end{algorithmic}
+\end{algorithm}
 
 From here, checks may be performed to ensure that grip is used appropriately, and final velocity is calculated much like before.
 
