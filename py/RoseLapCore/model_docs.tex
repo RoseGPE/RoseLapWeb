@@ -46,7 +46,6 @@ These simulation results can be useful, potentially, to assist a driver in train
 These lap times can be used with point formulas and other data to determine the overall point limit of a car at a particular competition.
 
 \section{Pre-Processing and Input Data}
-Blah blah dxfs and YAML
 
 \subsection{Tire Data Fitting}
 As discussed in the 'Tires' section, tire models used in RoseLap v4 are rather simplistic, but are more sophisticated than the constant COF presumed in v3 and prior. To determine the four parameters, some fitting must be done.
@@ -72,6 +71,10 @@ This provides us with the four parameters for the tire: the offset and slope, in
 \includegraphics[width=\textwidth]{fric_ellipses_fit.png}
 
 User adjustments can be made by changing confidence intervals, bins, or even overriding the regression results and using the charts to produce a linear fit.
+
+\subsection{Vehicle Data Entry}
+
+\subsection{Track Definition}
 
 \section{Component Models}
 
@@ -207,7 +210,7 @@ We can now compute the overall acceleration of the vehicle and its final velocit
 
 After creating a vehicle with known parameters and a track made of segments, the process of solving can begin. 
 
-\subsection{Steps}
+\subsubsection{Steps}
 
 We will first examine a 'step'- how to get from the start state to end state of a given segment. The arguments for the 'step' function are as follows:
 
@@ -255,11 +258,11 @@ The bisection algorithm, from here, is fairly straightforward:
 \end{algorithmic}
 \end{algorithm}
 
-\subsection{Aerodynamic Strategy}
+\subsubsection{Aerodynamic Strategy}
 
 The aerodynamic strategy is also quite straightforward. Run a step with one aero configuration, and with another. If only one works, use that one. If both work, use the one with the better longitudinal acceleration. When braking, the choice is between 'full' or normal aero kit and an airbrake. When accelerating, the choice is between a DRS aero kit and the full aero kit.
 
-\subsection{Overarching Solver}
+\subsubsection{Overarching Solver}
 
 With the strategy for determining the optimal (and feasible) acceleration around a corner determined, we can begin to determine the overall driving strategy to determine the optimal drive around a track.
 
@@ -345,7 +348,7 @@ It should be noted that the summation of forces about the longitudinal axis resu
 
 Solution of this is somewhat ugly, and most importantly, cannot be done explicitly. As such, the solution is attempted at first in a marginal fashion; this will be discussed later.
 
-\subsection{The Marginal Physics}
+\subsubsection{The Marginal Physics}
 This method begins by computing the required lateral force for each tire. $N_f, N_r, v0$ are presumed to be known from the previous iteration.
 
 \begin{align}
@@ -396,7 +399,7 @@ The normal force is computed for the next iteration, and for checks.
 			+ \frac{h_{CP}}{l_{wheelbase}} F_{drag}
 \end{align}
 
-\subsection{Working Backwards}
+\subsubsection{Working Backwards}
 This method determines the forces on the vehicle given a prescribed $a_{long}$.
 
 The normal forces on the tires can be found by solving the summation of forces in the and vertical direction, and summation of moments about the lateral axis. This results in:
@@ -453,15 +456,31 @@ Taking a step is significantly more complicated in the two-tire model, because a
 
 To solve for an acceleration that will work and still be optimal, a simple loop is employed to scan over a range of vehicle velocities (which are the same as the bounds for bisection used in the point-mass model). The physics discussed in the "Working Backwards" section are employed to check. This was intended to be bisection at first, as this would enable more precision. How to make this work was not immediately self-evident though, but Thad does have some ideas on how to make it work. As it stands, the range of possible vehicle velocities is swept through, and then the 'best' (highest amplitude of acceleration, depending on if braking is desired) velocity is chosen.
 
-\subsection{Putting it Together}
+\subsubsection{Putting it Together}
 
 The overall solver for the two-tire model is identical to the point-mass model, save for the braking algorithm employed. The braking algorithm employed here does not use the bisection stage, but uses smaller steps backwards. This was done because of solution stability. Bisection is the ideal algorithm, but stability issues meant having to forgo the computational efficiency of the bisection algorithm.
 
 \section{Point Simulations}
 
-\subsection{Competition Formulae}
+Once multiple lap time simulations have been ran, the next important thing to do is put the pieces together and simulate points at a competition.
 
-\subsection{Code Implementation}
+The points scored at each event can be found from the FSAE rulebook:
+
+\begin{align}
+	P_{acceleration} = 95.5 \frac{1.5 t_{best}}{0.5 (t_{acceleration} - 1)} + 4.5 \\
+	P_{skidpad} = 71.5 \frac{\frac{1.45 t_{best}}{t_{skidpad}}^2 -1}{1.45^2 - 1} + 3.5 \\
+	P_{autocross} = 118.5 \frac{1.45 t_{best}}{0.45 (t_{autocross} - 1)} + 6.5 \\
+	P_{endurance} = 250 \frac{1.45 t_{best}}{0.45 (t_{endurance} - 1)} + 25
+\end{align}
+
+Efficiency score calculation is more complex.
+
+\begin{align}
+	EF_i = \frac{t_{best}}{t_{endurance}} \frac{CO2_{best}}{CO2_{endurance}} \\
+	P_{efficiency} = 100 \frac{\frac{EF_{min}}{EF_i}-1}{\frac{EF_{min}}{EF_{max}}-1}
+\end{align}
+
+Lap times, best times at previous tracks, and estimated CO2 production can simply be plugged into these formulae. Estimation of the CO2 production, hopefully, is good enough.
 
 \section{Post-Processing}
 
