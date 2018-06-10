@@ -98,7 +98,7 @@ class sim_pointmass:
       # This logic helps absorb simulation oscillations (brake-accel oscillation on corners)
       # If there's curvature, and we were braking before (we are not anymore) or we were sustaining before with negligible curvature change, continue sustaining
        # 
-      if segment.curvature > 0 and abs(prior_result[O_CURVATURE] - segment.curvature)<=1e-3 and (prior_result[O_STATUS] == S_BRAKING or prior_result[O_STATUS] == S_SUSTAINING):
+      if segment.curvature > 0 and abs(prior_result[O_CURVATURE] - segment.curvature)<=1e-5 and (prior_result[O_STATUS] == S_BRAKING or prior_result[O_STATUS] == S_SUSTAINING):
         status = S_SUSTAINING
         Ftire_long = vehicle.drag(v0, aero_mode)
       else:

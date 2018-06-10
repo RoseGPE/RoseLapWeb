@@ -116,7 +116,7 @@ class sim_twotires:
       # @FIXME NOT PLAYED AROUND WITH ENOUGH WITH TWO TIRE MODEL!!!!
       # This logic helps absorb simulation oscillations (brake-accel oscillation on corners)
       # If there's curvature, and we were braking before (we are not anymore) or we were sustaining before with negligible curvature change, continue sustaining
-      if segment.curvature > 0 and (prior_result[O_STATUS] == S_BRAKING  or (abs(prior_result[O_CURVATURE] - segment.curvature)<=0.03 and prior_result[O_STATUS] == S_SUSTAINING)):
+      if segment.curvature > 0 and (prior_result[O_STATUS] == S_BRAKING  or (abs(prior_result[O_CURVATURE] - segment.curvature)<=1e-5 and prior_result[O_STATUS] == S_SUSTAINING)):
         status = S_SUSTAINING
         Fr_long = vehicle.drag(v0, aero_mode)
       # If not sustaining, jammalam that throttle
@@ -166,7 +166,7 @@ class sim_twotires:
 
     # Loop through a range of acceleration possiblities if the result from this step was invalid (try to fix this step)
     # This was bisection in single tire (for sustaining usage) but I couldn't get that to work here. Thus dumb iteration.
-    N_ITERS = 50
+    N_ITERS = 150
     if remaining_long_grip < 0:
       # If we were scheduled to coast, we're not using our tires anyways, so we're kinda screwed anyways. 
       # @FIXME: THIS MIGHT BE THE PROBLEM!!!!!!! If you are midway through a shift when you hit a corner, there's no recourse. Not sure how to solve.
@@ -226,6 +226,8 @@ class sim_twotires:
       # If nothing was valid then nothing will work on this step. Gotta brake earlier.
       if len(valid_entries) < 1:
         return None
+
+
 
       # we have found the range of workable solutions, let's hone in on those now
       # by hone in I mean pick the best one
