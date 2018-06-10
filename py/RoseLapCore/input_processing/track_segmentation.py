@@ -257,9 +257,9 @@ def file_to_segments(filename, dl):
     return seg_points(points,intermediates,open_ended)
   elif filename[-4:].lower() == '.svg':
     testpath,attrs = svg2paths(filename) 
+    print(testpath)
     testpath = testpath[0]
     pts,sectors = points_in_each_seg_slow(testpath, dl)
-    print(pts)
     return seg_points_svg(pts, max(abs(pts[0,:]-pts[-1,:])) > epsilon)
   else:
     return None
