@@ -8,7 +8,7 @@ sim = sims.Simulation("two_tires");
 
 vehicle  = vehicle.Vehicle(yaml.load(open('params/vehicles/rgp008_baseline.yaml','r'),True))
 vehicle.prep()
-segments = trackseg.file_to_segments('params/DXFs/ne_2015_endurance.svg',0.5)
+segments = trackseg.file_to_segments('params/DXFs/ne_2017_endurance.svg',0.5)
 
 plottools.plot_velocity_and_events(sim.solve(vehicle, segments[0:int(len(segments)*5/5)]),'t','Vehicle 1')
 
