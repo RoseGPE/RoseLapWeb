@@ -147,9 +147,14 @@ def pointify_dxf(dxf_output, connectivity, dl):
 
 def points_in_each_seg_slow(path, dx):
   a = np.array([])
+  s = np.array([])
+  sectors = []
   for seg in path:
-      a = np.append(a, seg.poly()(np.linspace(0,1-1e-2,seg.length()/dx)))
-  return np.stack((a.real,a.imag),axis=1)
+    x = seg.poly()(np.linspace(0,1,seg.length()/dx))[:-1]
+    a = np.append(a, x)
+    s = np.append(s, np.ones_like(x)*len(sectors))
+    sectors.append(a.shape[0])
+  return (np.stack((a.real,a.imag,s.real),axis=1),sectors)
 
 class Segment(object):
   def __init__(self,x1,y1,x2,y2,x3,y3,sector,endpoint):
@@ -220,7 +225,7 @@ def seg_points_svg(points,open_ended):
       if open_ended:
         overk = True
         ip = i
-    segs.append(Segment(points[im,0], points[im,1], points[i,0], points[i,1], points[ip,0], points[ip,1], 0, overk))
+    segs.append(Segment(points[im,0], points[im,1], points[i,0], points[i,1], points[ip,0], points[ip,1], points[i,2], overk))
   return segs
 
 def plot_segments(segments):
@@ -253,7 +258,8 @@ def file_to_segments(filename, dl):
   elif filename[-4:].lower() == '.svg':
     testpath,attrs = svg2paths(filename) 
     testpath = testpath[0]
-    pts = points_in_each_seg_slow(testpath, dl)
+    pts,sectors = points_in_each_seg_slow(testpath, dl)
+    print(pts)
     return seg_points_svg(pts, max(abs(pts[0,:]-pts[-1,:])) > epsilon)
   else:
     return None
