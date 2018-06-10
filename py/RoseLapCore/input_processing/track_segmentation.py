@@ -3,6 +3,7 @@ import numpy as np
 import math
 import itertools as it
 import time
+from svgpathtools import *
 
 epsilon = 1e-4
 
@@ -144,6 +145,12 @@ def pointify_dxf(dxf_output, connectivity, dl):
       intermediates.append(len(pts))
   return (np.array(pts),intermediates)
 
+def points_in_each_seg_slow(path, dx):
+  a = np.array([])
+  for seg in path:
+      a = np.append(a, seg.poly()(np.linspace(0,1-1e-2,seg.length()/dx)))
+  return np.stack((a.real,a.imag),axis=1)
+
 class Segment(object):
   def __init__(self,x1,y1,x2,y2,x3,y3,sector,endpoint):
     self.x_m=x1; self.x=x2; self.x_p=x3; self.y_m=y1; self.y=y2; self.y_p=y3;
@@ -163,7 +170,10 @@ class Segment(object):
       except ValueError:
         area=0
 
-      self.curvature = 4*area/(self.length_m*self.length_p*self.length_secant)
+      if self.length_m <= 0 or self.length_p <=0:
+        self.curvature = 0
+      else:
+        self.curvature = 4*area/(self.length_m*self.length_p*self.length_secant)
 
 class RLT(object):
   def __init__(self, k, l, s):
@@ -194,6 +204,25 @@ def seg_points(points,intermediates,open_ended):
     segs[i].curvature = (segs[i-1].curvature+segs[i+1].curvature)/2
   return segs
 
+def seg_points_svg(points,open_ended):
+  segs=[]
+  for i in range(points.shape[0]):
+    overk = False
+    im=i-1
+    if im < 0:
+      im = points.shape[0]-1
+      if open_ended:
+        overk = True
+        im = 0
+    ip=i+1
+    if ip >= points.shape[0]:
+      ip = 0
+      if open_ended:
+        overk = True
+        ip = i
+    segs.append(Segment(points[im,0], points[im,1], points[i,0], points[i,1], points[ip,0], points[ip,1], 0, overk))
+  return segs
+
 def plot_segments(segments):
   sectors = []
   labels = []
@@ -216,13 +245,18 @@ def plot_segments(segments):
 
   plt.show()
 
-def dxf_to_segments(filename, dl):
-  # The function you came here for. Hand it a filename and desired segment distance, you get segments of the track.
-  dxf_geometry,connectivity,open_ended = load_dxf(filename)
-  points,intermediates = pointify_dxf(dxf_geometry,connectivity,dl)
-  #print (connectivity)
-  segs = seg_points(points,intermediates,open_ended)
-  return segs
+def file_to_segments(filename, dl):
+  if filename[-4:].lower() == '.dxf':
+    dxf_geometry,connectivity,open_ended = load_dxf(filename)
+    points,intermediates = pointify_dxf(dxf_geometry,connectivity,dl)
+    return seg_points(points,intermediates,open_ended)
+  elif filename[-4:].lower() == '.svg':
+    testpath,attrs = svg2paths(filename) 
+    testpath = testpath[0]
+    pts = points_in_each_seg_slow(testpath, dl)
+    return seg_points_svg(pts, max(abs(pts[0,:]-pts[-1,:])) > epsilon)
+  else:
+    return None
 
 def rlt_to_segments(filename):
   with open(filename, "r") as rlt:
