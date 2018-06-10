@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
-fn = 'A1654run45.dat' # USERDEF select from the data folder
+fn = 'A1654run49.dat' # USERDEF select from the data folder
 tire_data = np.genfromtxt('./data/'+fn, skip_header=3, delimiter='\t')
 
 # TTC Tire data has X as longitudinal, Y as lateral, Z as normal (negative)
@@ -40,8 +40,8 @@ plt.xlabel('Normal Force (lb)')
 plt.ylabel('Frequency in Dataset')
 
 # USERDEF the 'bins' of tire data tested, and the median data at each
-bins = [-275,-220,-170,-100,0]
-avgs = [-225, -182, -140, -40]
+bins = [[-275,-230],[-210,-170],[-155,-130],[-100,0]]
+avgs = [-220, -180, -140, -40]
 xmax = []
 ymax = []
 
@@ -54,7 +54,7 @@ def reject_outliers(data, m, by_col):
 
 plt.subplot(222)
 for i in range(0,len(avgs)):
-    tire_data_filtered = tire_data[(tire_data[:,FZ] > bins[i]) & (tire_data[:,FZ] < bins[i+1])]
+    tire_data_filtered = tire_data[(tire_data[:,FZ] > bins[i][0]) & (tire_data[:,FZ] < bins[i][1])]
     plt.plot(tire_data_filtered[:,FX], tire_data_filtered[:,FY], '.', markersize=1, label=("Raw, FZ=%.1f" % avgs[i]))
     tire_data_filtered = reject_outliers(reject_outliers(tire_data_filtered,sigmas,FX), sigmas,FY)
     plt.title('Friction Ellipses')
@@ -74,12 +74,12 @@ print('Lateral: Fy = %f * Fz + %f' % (slope_y, intercept_y))
 # slope_y
 # intercept_x
 # intercept_y
-xm = intercept_x+slope_x*bins[0]
-ym = intercept_y+slope_y*bins[0]
+xm = intercept_x+slope_x*bins[0][0]
+ym = intercept_y+slope_y*bins[0][0]
 
 plt.subplot(223)
 plt.plot(avgs,xmax,'bo',label='Captured Points')
-plt.plot([0,bins[0]],[intercept_x, xm], 'r', label='Fit Line')
+plt.plot([0,bins[0][0]],[intercept_x, xm], 'r', label='Fit Line')
 plt.plot(tire_data[:,FZ], abs(tire_data[:,FX]), '.', markersize=1, label='Tire Data')
 plt.ylim([0,max(xm,ym)*1.05])
 plt.title('X (Longitudinal) Force vs. Normal Force')
@@ -90,7 +90,7 @@ plt.legend()
 
 plt.subplot(224)
 plt.plot(avgs,ymax,'bo',label='Captured Points')
-plt.plot([0,bins[0]],[intercept_y, ym], 'r', label='Fit Line')
+plt.plot([0,bins[0][0]],[intercept_y, ym], 'r', label='Fit Line')
 plt.plot(tire_data[:,FZ], abs(tire_data[:,FY]), '.', markersize=1, label='Tire Data')
 plt.ylim([0,max(ym,xm)*1.05])
 plt.title('Y (Lateral) Force vs. Normal Force')
