@@ -29,15 +29,18 @@ def points_in_each_seg_slow(path, dx):
     return np.stack((a.real,a.imag),axis=1)
 
 if __name__ == '__main__':
-    testpath,attrs = svg2paths('params/DXFs/test.svg') 
+    testpath,attrs = svg2paths('params/DXFs/ne_2017_endurance.svg') 
     testpath = testpath[0]
-    tvals = np.linspace(0, 1, 10)
 
-    print(testpath)
+    print(sum([x.length() for x in testpath]))
 
-    pts = points_in_each_seg_slow(testpath, 4)
-    pts = pts-pts[0,:]
-    print(pts)
-    plt.plot(pts[:,0],pts[:,1],'.')
+    # tvals = np.linspace(0, 1, 10)
 
-    plt.show()
+    # print(testpath)
+
+    # pts = points_in_each_seg_slow(testpath, 4)
+    # pts = pts-pts[0,:]
+    # print(pts)
+    # plt.plot(pts[:,0],pts[:,1],'.')
+
+    # plt.show()

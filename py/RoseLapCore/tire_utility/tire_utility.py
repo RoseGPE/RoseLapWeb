@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
-fn = 'A1654run49.dat' # USERDEF select from the data folder
+fn = 'A1654run45.dat' # USERDEF select from the data folder
 tire_data = np.genfromtxt('./data/'+fn, skip_header=3, delimiter='\t')
 
 # TTC Tire data has X as longitudinal, Y as lateral, Z as normal (negative)
@@ -41,7 +41,7 @@ plt.ylabel('Frequency in Dataset')
 
 # USERDEF the 'bins' of tire data tested, and the median data at each
 bins = [[-275,-230],[-210,-170],[-155,-130],[-100,0]]
-avgs = [-220, -180, -140, -40]
+avgs = [-230, -185, -140, -45]
 xmax = []
 ymax = []
 
