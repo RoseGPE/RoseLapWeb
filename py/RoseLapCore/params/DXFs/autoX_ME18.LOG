@@ -1,4 +1,4 @@
-{"cutoff_start": 90,"cutoff_end": 1280,"d_nom": 5.74,"d_scale": 1.0185, "D": 23.0, "maxcurv": 0.15, "smoothing":0.01}
+{"cutoff_start": 90,"cutoff_end": 1280,"d_nom": 5.74,"d_scale": 1.0185, "D": 23.0, "maxcurv": 0.15, "smoothing":0.18,  "savgol_amt":151, "savgol_dof":1}
 0,0
 15,4
 26,11

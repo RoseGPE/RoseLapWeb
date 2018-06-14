@@ -240,8 +240,8 @@ def seg_points_trackwalker(fn,dx,plot=False):
   if plot:
     plt.figure()
     plt.plot(l,k,'.',ms=1)
-  l = signal.savgol_filter(l,201,2)
-  k = signal.savgol_filter(k,501,2)
+  l = signal.savgol_filter(l,params["savgol_amt"],params["savgol_dof"])
+  k = signal.savgol_filter(k,params["savgol_amt"],params["savgol_dof"])
   if plot:
     plt.plot(l,k,'-',lw=1)
   spl = UnivariateSpline(l, k, k=5)
@@ -253,6 +253,19 @@ def seg_points_trackwalker(fn,dx,plot=False):
     plt.plot(lsp,k, lw=2)
     plt.title('Filtered l-k')
 
+  d = np.zeros(l.shape,dtype=float)
+  theta = np.zeros(l.shape,dtype=float)
+  xf = np.zeros(l.shape,dtype=float)
+  yf = np.zeros(l.shape,dtype=float)
+  for i in range(1,np.size(l)):
+    d[i] = (l[i]-l[i-1])
+    theta[i] = theta[i-1] + d[i]*k[i]
+    xf[i] = xf[i-1] + math.sin(theta[i])*d[i]
+    yf[i] = yf[i-1] + math.cos(theta[i])*d[i]
+  if plot:
+    plt.figure()
+    plt.plot(x,y,'.b',ms=1)
+    plt.plot(xf,yf,'.r',ms=2)
   segs = []
   for i in range(len(k)):
     segs.append(Segment(0,0,0,0,0,0, 0,False,dx,abs(k[i])))
