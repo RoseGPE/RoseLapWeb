@@ -238,14 +238,14 @@ class sim_twotires:
             vfu = vf
         
         if abs(vfu - vfl) < 1e-5:
-          # print("quit early at %d" % n)
+          print("quit early at %d" % n)
           break
 
         # If this distribution of grip is valid, make note
         # if min(remaining_long_grip) >= 0:
         #   valid_entries.append((n,vf,a_long))
       # else:
-      #   print("quit normally")
+        print("quit normally")
       # If nothing was valid then nothing will work on this step. Gotta brake earlier.
       if remaining_long_grip[0] < 0 or remaining_long_grip[1] < 0:
         if vf_working is None:
@@ -364,7 +364,7 @@ class sim_twotires:
 
     # step loop set up
     i = 1
-    backup_amount = 3 #int(7.0/segments[0].length)
+    backup_amount = int(7.0/segments[0].length)
     bounds_found = False
     failpt = -1
     middle_brake_bound = -1
@@ -373,7 +373,7 @@ class sim_twotires:
 
     while i<len(segments):
       if i<0:
-        print('sim_twotires.solve had a major catastrophe; index moved below zero. Unable to restart.')
+        # print('sim_twotires.solve had a major catastrophe; index moved below zero. Unable to restart.')
         return None
 
       # If the gear was undefined and the point where shifting happened is not defined, pick the best gear right off
@@ -385,6 +385,7 @@ class sim_twotires:
       if step_result is None:
         # Vehicle crashed. Initiate braking algorithm!
         if not brake:
+          # print("%d,%.2f: start braking" % (i,output[i,O_DISTANCE]))
           # Start braking
 
           # Make a backup (deep) copy of the output matrix prior to crash. (enables bisection algorithm)
@@ -392,14 +393,25 @@ class sim_twotires:
           brake = True
           bounds_found = False
           failpt = i-1
-          lower_brake_bound = failpt
+          lower_brake_bound = i
+          i = lower_brake_bound
         elif bounds_found:
+          # print("%d,%.2f: too short (%d, %d, %d)" % (i,output[i,O_DISTANCE],lower_brake_bound,middle_brake_bound,upper_brake_bound))
           # If the bounds for braking have been found, then clearly we're on the 'too short' side of the bisection algorithm. Scoot away.
           upper_brake_bound = middle_brake_bound
-          middle_brake_bound = (upper_brake_bound+lower_brake_bound)/2          
-          i = middle_brake_bound
+          middle_brake_bound_prop = int(float(upper_brake_bound+lower_brake_bound)/2) 
+          if middle_brake_bound == middle_brake_bound_prop:
+            # print('bam')
+            i = middle_brake_bound - 1
+            middle_brake_bound = i
+            upper_brake_bound = i-1
+          else:
+            print ('no bam; %d' % middle_brake_bound)
+            middle_brake_bound = middle_brake_bound_prop
+            i = middle_brake_bound
           output = np.copy(precrash_output)
         else:
+          # print("%d,%.2f: move back" % (i,output[i,O_DISTANCE]))
           # If we haven't found bounds yet, need to keep moving backwards til a survivable point is reached.
           lower_brake_bound-=backup_amount
           i = lower_brake_bound
@@ -408,6 +420,7 @@ class sim_twotires:
         gear = None
         shiftpt = -1
       elif i<=failpt:
+        # print("%d,%.2f: still braking at v=%.2f" % (i,output[i,O_DISTANCE],output[i,O_VELOCITY]))
         # Vehicle still braking
         output[i] = step_result
         i+=1
@@ -417,20 +430,22 @@ class sim_twotires:
         shiftpt = -1
         shift_v_req = 0
       # FIXME: This is needed for the bisection algorithm
-      # elif failpt>=0 and not bounds_found:
-      #   print('nailed it', step_result[O_VELOCITY], lower_brake_bound)
-      #   bounds_found = True
-      #   upper_brake_bound = failpt-1 #lower_brake_bound+backup_amount
-      #   middle_brake_bound = (upper_brake_bound+lower_brake_bound)/2
-      #   i = middle_brake_bound
-      #   output = np.copy(precrash_output)
+      elif failpt>=0 and not bounds_found:
+        # print('%d,%.2f: nailed it at %d' % (i, step_result[O_VELOCITY], lower_brake_bound))
+        bounds_found = True
+        upper_brake_bound = failpt-1 #lower_brake_bound+backup_amount
+        middle_brake_bound = int(float(upper_brake_bound+lower_brake_bound)/2)
+        i = middle_brake_bound
+        output = np.copy(precrash_output)
       elif failpt>=0 and bounds_found and abs(lower_brake_bound - upper_brake_bound) > 1:
-        # If past the point of crashing and we've successfully bisected to convergence
+        # print("%d,%.2f: converged (%d,%d,%d)" % (i,output[i,O_DISTANCE],lower_brake_bound,middle_brake_bound,upper_brake_bound))
+        # If past the point of crashing and we've not yet successfully bisected to convergence
         lower_brake_bound = middle_brake_bound
-        middle_brake_bound = (upper_brake_bound+lower_brake_bound)/2
+        middle_brake_bound = int(float(upper_brake_bound+lower_brake_bound)/2)
         i = middle_brake_bound
         output = np.copy(precrash_output)
       else:
+        # print("%d,%.2f: normal op" % (i,output[i,O_DISTANCE]))
         # normal operation
 
         # quit braking
