@@ -53,7 +53,7 @@ class Vehicle(object):
     f_y_max = self.tire_mu_y*(f_norm/n_tires) + self.tire_offset_y
 
     if f_x_max < abs(f_long/n_tires):
-      return (-1, f_y_max*n_tires)
+      return (-np.inf, f_y_max*n_tires)
     f_lat = math.sqrt(max(1-(abs(f_long)/n_tires)**2/f_x_max/f_x_max,0))*f_y_max
     return (f_lat*n_tires, f_y_max*n_tires)
 
@@ -62,7 +62,7 @@ class Vehicle(object):
     f_y_max = self.tire_mu_y*(f_norm/n_tires) + self.tire_offset_y
 
     if f_y_max < abs(f_lat/n_tires):
-      return (-1, f_x_max*n_tires)
+      return (-np.inf, f_x_max*n_tires)
     f_long = math.sqrt(max(1-(abs(f_lat)/n_tires)**2/f_y_max/f_y_max,0))*f_x_max
     return (f_long*n_tires, f_x_max*n_tires)
 

@@ -4,11 +4,11 @@ import input_processing.fancyyaml as yaml
 import input_processing.track_segmentation as trackseg
 import plottools
 
-sim = sims.Simulation("point_mass");
+sim = sims.Simulation("two_tires");
 
 vehicle  = vehicle.Vehicle(yaml.load(open('params/vehicles/rgp007.yaml','r'),True))
 vehicle.prep()
-segments = trackseg.file_to_segments('params/DXFs/autoX_ME18.LOG',0.3)
+segments = trackseg.file_to_segments('params/DXFs/ne_2017_autox.svg',0.7)
 output = sim.solve(vehicle, segments)
 plottools.plot_velocity_and_events(output,'t','Vehicle 1')
 
