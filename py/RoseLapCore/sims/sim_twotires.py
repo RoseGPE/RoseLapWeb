@@ -167,7 +167,7 @@ class sim_twotires:
     # Loop through a range of acceleration possiblities if the result from this step was invalid (try to fix this step)
     # This was bisection in single tire (for sustaining usage) but I couldn't get that to work here. Thus dumb iteration.
     vf_working = None
-    N_ITERS = 150
+    N_ITERS = 25
     if remaining_long_grip < 0:
       # If we were scheduled to coast, we're not using our tires anyways, so we're kinda screwed anyways. 
       # @FIXME: THIS MIGHT BE THE PROBLEM!!!!!!! If you are midway through a shift when you hit a corner, there's no recourse. Not sure how to solve.
@@ -237,13 +237,15 @@ class sim_twotires:
           else:
             vfu = vf
         
-        if abs(vfu - vfl) < 1e-2:
+        if abs(vfu - vfl) < 1e-5:
+          # print("quit early at %d" % n)
           break
 
         # If this distribution of grip is valid, make note
         # if min(remaining_long_grip) >= 0:
         #   valid_entries.append((n,vf,a_long))
-        
+      # else:
+      #   print("quit normally")
       # If nothing was valid then nothing will work on this step. Gotta brake earlier.
       if remaining_long_grip[0] < 0 or remaining_long_grip[1] < 0:
         if vf_working is None:
@@ -293,12 +295,8 @@ class sim_twotires:
           remaining_long_grip[0]-=F_req_long
           Fr_long = F_req_long
 
-      # Fr_remaining = vehicle.f_long_remain(2, Nr, Fr_lat)[0]
-      # Ff_remaining = vehicle.f_long_remain(2, Nf, Ff_lat)[0]
-
-    # There was some really big and impressive code here that didn't work
-    # So it was deleted
-    # If you feel like reviving the bisection algorithm, dig through git
+        Fr_remaining = vehicle.f_long_remain(2, Nr, Fr_lat)[0]
+        Ff_remaining = vehicle.f_long_remain(2, Nf, Ff_lat)[0]
 
     if v0+vf > 0:
       tf = t0 + segment.length/((v0+vf)/2)
