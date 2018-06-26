@@ -152,13 +152,19 @@ def pointify_dxf(dxf_output, connectivity, dl):
 def points_in_each_seg_slow(path, dx):
   a = np.array([])
   s = np.array([])
+  k = np.array([])
+  d = np.array([])
   sectors = []
   for seg in path:
-    x = seg.poly()(np.linspace(0,1,seg.length()/dx))[:-1]
+    ls = np.linspace(0,1,seg.length()/dx)[:-1]
+    x = seg.poly()(ls)
+    for i in ls:
+      k = np.append(k, seg.curvature(i))
     a = np.append(a, x)
     s = np.append(s, np.ones_like(x)*len(sectors))
     sectors.append(a.shape[0])
-  return (np.stack((a.real,a.imag,s.real),axis=1),sectors)
+  print(k)
+  return (np.stack((a.real,-a.imag,k,s.real),axis=1),sectors)
 
 class Segment(object):
   def __init__(self,x1=None,y1=None,x2=None,y2=None,x3=None,y3=None,sector=0,endpoint=False,length=None,curvature=None):
@@ -184,7 +190,11 @@ class Segment(object):
           self.curvature = 0
         else:
           self.curvature = 4*area/(self.length_m*self.length_p*self.length_secant)
+      # if not (curvature is None):
+      #   self.curvature = curvature
     else:
+      self.x = x2
+      self.y = y2
       self.length = length
       self.length_m = length
       self.length_p = length
@@ -268,7 +278,7 @@ def seg_points_trackwalker(fn,dx,plot=False):
     plt.plot(xf,yf,'.r',ms=2)
   segs = []
   for i in range(len(k)):
-    segs.append(Segment(0,0,0,0,0,0, 0,False,dx,abs(k[i])))
+    segs.append(Segment(0,0, xf[i],yf[i], 0,0, 0,False,dx,abs(k[i])))
 
   return segs
 
@@ -311,7 +321,7 @@ def seg_points_svg(points,open_ended):
       if open_ended:
         overk = True
         ip = i
-    segs.append(Segment(points[im,0], points[im,1], points[i,0], points[i,1], points[ip,0], points[ip,1], points[i,2], overk))
+    segs.append(Segment(points[im,0], points[im,1], points[i,0], points[i,1], points[ip,0], points[ip,1], points[i,3], overk, curvature=points[i,2]))
   return segs
 
 def plot_segments(segments):

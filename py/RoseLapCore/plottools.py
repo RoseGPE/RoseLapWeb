@@ -2,7 +2,8 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import matplotlib.cm as cmx
-import matplotlib.colors as colors
+import matplotlib.colors as colorsx
+import matplotlib.colorbar as colorbar
 import sims.constants as sim
 
 def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
@@ -90,6 +91,30 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
 
   plt.draw()
   print("chill")
+
+def plot_map(segments, output, title='Map'):
+  fig, ax = plt.subplots(figsize=(10,10))
+
+  
+
+  x = np.array([s.x for s in segments]);
+  y = np.array([s.y for s in segments]);
+  z = output[:,sim.O_VELOCITY]
+
+  cmap = cmx.get_cmap('viridis')
+  normalize = colorsx.Normalize(vmin=min(z), vmax=max(z))
+  colors = [cmap(normalize(value)) for value in z]
+
+  ax.scatter(x,y, color=colors)
+
+  cax, _ = colorbar.make_axes(ax)
+  cbar = colorbar.ColorbarBase(cax, cmap=cmap, norm=normalize)
+
+  fig.canvas.set_window_title(title)
+  fig.suptitle(title)
+  ax.axis('equal')
+
+  plt.draw()
 
 
 class DetailZoom:

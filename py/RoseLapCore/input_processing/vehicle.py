@@ -20,12 +20,12 @@ class Vehicle(object):
   def eng_force(self, vel, gear):
     # Compute the angular speed of the crankshaft. 9.5493 is a conversion factor from rad/s to RPM.
     gear_ratio = self.gears[gear]
-    eng_output_rpm = vel / self.tire_radius * 9.5493 * self.final_drive_reduction
+    eng_output_rpm = vel / self.rear_tire_radius * 9.5493 * self.final_drive_reduction
     crank_rpm = eng_output_rpm * self.engine_reduction * gear_ratio
 
     if crank_rpm <= self.engine_rpms[0]:
       # If under RPM range, use the lowest torque value
-      return (self.engine_torque[0] * self.engine_reduction * gear_ratio * self.final_drive_reduction / self.tire_radius, crank_rpm)
+      return (self.engine_torque[0] * self.engine_reduction * gear_ratio * self.final_drive_reduction / self.front_tire_radius, crank_rpm)
     elif crank_rpm > self.engine_rpms[-1]:
       # If over RPM range, no power because you're hitting the rev limiter
       return (0,crank_rpm)
@@ -34,7 +34,7 @@ class Vehicle(object):
       for i in range(1, len(self.engine_rpms)):
         if crank_rpm < self.engine_rpms[i]:
           torque = self.engine_torque[i] + (crank_rpm - self.engine_rpms[i]) * (self.engine_torque[i-1] - self.engine_torque[i]) / (self.engine_rpms[i-1] - self.engine_rpms[i])
-          return (torque * self.engine_reduction * gear_ratio * self.final_drive_reduction / self.tire_radius, crank_rpm)
+          return (torque * self.engine_reduction * gear_ratio * self.final_drive_reduction / self.rear_tire_radius, crank_rpm)
 
   def best_gear(self, v, fr_limit):
     # Find the best gear and return the number for it.
@@ -48,18 +48,26 @@ class Vehicle(object):
         besti = i
     return besti
 
-  def f_lat_remain(self, n_tires, f_norm, f_long):
-    f_x_max = self.tire_mu_x*(f_norm/n_tires) + self.tire_offset_x
-    f_y_max = self.tire_mu_y*(f_norm/n_tires) + self.tire_offset_y
+  def f_lat_remain(self, n_tires, f_norm, f_long, front=False):
+    if front:
+      f_x_max = self.front_tire_mu_x*(f_norm/n_tires) + self.front_tire_offset_x
+      f_y_max = self.front_tire_mu_y*(f_norm/n_tires) + self.front_tire_offset_y
+    else:
+      f_x_max = self.rear_tire_mu_x*(f_norm/n_tires) + self.rear_tire_offset_x
+      f_y_max = self.rear_tire_mu_y*(f_norm/n_tires) + self.rear_tire_offset_y
 
     if f_x_max < abs(f_long/n_tires):
       return (-np.inf, f_y_max*n_tires)
     f_lat = math.sqrt(max(1-(abs(f_long)/n_tires)**2/f_x_max/f_x_max,0))*f_y_max
     return (f_lat*n_tires, f_y_max*n_tires)
 
-  def f_long_remain(self, n_tires, f_norm, f_lat):
-    f_x_max = self.tire_mu_x*(f_norm/n_tires) + self.tire_offset_x
-    f_y_max = self.tire_mu_y*(f_norm/n_tires) + self.tire_offset_y
+  def f_long_remain(self, n_tires, f_norm, f_lat, front=False):
+    if front:
+      f_x_max = self.front_tire_mu_x*(f_norm/n_tires) + self.front_tire_offset_x
+      f_y_max = self.front_tire_mu_y*(f_norm/n_tires) + self.front_tire_offset_y
+    else:
+      f_x_max = self.rear_tire_mu_x*(f_norm/n_tires) + self.rear_tire_offset_x
+      f_y_max = self.rear_tire_mu_y*(f_norm/n_tires) + self.rear_tire_offset_y
 
     if f_y_max < abs(f_lat/n_tires):
       return (-np.inf, f_x_max*n_tires)

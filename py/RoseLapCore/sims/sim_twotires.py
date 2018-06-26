@@ -80,8 +80,8 @@ class sim_twotires:
     Fr_lat = vehicle.weight_bias*segment.curvature*vehicle.mass*v0**2
 
     # Determine the remaining longitudinal grip. If there isn't any, then we're out of luck.
-    Ff_remaining, Ff_max_long = vehicle.f_long_remain(2, Nf, Ff_lat)
-    Fr_remaining, Fr_max_long = vehicle.f_long_remain(2, Nr, Fr_lat)
+    Ff_remaining, Ff_max_long = vehicle.f_long_remain(2, Nf, Ff_lat, True)
+    Fr_remaining, Fr_max_long = vehicle.f_long_remain(2, Nr, Fr_lat, False)
     if Ff_remaining < 0 or Fr_remaining < 0:
       return None
 
@@ -162,7 +162,7 @@ class sim_twotires:
     Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
 
     # Figure out how much longitudinal grip remains
-    remaining_long_grip = min(vehicle.f_long_remain(2, Nr, Fr_lat)[0], vehicle.f_long_remain(2, Nf, Ff_lat)[0])
+    remaining_long_grip = min(vehicle.f_long_remain(2, Nr, Fr_lat, False)[0], vehicle.f_long_remain(2, Nf, Ff_lat, True)[0])
 
     # Loop through a range of acceleration possiblities if the result from this step was invalid (try to fix this step)
     # This was bisection in single tire (for sustaining usage) but I couldn't get that to work here. Thus dumb iteration.
@@ -196,7 +196,7 @@ class sim_twotires:
         Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
 
         # Calculate how much grip there is left
-        remaining_long_grip = [vehicle.f_long_remain(2, Nr, Fr_lat)[0],vehicle.f_long_remain(2, Nf, Ff_lat)[0]]
+        remaining_long_grip = [vehicle.f_long_remain(2, Nr, Fr_lat, False)[0],vehicle.f_long_remain(2, Nf, Ff_lat, True)[0]]
         # Calculate how much grip is needed
         F_req_long = a_long*vehicle.mass+vehicle.drag(vf,aero_mode)
 
@@ -238,14 +238,14 @@ class sim_twotires:
             vfu = vf
         
         if abs(vfu - vfl) < 1e-5:
-          print("quit early at %d" % n)
+          # print("quit early at %d" % n)
           break
 
         # If this distribution of grip is valid, make note
         # if min(remaining_long_grip) >= 0:
         #   valid_entries.append((n,vf,a_long))
       # else:
-        print("quit normally")
+        # print("quit normally")
       # If nothing was valid then nothing will work on this step. Gotta brake earlier.
       if remaining_long_grip[0] < 0 or remaining_long_grip[1] < 0:
         if vf_working is None:
@@ -275,7 +275,7 @@ class sim_twotires:
         Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
 
 
-        remaining_long_grip = [vehicle.f_long_remain(2, Nr, Fr_lat)[0],vehicle.f_long_remain(2, Nf, Ff_lat)[0]]
+        remaining_long_grip = [vehicle.f_long_remain(2, Nr, Fr_lat, False)[0],vehicle.f_long_remain(2, Nf, Ff_lat, True)[0]]
         F_req_long = a_long*vehicle.mass+vehicle.drag(vf,aero_mode)
         if F_req_long < 0:
           status = S_BRAKING
@@ -295,8 +295,8 @@ class sim_twotires:
           remaining_long_grip[0]-=F_req_long
           Fr_long = F_req_long
 
-        Fr_remaining = vehicle.f_long_remain(2, Nr, Fr_lat)[0]
-        Ff_remaining = vehicle.f_long_remain(2, Nf, Ff_lat)[0]
+        Fr_remaining = vehicle.f_long_remain(2, Nr, Fr_lat, False)[0]
+        Ff_remaining = vehicle.f_long_remain(2, Nf, Ff_lat, True)[0]
 
     if v0+vf > 0:
       tf = t0 + segment.length/((v0+vf)/2)
@@ -406,7 +406,7 @@ class sim_twotires:
             middle_brake_bound = i
             upper_brake_bound = i-1
           else:
-            print ('no bam; %d' % middle_brake_bound)
+            # print ('no bam; %d' % middle_brake_bound)
             middle_brake_bound = middle_brake_bound_prop
             i = middle_brake_bound
           output = np.copy(precrash_output)

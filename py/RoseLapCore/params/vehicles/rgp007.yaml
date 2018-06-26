@@ -10,14 +10,24 @@ cp_height: [0.9,0.9,0.9]
 cp_bias: [0.6,0.6,0.6]
 
 # Longitudinal Forces
-tire_mu_x: 2.8196
-tire_offset_x: 4.73
+front_tire_mu_x: 2.8196
+front_tire_offset_x: 4.73
 
 # Lateral Forces
-tire_mu_y: 2.0050
-tire_offset_y: 8.61
+front_tire_mu_y: 2.0050
+front_tire_offset_y: 8.61
 
-tire_radius: 0.75
+front_tire_radius: 0.75
+
+# Longitudinal Forces
+rear_tire_mu_x: 2.8196
+rear_tire_offset_x: 4.73
+
+# Lateral Forces
+rear_tire_mu_y: 2.0050
+rear_tire_offset_y: 8.61
+
+rear_tire_radius: 0.75
 
 # CORRECT: 370 lb car and 180 lb driver
 mass: 550
