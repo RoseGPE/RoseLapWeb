@@ -29,7 +29,9 @@ O_CO2 = 14
 O_AERO_MODE = 15
 
 O_MATRIX_COLS = 16
-
+O_NAMES = ["Time","Distance","Velocity","Front Normal Force","Rear Normal Force","Sector","Status","Gear","Longitudinal Acc.","Lateral Acc.", "Remaining Front Force", "Remaining Rear Force", "Curvature", "Engine Speed", "CO2", "Aero Mode"]
+O_UNITS = ["s","ft","ft/s","lb","lb","","","","G's","G's","lb","lb","ft^-1","RPM","lbm",""]
+O_LIMITS = [[0,120],[0,7000],[0,90],[0,2000],[0,2000],[0,100],[0,10],[0,6],[-5,5],[0,5],[0,2000],[0,2000],[0,0.1],[3000,16000],[0,1.5],[0,3]]
 
 # Shifting status codes
 IN_PROGRESS = 0
