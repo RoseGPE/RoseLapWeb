@@ -154,6 +154,8 @@ def points_in_each_seg_slow(path, dx):
   s = np.array([])
   k = np.array([])
   d = np.array([])
+  l = np.array([0])
+  firsttime = True
   sectors = []
   for seg in path:
     ls = np.linspace(0,1,seg.length()/dx)[:-1]
@@ -163,8 +165,19 @@ def points_in_each_seg_slow(path, dx):
     a = np.append(a, x)
     s = np.append(s, np.ones_like(x)*len(sectors))
     sectors.append(a.shape[0])
-  print(k)
-  return (np.stack((a.real,-a.imag,k,s.real),axis=1),sectors)
+  for i in range(1,len(a)):
+    l = np.append(l, l[-1]+math.hypot(a.real[i]-a.real[i-1],-a.imag[i]+a.imag[i-1]))
+  # print(k)
+  spl = UnivariateSpline(l, k, k=2)
+  spl.set_smoothing_factor(0.005)
+  lsp = l #np.linspace(min(l),max(l), l[-1]/dx)
+  knew = spl(lsp)
+
+  # plt.plot(l,k,'.')
+  # plt.plot(lsp,knew, lw=2)
+  # plt.show()
+
+  return (np.stack((a.real,-a.imag,knew,s.real),axis=1),sectors)
 
 class Segment(object):
   def __init__(self,x1=None,y1=None,x2=None,y2=None,x3=None,y3=None,sector=0,endpoint=False,length=None,curvature=None):
@@ -190,9 +203,11 @@ class Segment(object):
           self.curvature = 0
         else:
           self.curvature = 4*area/(self.length_m*self.length_p*self.length_secant)
-      # if not (curvature is None):
-      #   self.curvature = curvature
+      if not (curvature is None):
+        # print('override curv')
+        self.curvature = curvature
     else:
+      # print('override all')
       self.x = x2
       self.y = y2
       self.length = length
@@ -322,6 +337,13 @@ def seg_points_svg(points,open_ended):
         overk = True
         ip = i
     segs.append(Segment(points[im,0], points[im,1], points[i,0], points[i,1], points[ip,0], points[ip,1], points[i,3], overk, curvature=points[i,2]))
+  # for i in range(1,len(segs)-1):
+  #   d1 = segs[i].curvature-segs[i-1].curvature
+  #   d2 = segs[i].curvature-segs[i+1].curvature
+
+  #   if d1 > 0.005 and d2 > 0.005:
+  #     segs[i].curvature = (segs[i-1].curvature+segs[i+1].curvature)/2
+
   return segs
 
 def plot_segments(segments):
@@ -381,9 +403,10 @@ def rlt_to_segments(filename):
 if __name__ == '__main__':
   import sys
   segs = file_to_segments(sys.argv[1], float(sys.argv[2]), True)
+  
   #[print(x.x, x.y, x.curvature, x.sector) for x in segs]
-  try:
-    plot_segments (segs)
-  except:
-    print("plot_segments failed")
-    plt.show()
+  # try:
+  #   plot_segments (segs)
+  # except:
+  #   print("plot_segments failed")
+  plt.show()

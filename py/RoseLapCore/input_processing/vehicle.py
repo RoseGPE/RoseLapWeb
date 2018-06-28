@@ -76,6 +76,7 @@ class Vehicle(object):
 
   def prep(self):
     self.mass = self.mass / self.g
+    self.moi_yaw = self.moi_yaw / self.g
 
   def __init__(self, v_OBJ):
     self.g = g

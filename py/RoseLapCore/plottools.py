@@ -25,7 +25,7 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
   alat = output[:, sim.O_LAT_ACC]
   eng_rpm = output[:, sim.O_ENG_RPM]
 
-  curv = output[:, sim.O_CURVATURE]*100
+  curv = output[:, sim.O_CURVATURE]
 
   if axis == 'time':
     plt.xlabel('Elapsed time')

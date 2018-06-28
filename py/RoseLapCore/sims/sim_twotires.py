@@ -26,36 +26,37 @@ class sim_twotires:
     Takes a vehicle step. Picks the aerodynamic strategy that works out to be the best.
     See substep for return value. If no aero strategy is valid, returns None, else returns the best.
     """
-    if brake:
-      out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
-      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-      if out_nor is not None:
-        if out_brk is not None:
-          if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
-            return out_brk
-          else:
-            return out_nor
-        else:
-          return out_nor
-      elif out_brk is not None:
-        return out_brk
-      else:
-        return None
-    else:
-      out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
-      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-      if out_nor is not None:
-        if out_drs is not None:
-          if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
-            return out_drs
-          else:
-            return out_nor
-        else:
-          return out_nor
-      elif out_drs is not None:
-        return out_drs
-      else:
-        return None
+    return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    # if brake:
+    #   out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
+    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    #   if out_nor is not None:
+    #     if out_brk is not None:
+    #       if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
+    #         return out_brk
+    #       else:
+    #         return out_nor
+    #     else:
+    #       return out_nor
+    #   elif out_brk is not None:
+    #     return out_brk
+    #   else:
+    #     return None
+    # else:
+    #   out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
+    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    #   if out_nor is not None:
+    #     if out_drs is not None:
+    #       if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
+    #         return out_drs
+    #       else:
+    #         return out_nor
+    #     else:
+    #       return out_nor
+    #   elif out_drs is not None:
+    #     return out_drs
+    #   else:
+    #     return None
     
   def substep(self, vehicle, prior_result, segment, segment_next, brake, shifting, gear, aero_mode):
     """
@@ -75,13 +76,21 @@ class sim_twotires:
     co2_elapsed = prior_result[O_CO2];
     status = S_TOPPED_OUT
 
+    
+
     # Determine how much grip is used keeping the car from skidding away
-    Ff_lat = (1-vehicle.weight_bias)*segment.curvature*vehicle.mass*v0**2
-    Fr_lat = vehicle.weight_bias*segment.curvature*vehicle.mass*v0**2
+    alpha = -v0**2*(segment.curvature-prior_result[O_CURVATURE])/segment.length
+    a_lat = segment.curvature*v0**2
+    Ff_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+    Fr_lat = vehicle.weight_bias*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+    
 
     # Determine the remaining longitudinal grip. If there isn't any, then we're out of luck.
     Ff_remaining, Ff_max_long = vehicle.f_long_remain(2, Nf, Ff_lat, True)
     Fr_remaining, Fr_max_long = vehicle.f_long_remain(2, Nr, Fr_lat, False)
+    _, Ff_max_lat = vehicle.f_lat_remain(2, Nf, Ff_lat, True)
+    _, Fr_max_lat = vehicle.f_lat_remain(2, Nr, Fr_lat, False)
+#    print("contribs",brake,Ff_max_lat,Fr_max_lat,Ff_lat,Fr_lat,alpha*vehicle.moi_yaw/vehicle.wheelbase_length)
     if Ff_remaining < 0 or Fr_remaining < 0:
       return None
 
@@ -158,8 +167,10 @@ class sim_twotires:
         + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
     # Determine lateral force requirements
-    Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
-    Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
+    alpha = -vf**2*(segment_next.curvature-segment.curvature)/segment_next.length
+    a_lat = segment_next.curvature*vf**2
+    Ff_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+    Fr_lat = vehicle.weight_bias*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
 
     # Figure out how much longitudinal grip remains
     remaining_long_grip = min(vehicle.f_long_remain(2, Nr, Fr_lat, False)[0], vehicle.f_long_remain(2, Nf, Ff_lat, True)[0])
@@ -192,8 +203,10 @@ class sim_twotires:
             + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
         # Calculate required lateral forces
-        Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
-        Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
+        alpha = -vf**2*(segment_next.curvature-segment.curvature)/segment_next.length
+        a_lat = segment_next.curvature*vf**2
+        Ff_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+        Fr_lat = vehicle.weight_bias*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
 
         # Calculate how much grip there is left
         remaining_long_grip = [vehicle.f_long_remain(2, Nr, Fr_lat, False)[0],vehicle.f_long_remain(2, Nf, Ff_lat, True)[0]]
@@ -238,14 +251,7 @@ class sim_twotires:
             vfu = vf
         
         if abs(vfu - vfl) < 1e-5:
-          # print("quit early at %d" % n)
           break
-
-        # If this distribution of grip is valid, make note
-        # if min(remaining_long_grip) >= 0:
-        #   valid_entries.append((n,vf,a_long))
-      # else:
-        # print("quit normally")
       # If nothing was valid then nothing will work on this step. Gotta brake earlier.
       if remaining_long_grip[0] < 0 or remaining_long_grip[1] < 0:
         if vf_working is None:
@@ -271,8 +277,10 @@ class sim_twotires:
             + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
             + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
-        Ff_lat = (1-vehicle.weight_bias)*segment_next.curvature*vehicle.mass*vf**2
-        Fr_lat = vehicle.weight_bias*segment_next.curvature*vehicle.mass*vf**2
+        alpha = -vf**2*(segment_next.curvature-segment.curvature)/segment_next.length
+        a_lat = segment_next.curvature*vf**2
+        Ff_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+        Fr_lat = vehicle.weight_bias*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
 
 
         remaining_long_grip = [vehicle.f_long_remain(2, Nr, Fr_lat, False)[0],vehicle.f_long_remain(2, Nf, Ff_lat, True)[0]]
@@ -364,7 +372,7 @@ class sim_twotires:
 
     # step loop set up
     i = 1
-    backup_amount = int(7.0/segments[0].length)
+    backup_amount = int(6.0/segments[0].length)
     bounds_found = False
     failpt = -1
     middle_brake_bound = -1
@@ -381,6 +389,7 @@ class sim_twotires:
         gear = vehicle.best_gear(output[i-1,O_VELOCITY], output[i,O_FR_REMAINING])
 
       # Take a step.
+      # print("execute %d" % i)
       step_result = self.step(vehicle,output[i-1,:], segments[i], (segments[i+1] if i+1<len(segments) else segments[i]), brake, shiftpt>=0, gear)
       if step_result is None:
         # Vehicle crashed. Initiate braking algorithm!
@@ -398,13 +407,15 @@ class sim_twotires:
         elif bounds_found:
           # print("%d,%.2f: too short (%d, %d, %d)" % (i,output[i,O_DISTANCE],lower_brake_bound,middle_brake_bound,upper_brake_bound))
           # If the bounds for braking have been found, then clearly we're on the 'too short' side of the bisection algorithm. Scoot away.
-          upper_brake_bound = middle_brake_bound
+          
           middle_brake_bound_prop = int(float(upper_brake_bound+lower_brake_bound)/2) 
-          if middle_brake_bound == middle_brake_bound_prop:
+          upper_brake_bound = middle_brake_bound
+          if abs(upper_brake_bound-lower_brake_bound) <= 1:
             # print('bam')
             i = middle_brake_bound - 1
             middle_brake_bound = i
             upper_brake_bound = i-1
+            lower_brake_bound-=1
           else:
             # print ('no bam; %d' % middle_brake_bound)
             middle_brake_bound = middle_brake_bound_prop

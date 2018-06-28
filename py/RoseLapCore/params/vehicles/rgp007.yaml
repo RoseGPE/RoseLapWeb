@@ -31,6 +31,7 @@ rear_tire_radius: 0.75
 
 # CORRECT: 370 lb car and 180 lb driver
 mass: 550
+moi_yaw: 1100 #lolnoclue. ft*lb
 # FIXME: No idea if ballpark. Also VARIABLE
 cg_height: 0.8
 
