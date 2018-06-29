@@ -26,37 +26,37 @@ class sim_twotires:
     Takes a vehicle step. Picks the aerodynamic strategy that works out to be the best.
     See substep for return value. If no aero strategy is valid, returns None, else returns the best.
     """
-    return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    # if brake:
-    #   out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
-    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    #   if out_nor is not None:
-    #     if out_brk is not None:
-    #       if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
-    #         return out_brk
-    #       else:
-    #         return out_nor
-    #     else:
-    #       return out_nor
-    #   elif out_brk is not None:
-    #     return out_brk
-    #   else:
-    #     return None
-    # else:
-    #   out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
-    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    #   if out_nor is not None:
-    #     if out_drs is not None:
-    #       if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
-    #         return out_drs
-    #       else:
-    #         return out_nor
-    #     else:
-    #       return out_nor
-    #   elif out_drs is not None:
-    #     return out_drs
-    #   else:
-    #     return None
+    # return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    if brake:
+      out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
+      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+      if out_nor is not None:
+        if out_brk is not None:
+          if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
+            return out_brk
+          else:
+            return out_nor
+        else:
+          return out_nor
+      elif out_brk is not None:
+        return out_brk
+      else:
+        return None
+    else:
+      out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
+      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+      if out_nor is not None:
+        if out_drs is not None:
+          if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
+            return out_drs
+          else:
+            return out_nor
+        else:
+          return out_nor
+      elif out_drs is not None:
+        return out_drs
+      else:
+        return None
     
   def substep(self, vehicle, prior_result, segment, segment_next, brake, shifting, gear, aero_mode):
     """

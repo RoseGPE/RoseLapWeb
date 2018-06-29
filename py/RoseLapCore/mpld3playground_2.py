@@ -114,6 +114,20 @@ class InteractiveLegendPlugin(PluginBase):
       cursor: pointer;
       font-size: 10pt;
     }
+    .legend {
+        width: 500px;
+        border: none;
+    }
+    .legend_box {
+        box-sizing: border-box;
+        width: 16.6%;
+        border: none;
+        float: left;
+        text-align: center;
+    }
+    .name-list {
+        width: 100px;
+    }
     """
 
     def __init__(self, plot_elements, labels, ax=None,
@@ -183,14 +197,14 @@ xys = np.array([[s.x,s.y] for s in segments])
 output = sim.solve(vehicle, segments[:len(segments)/1])
 
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(16,9))
 line_collections = []
 x = xys[:,0]
 y = xys[:,1]
 # df = pd.DataFrame(index=range(len(x)))
 # for i in range(sims.O_MATRIX_COLS):
 z = output[:,sims.O_VELOCITY]
-line_collections.append(ax.scatter(x, y, c=z, s=8))
+line_collections.append(ax.scatter(x, y, c=z, s=20))
 
 	# df[sims.O_NAMES[i]] = z
 ax.axis('equal')

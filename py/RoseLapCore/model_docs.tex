@@ -338,7 +338,7 @@ The vehicle physics begin with the summation of forces and moments in the vertic
 	\Sigma F_{vert} = N_{f} + N_{r} - m g - F_{down}(v_0) = m a_{vert} = 0 \\
 	\Sigma F_{lat}  = F_{tire,lat,f} + F_{tire,lat,f} = m a_{lat} = m v^2 k \\
 	\Sigma F_{long} = F_{tire,long,f} + F_{tire,long,f} - F_{drag}(v_0) = m a_{long} \\	
-	\Sigma M_{vert} = F_{tire,lat,f} l_{wheelbase} = m a_{lat} l_{CG} = m v^2 k l_{CG}\\
+	\Sigma M_{vert} = F_{tire,lat,f} l_{wheelbase} = m a_{lat} l_{CG} = m v^2 k l_{CG} + I_{yaw} \alpha \\
 	\Sigma M_{lat}  = N_{f} l_{wheelbase} + F_{drag}(v_0) h_{CP} - F_{down}(v_0) l_{CP} - m g l_{CG} = m a_{long} h_{CG}
 \end{align}
 
