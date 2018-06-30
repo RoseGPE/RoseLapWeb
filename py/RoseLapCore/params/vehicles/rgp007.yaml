@@ -29,6 +29,17 @@ rear_tire_offset_y: 8.61
 
 rear_tire_radius: 0.75
 
+
+# Longitudinal Forces
+comb_tire_mu_x: 2.8196
+comb_tire_offset_x: 4.73
+
+# Lateral Forces
+comb_tire_mu_y: 2.0050
+comb_tire_offset_y: 8.61
+
+comb_tire_radius: 0.75
+
 # CORRECT: 370 lb car and 180 lb driver
 mass: 550
 moi_yaw: 1100 #lolnoclue. ft*lb

@@ -48,8 +48,11 @@ class Vehicle(object):
         besti = i
     return besti
 
-  def f_lat_remain(self, n_tires, f_norm, f_long, front=False):
-    if front:
+  def f_lat_remain(self, n_tires, f_norm, f_long, front=None):
+    if front is None:
+      f_x_max = self.comb_tire_mu_x*(f_norm/n_tires) + self.comb_tire_offset_x
+      f_y_max = self.comb_tire_mu_y*(f_norm/n_tires) + self.comb_tire_offset_y
+    elif front:
       f_x_max = self.front_tire_mu_x*(f_norm/n_tires) + self.front_tire_offset_x
       f_y_max = self.front_tire_mu_y*(f_norm/n_tires) + self.front_tire_offset_y
     else:
@@ -61,8 +64,11 @@ class Vehicle(object):
     f_lat = math.sqrt(max(1-(abs(f_long)/n_tires)**2/f_x_max/f_x_max,0))*f_y_max
     return (f_lat*n_tires, f_y_max*n_tires)
 
-  def f_long_remain(self, n_tires, f_norm, f_lat, front=False):
-    if front:
+  def f_long_remain(self, n_tires, f_norm, f_lat, front=None):
+    if front is None:
+      f_x_max = self.comb_tire_mu_x*(f_norm/n_tires) + self.comb_tire_offset_x
+      f_y_max = self.comb_tire_mu_y*(f_norm/n_tires) + self.comb_tire_offset_y
+    elif front:
       f_x_max = self.front_tire_mu_x*(f_norm/n_tires) + self.front_tire_offset_x
       f_y_max = self.front_tire_mu_y*(f_norm/n_tires) + self.front_tire_offset_y
     else:
