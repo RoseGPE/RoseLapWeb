@@ -8,6 +8,9 @@ Point mass model
 It's a unicycle! Fast, right?
 """
 
+def derate_curvature(curv, raddl):
+  return curv/(1.0 + raddl*curv)
+
 def floor_sqrt(x):
   """
   Like sqrt but with a floor. If x <= 0, return 0.
@@ -76,7 +79,7 @@ class sim_pointmass:
 
     
     # How much grip is needed to keep the car from skidding away
-    Ftire_lat = segment.curvature*vehicle.mass*v0**2
+    Ftire_lat = derate_curvature(segment.curvature,vehicle.r_add)*vehicle.mass*v0**2
 
     # Determine the remaining longitudinal grip. If there isn't any, then we're out of luck.
     Ftire_remaining, Ftire_max_long = vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(v0,aero_mode), Ftire_lat)
@@ -172,7 +175,7 @@ class sim_pointmass:
       status,
       gear,
       a_long / vehicle.g, 
-      (vavg ** 2) * segment.curvature / vehicle.g, 
+      (vavg ** 2) * derate_curvature(segment.curvature,vehicle.r_add) / vehicle.g, 
       Ftire_remaining,
       0,
       segment.curvature,
@@ -185,7 +188,7 @@ class sim_pointmass:
 
   def compute_excess(self, vehicle, segment, vf, aero_mode):
     # Returns how much tire grip there is after that needed to overcome drag
-    return vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(vf, aero_mode), vehicle.mass*vf**2*segment.curvature)[0] - vehicle.drag(vf, aero_mode)
+    return vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(vf, aero_mode), vehicle.mass*vf**2*derate_curvature(segment.curvature,vehicle.r_add))[0] - vehicle.drag(vf, aero_mode)
 
   def solve(self, vehicle, segments, output_0 = None):
     # set up initial stuctures

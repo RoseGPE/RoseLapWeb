@@ -35,6 +35,8 @@ moi_yaw: 1100 #lolnoclue. ft*lb
 # FIXME: No idea if ballpark. Also VARIABLE
 cg_height: 0.8
 
+r_add: 0 # simulate a smaller or wider wheelbase with this parameter
+
 
 # VARIABLE: this should be studied to determine a good value and then stick with it
 brake_bias: 0.67

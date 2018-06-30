@@ -149,7 +149,7 @@ def pointify_dxf(dxf_output, connectivity, dl):
       intermediates.append(len(pts))
   return (np.array(pts),intermediates)
 
-def points_in_each_seg_slow(path, dx):
+def points_in_each_seg_slow(path, dx, plot):
   a = np.array([])
   s = np.array([])
   k = np.array([])
@@ -173,9 +173,9 @@ def points_in_each_seg_slow(path, dx):
   lsp = l #np.linspace(min(l),max(l), l[-1]/dx)
   knew = spl(lsp)
 
-  # plt.plot(l,k,'.')
-  # plt.plot(lsp,knew, lw=2)
-  # plt.show()
+  if plot:
+    plt.plot(l,k,'.')
+    plt.plot(lsp,knew, lw=2)
 
   return (np.stack((a.real,-a.imag,knew,s.real),axis=1),sectors)
 
@@ -378,7 +378,7 @@ def file_to_segments(filename, dl, plot=False):
     testpath,attrs = svg2paths(filename) 
     # print(testpath)
     testpath = testpath[0]
-    pts,sectors = points_in_each_seg_slow(testpath, dl)
+    pts,sectors = points_in_each_seg_slow(testpath, dl, plot)
     return seg_points_svg(pts, max(abs(pts[0,:]-pts[-1,:])) > epsilon)
   elif filename[-4:].lower() == '.log':
     return seg_points_trackwalker(filename, dl, plot)

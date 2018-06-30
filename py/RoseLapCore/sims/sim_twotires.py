@@ -8,6 +8,8 @@ Two tire model
 Imagine a point mass with two tires, that's this model!
 """
 
+def derate_curvature(curv, raddl):
+  return curv/(1.0 + raddl*curv)
 
 def floor_sqrt(x):
   """
@@ -79,8 +81,8 @@ class sim_twotires:
     
 
     # Determine how much grip is used keeping the car from skidding away
-    alpha = -v0**2*(segment.curvature-prior_result[O_CURVATURE])/segment.length
-    a_lat = segment.curvature*v0**2
+    alpha = -v0**2*(derate_curvature(segment.curvature, vehicle.r_add)-derate_curvature(prior_result[O_CURVATURE], vehicle.r_add))/segment.length
+    a_lat = derate_curvature(segment.curvature, vehicle.r_add)*v0**2
     Ff_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
     Fr_lat = vehicle.weight_bias*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
     
@@ -167,8 +169,8 @@ class sim_twotires:
         + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
     # Determine lateral force requirements
-    alpha = -vf**2*(segment_next.curvature-segment.curvature)/segment_next.length
-    a_lat = segment_next.curvature*vf**2
+    alpha = -vf**2*(derate_curvature(segment_next.curvature, vehicle.r_add)-derate_curvature(segment.curvature, vehicle.r_add))/segment_next.length
+    a_lat = derate_curvature(segment_next.curvature, vehicle.r_add)*vf**2
     Ff_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
     Fr_lat = vehicle.weight_bias*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
 
@@ -203,8 +205,8 @@ class sim_twotires:
             + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
         # Calculate required lateral forces
-        alpha = -vf**2*(segment_next.curvature-segment.curvature)/segment_next.length
-        a_lat = segment_next.curvature*vf**2
+        alpha = -vf**2*(derate_curvature(segment_next.curvature, vehicle.r_add)-derate_curvature(segment.curvature, vehicle.r_add))/segment_next.length
+        a_lat = derate_curvature(segment_next.curvature, vehicle.r_add)*vf**2
         Ff_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
         Fr_lat = vehicle.weight_bias*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
 
@@ -277,8 +279,8 @@ class sim_twotires:
             + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
             + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
-        alpha = -vf**2*(segment_next.curvature-segment.curvature)/segment_next.length
-        a_lat = segment_next.curvature*vf**2
+        alpha = -vf**2*(derate_curvature(segment_next.curvature, vehicle.r_add)-derate_curvature(segment.curvature, vehicle.r_add))/segment_next.length
+        a_lat = derate_curvature(segment_next.curvature, vehicle.r_add)*vf**2
         Ff_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
         Fr_lat = vehicle.weight_bias*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
 
@@ -325,7 +327,7 @@ class sim_twotires:
       status,
       gear,
       a_long / vehicle.g, 
-      (v0 ** 2) * segment.curvature / vehicle.g, 
+      (v0 ** 2) * derate_curvature(segment.curvature, vehicle.r_add) / vehicle.g, 
       Ff_remaining, 
       Fr_remaining, 
       segment.curvature,
