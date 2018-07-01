@@ -225,7 +225,7 @@ class sim_twotires:
             else:
               remaining_long_grip[1] -= -F_req_long
           else:
-            F_brake = -F_req_long/vehicle.front_brake_bias()
+            F_brake = -F_req_long
             remaining_long_grip[0] -= F_brake*vehicle.rear_brake_bias()
             remaining_long_grip[1] -= F_brake*vehicle.front_brake_bias()
         else:
@@ -296,7 +296,7 @@ class sim_twotires:
             else:
               remaining_long_grip[1] -= -F_req_long
           else:
-            F_brake = -F_req_long/vehicle.front_brake_bias()
+            F_brake = -F_req_long
             remaining_long_grip[0] -= F_brake*vehicle.rear_brake_bias()
             remaining_long_grip[1] -= F_brake*vehicle.front_brake_bias()
           Fr_long = -1
@@ -317,22 +317,47 @@ class sim_twotires:
     if Fr_long > 0:
       co2_elapsed += segment.length*Fr_long*vehicle.co2_factor/vehicle.e_factor
 
+    # output = np.array([
+    #   tf,
+    #   xf,
+    #   vf,
+    #   Nf,
+    #   Nr, 
+    #   segment.sector,
+    #   status,
+    #   gear,
+    #   a_long / vehicle.g, 
+    #   (v0 ** 2) * derate_curvature(segment.curvature, vehicle.r_add) / vehicle.g, 
+    #   Ff_remaining, 
+    #   Fr_remaining, 
+    #   segment.curvature,
+    #   eng_rpm,
+
+    #   co2_elapsed,
+    #   aero_mode
+    # ])
+
     output = np.array([
       tf,
       xf,
       vf,
       Nf,
-      Nr, 
+      0,
+      Nr,
+      0, 
       segment.sector,
       status,
       gear,
       a_long / vehicle.g, 
       (v0 ** 2) * derate_curvature(segment.curvature, vehicle.r_add) / vehicle.g, 
+      0,
+      0,
       Ff_remaining, 
-      Fr_remaining, 
+      0,
+      Fr_remaining,
+      0,
       segment.curvature,
       eng_rpm,
-
       co2_elapsed,
       aero_mode
     ])
@@ -377,6 +402,7 @@ class sim_twotires:
     backup_amount = int(6.0/segments[0].length)
     bounds_found = False
     failpt = -1
+    precrash_i = -1
     middle_brake_bound = -1
     lower_brake_bound = -1
     upper_brake_bound = -1
@@ -404,6 +430,9 @@ class sim_twotires:
           brake = True
           bounds_found = False
           failpt = i-1
+          precrash_i = i
+          while segments[failpt-1].curvature < segments[failpt].curvature and failpt<len(segments):
+            failpt += 1
           lower_brake_bound = i
           i = lower_brake_bound
         elif bounds_found:
@@ -446,7 +475,7 @@ class sim_twotires:
       elif failpt>=0 and not bounds_found:
         # print('%d,%.2f: nailed it at %d' % (i, step_result[O_VELOCITY], lower_brake_bound))
         bounds_found = True
-        upper_brake_bound = failpt-1 #lower_brake_bound+backup_amount
+        upper_brake_bound = precrash_i-1 #lower_brake_bound+backup_amount
         middle_brake_bound = int(float(upper_brake_bound+lower_brake_bound)/2)
         i = middle_brake_bound
         output = np.copy(precrash_output)

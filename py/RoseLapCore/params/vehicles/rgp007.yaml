@@ -40,9 +40,15 @@ comb_tire_offset_y: 8.61
 
 comb_tire_radius: 0.75
 
+k_roll_front: 100.0 # ft-lbf / deg
+k_roll_rear:  200.0 # ft-lbf / deg
+k_chassis:    800.0 # ft-lbf / deg
+track_front: 4.0
+track_rear:  4.0
+
 # CORRECT: 370 lb car and 180 lb driver
 mass: 550
-moi_yaw: 1100 #lolnoclue. ft*lb
+moi_yaw: 0 #1100 #lolnoclue. ft*lb
 # FIXME: No idea if ballpark. Also VARIABLE
 cg_height: 0.8
 
