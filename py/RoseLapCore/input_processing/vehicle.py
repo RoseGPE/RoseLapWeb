@@ -106,6 +106,7 @@ class Vehicle(object):
       f_long = [0,0]
       f_long[b] = f_x_max[b]*math.sqrt(max(1-f_lat**2/f_x_max[b]**2,0))
       f_long[s] = f_x_max[s]
+      # print("OH???",f_long)
       return (f_long, f_x_max)
 
     fym1 = f_y_max[0]
@@ -124,6 +125,9 @@ class Vehicle(object):
     #fy1 =  (fxm1**2*fy*fym2 - fxm1**2*fym2**2 + fxm2**2*fym1**2)/(fxm1**2*fym2 + fxm2**2*fym1) optimized solution
 
     fy2 = f_lat-fy1
+
+    # if abs(fy1-fy2) > 0:
+    # print("ERROR!!!!!!!!!",fy1,fy2)
     
     f_long1 = f_x_max[0]*math.sqrt(max(1-fy1**2/f_y_max[0]**2,0))
     f_long2 = f_x_max[1]*math.sqrt(max(1-fy2**2/f_y_max[1]**2,0))

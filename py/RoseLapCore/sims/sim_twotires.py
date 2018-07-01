@@ -94,7 +94,7 @@ class sim_twotires:
     _, Fr_max_lat = vehicle.f_lat_remain(2, Nr, Fr_lat, False)
 #    print("contribs",brake,Ff_max_lat,Fr_max_lat,Ff_lat,Fr_lat,alpha*vehicle.moi_yaw/vehicle.wheelbase_length)
     if Ff_remaining < 0 or Fr_remaining < 0:
-      print('failpt A')
+      # print('failpt A')
       return None
 
     # Determine how much force the engine can produce.
@@ -186,7 +186,8 @@ class sim_twotires:
       # If we were scheduled to coast, we're not using our tires anyways, so we're kinda screwed anyways. 
       # @FIXME: THIS MIGHT BE THE PROBLEM!!!!!!! If you are midway through a shift when you hit a corner, there's no recourse. Not sure how to solve.
       if shifting == IN_PROGRESS and not brake:
-        print('failpt B')
+        # print('failpt B')
+        vfu = floor_sqrt(v0**2 + 2*(- vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
         return None
       valid_entries = []
       for n in range(N_ITERS):
@@ -221,11 +222,14 @@ class sim_twotires:
         if F_req_long < 0:
           status = S_BRAKING
           if vehicle.perfect_brake_bias:
-            if remaining_long_grip[0] > -F_req_long:
-              remaining_long_grip[1] -= (-F_req_long-remaining_long_grip[0])
-              remaining_long_grip[0] = 0
+            order = np.argsort(remaining_long_grip)
+            if remaining_long_grip[order[0]] < F_req_long:
+              F_req_long -= remaining_long_grip[order[0]]
+              remaining_long_grip[order[0]] = 0
             else:
-              remaining_long_grip[1] -= -F_req_long
+              remaining_long_grip[order[0]] -= F_req_long
+              F_req_long = 0
+            remaining_long_grip[order[1]] -= F_req_long
           else:
             F_brake = -F_req_long
             remaining_long_grip[0] -= F_brake*vehicle.rear_brake_bias()
@@ -259,7 +263,7 @@ class sim_twotires:
       # If nothing was valid then nothing will work on this step. Gotta brake earlier.
       if remaining_long_grip[0] < 0 or remaining_long_grip[1] < 0:
         if vf_working is None:
-          print('failpt C')
+          # print('failpt C')
           return None
 
 
@@ -293,11 +297,14 @@ class sim_twotires:
         if F_req_long < 0:
           status = S_BRAKING
           if vehicle.perfect_brake_bias:
-            if remaining_long_grip[0] > -F_req_long:
-              remaining_long_grip[1] -= (-F_req_long-remaining_long_grip[0])
-              remaining_long_grip[0] = 0
+            order = np.argsort(remaining_long_grip)
+            if remaining_long_grip[order[0]] < F_req_long:
+              F_req_long -= remaining_long_grip[order[0]]
+              remaining_long_grip[order[0]] = 0
             else:
-              remaining_long_grip[1] -= -F_req_long
+              remaining_long_grip[order[0]] -= F_req_long
+              F_req_long = 0
+            remaining_long_grip[order[1]] -= F_req_long
           else:
             F_brake = -F_req_long
             remaining_long_grip[0] -= F_brake*vehicle.rear_brake_bias()

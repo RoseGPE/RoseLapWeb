@@ -43,14 +43,14 @@ comb_tire_radius: 0.75
 k_roll_front: 100.0 # ft-lbf / deg
 k_roll_rear:  200.0 # ft-lbf / deg
 k_chassis:    800.0 # ft-lbf / deg
-track_front: 4.5
-track_rear:  4.4
+track_front: 1004.5
+track_rear:  1004.4
 
 # CORRECT: 370 lb car and 180 lb driver
 mass: 550
 moi_yaw: 0 #1100 #lolnoclue. ft*lb
 # FIXME: No idea if ballpark. Also VARIABLE
-cg_height: 0.8
+cg_height: 0.6
 
 r_add: 0 # simulate a smaller or wider wheelbase with this parameter
 

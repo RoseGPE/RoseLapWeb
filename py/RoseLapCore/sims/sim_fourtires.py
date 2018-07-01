@@ -129,11 +129,11 @@ class sim_fourtires:
       # Two different brake strategies: Perfect biasing and static bias
       status = S_BRAKING
       if vehicle.perfect_brake_bias:
-        Fr_long = -sum(Fr_remaining)
-        Ff_long = -sum(Ff_remaining)
+        Fr_long = -min(Fr_remaining)*2
+        Ff_long = -min(Ff_remaining)*2
       else:
         # Find which tire limits the force, and base force off of it
-        F_brake = min(sum(Ff_remaining)/vehicle.front_brake_bias(), sum(Fr_remaining)/vehicle.rear_brake_bias())
+        F_brake = min(min(Ff_remaining)*2/vehicle.front_brake_bias(), min(Fr_remaining)*2/vehicle.rear_brake_bias())
         Fr_long = -F_brake*vehicle.rear_brake_bias()
         Ff_long = -F_brake*vehicle.front_brake_bias()
       # Gear is undefined when shifting
@@ -159,9 +159,9 @@ class sim_fourtires:
           status = S_DRAG_LIM
 
       # Still not allowed to use more force than your tire can provide
-      if Fr_long > sum(Fr_remaining):
+      if Fr_long > min(Fr_remaining)*2:
         status = S_TIRE_LIM_ACC
-        Fr_long = sum(Fr_remaining)
+        Fr_long = min(Fr_remaining)*2
 
       if eng_rpm > vehicle.engine_rpms[-1]:
         status = S_TOPPED_OUT  
@@ -175,7 +175,7 @@ class sim_fourtires:
 
     # Also determine limits for top and low speeds if grip were reassigned
     vfu = floor_sqrt(v0**2 + 2*(Fr_engine_limit - vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
-    vfl = floor_sqrt(v0**2 + 2*(-sum(Ff_remaining) -sum(Fr_remaining) - vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
+    vfl = floor_sqrt(v0**2 + 2*(-min(Ff_remaining)*2 -min(Fr_remaining)*2 - vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
 
     
     # Calculate normal force on each tire
@@ -198,7 +198,7 @@ class sim_fourtires:
 
     # Figure out how much longitudinal grip remains
     remaining_long_grip = Ff_remaining+Fr_remaining
-    # print('remain', remaining_long_grip)
+    # # print('remain', remaining_long_grip)
 
     # Loop through a range of acceleration possiblities if the result from this step was invalid (try to fix this step)
     # This was bisection in single tire (for sustaining usage) but I couldn't get that to work here. Thus dumb iteration.
@@ -208,8 +208,9 @@ class sim_fourtires:
       # If we were scheduled to coast, we're not using our tires anyways, so we're kinda screwed anyways. 
       # @FIXME: THIS MIGHT BE THE PROBLEM!!!!!!! If you are midway through a shift when you hit a corner, there's no recourse. Not sure how to solve.
       if shifting == IN_PROGRESS and not brake:
-        print('failpt B')
-        return None
+        print('failpt B (recovery attempted)')
+        vfu = floor_sqrt(v0**2 + 2*(- vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
+        # return None
       valid_entries = []
       for n in range(N_ITERS):
         vf = (vfu+vfl)/2
@@ -244,15 +245,17 @@ class sim_fourtires:
         if F_req_long < 0:
           status = S_BRAKING
           if vehicle.perfect_brake_bias:
-            if min(remaining_long_grip[:2])*2 > -F_req_long:
-              remaining_long_grip[2] -= (-F_req_long/2-remaining_long_grip[0])
-              remaining_long_grip[3] -= (-F_req_long/2-remaining_long_grip[1])
+            order = np.argsort(remaining_long_grip)
+            for o in order[:-1]:
+              if remaining_long_grip[o] < F_req_long:
+                F_req_long -= remaining_long_grip[o]
+                remaining_long_grip[o] = 0
+              else:
+                remaining_long_grip[o] -= F_req_long
+                F_req_long = 0
 
-              remaining_long_grip[0] = 0
-              remaining_long_grip[1] = 0
-            else:
-              remaining_long_grip[2] -= -F_req_long/2
-              remaining_long_grip[3] -= -F_req_long/2
+            remaining_long_grip[order[-1]] -= F_req_long
+            
           else:
             F_brake = -F_req_long
             remaining_long_grip[0] -= F_brake*vehicle.front_brake_bias()/2
@@ -266,7 +269,7 @@ class sim_fourtires:
           remaining_long_grip[3]-=F_req_long/2
 
         if brake:
-          if min(remaining_long_grip) > 1e-2:
+          if min(remaining_long_grip) >= 0:
             vfu = vf # if you can, brake harder
             vf_working = vf
           elif min(remaining_long_grip[:2]) > min(remaining_long_grip[2:]): # grip problem is worse on the rear, maybe try less braking
@@ -276,7 +279,7 @@ class sim_fourtires:
         else:
           if F_req_long > Fr_engine_limit or shifting == IN_PROGRESS:
             vfu = vf # force bisect down; you can't be here
-          elif min(remaining_long_grip) > 1e-2:
+          elif min(remaining_long_grip) > 0:
             vfl = vf # try to go faster
             vf_working = vf
           elif min(remaining_long_grip[:2]) > min(remaining_long_grip[2:]): # grip problem is worse on the rear, maybe try more acceleration
@@ -325,15 +328,17 @@ class sim_fourtires:
         if F_req_long < 0:
           status = S_BRAKING
           if vehicle.perfect_brake_bias:
-            if min(remaining_long_grip[:2])*2 > -F_req_long:
-              remaining_long_grip[2] -= (-F_req_long/2-remaining_long_grip[0])
-              remaining_long_grip[3] -= (-F_req_long/2-remaining_long_grip[1])
+            order = np.argsort(remaining_long_grip)
+            for o in order[:-1]:
+              if remaining_long_grip[o] < F_req_long:
+                F_req_long -= remaining_long_grip[o]
+                remaining_long_grip[o] = 0
+              else:
+                remaining_long_grip[o] -= F_req_long
+                F_req_long = 0
 
-              remaining_long_grip[0] = 0
-              remaining_long_grip[1] = 0
-            else:
-              remaining_long_grip[2] -= -F_req_long/2
-              remaining_long_grip[3] -= -F_req_long/2
+            remaining_long_grip[order[-1]] -= F_req_long
+            
           else:
             F_brake = -F_req_long
             remaining_long_grip[0] -= F_brake*vehicle.front_brake_bias()/2
@@ -367,8 +372,8 @@ class sim_fourtires:
     # Ff_remaining,_ = vehicle.f_long_remain_pair([Nf1,Nf2], Ff_lat, True)
     # Fr_remaining,_ = vehicle.f_long_remain_pair([Nr1,Nr2], Fr_lat, False)
     # remaining_long_grip = Ff_remaining+Fr_remaining
-    # print([Nf1, Nf2, Nr1, Nr2])
-    # print(remaining_long_grip)
+    # # print([Nf1, Nf2, Nr1, Nr2])
+    # # print(remaining_long_grip)
     if min(remaining_long_grip) < 0:
       print('failpt WTF???')
 
@@ -426,7 +431,7 @@ class sim_fourtires:
       output[0,:] = output_0
       output[0,O_TIME] = 0
       output[0,O_DISTANCE] = 0
-      gear = vehicle.best_gear(output_0[O_VELOCITY], output_0[O_FR_REMAINING])
+      gear = vehicle.best_gear(output_0[O_VELOCITY], output_0[O_FR_REMAINING]+output_0[O_FR2_REMAINING])
       launched = True
 
     # Take the first step...
@@ -447,15 +452,15 @@ class sim_fourtires:
 
     while i<len(segments):
       if i<0:
-        print('sim_fourtires.solve had a major catastrophe; index moved below zero. Unable to restart.')
+        # print('sim_fourtires.solve had a major catastrophe; index moved below zero. Unable to restart.')
         return None
 
       # If the gear was undefined and the point where shifting happened is not defined, pick the best gear right off
       if (gear is None) and shiftpt < 0:
-        gear = vehicle.best_gear(output[i-1,O_VELOCITY], output[i,O_FR_REMAINING])
+        gear = vehicle.best_gear(output[i-1,O_VELOCITY], output[i,O_FR_REMAINING]+output[i,O_FR2_REMAINING])
 
       # Take a step.
-      # print("execute %d" % i)
+      # # print("execute %d" % i)
       step_result = self.step(vehicle,output[i-1,:], segments[i], (segments[i+1] if i+1<len(segments) else segments[i]), brake, shiftpt>=0, gear)
       if step_result is None:
         # Vehicle crashed. Initiate braking algorithm!
@@ -481,13 +486,13 @@ class sim_fourtires:
           middle_brake_bound_prop = int(float(upper_brake_bound+lower_brake_bound)/2) 
           upper_brake_bound = middle_brake_bound
           if abs(upper_brake_bound-lower_brake_bound) <= 1:
-            print('bam')
+            # print('bam')
             i = middle_brake_bound - 1
             middle_brake_bound = i
             upper_brake_bound = i-1
             lower_brake_bound-=1
           else:
-            # print ('no bam; %d' % middle_brake_bound)
+            # # print ('no bam; %d' % middle_brake_bound)
             middle_brake_bound = middle_brake_bound_prop
             i = middle_brake_bound
           output = np.copy(precrash_output)
@@ -500,12 +505,12 @@ class sim_fourtires:
             lower_brake_bound = 0
           i = lower_brake_bound
           output = np.copy(precrash_output)
-          print("to %d,%.2f" % (i,output[i,O_DISTANCE]))
+          # print("to %d,%.2f" % (i,output[i,O_DISTANCE]))
         # reset shifting params when braking
         gear = None
         shiftpt = -1
       elif i<=failpt:
-        print("%d,%.2f: still braking at v=%.2f" % (i,output[i,O_DISTANCE],output[i,O_VELOCITY]))
+        # print("%d,%.2f: still braking at v=%.2f" % (i,output[i,O_DISTANCE],output[i,O_VELOCITY]))
         # Vehicle still braking
         output[i] = step_result
         i+=1
@@ -516,21 +521,21 @@ class sim_fourtires:
         shift_v_req = 0
       # FIXME: This is needed for the bisection algorithm
       elif failpt>=0 and not bounds_found:
-        print('%d,%.2f: nailed it at %d' % (i, step_result[O_VELOCITY], lower_brake_bound))
+        # print('%d,%.2f: nailed it at %d' % (i, step_result[O_VELOCITY], lower_brake_bound))
         bounds_found = True
         #upper_brake_bound = precrash_i-1 #lower_brake_bound+backup_amount
         middle_brake_bound = int(float(upper_brake_bound+lower_brake_bound)/2)
         i = middle_brake_bound
         output = np.copy(precrash_output)
       elif failpt>=0 and bounds_found and abs(lower_brake_bound - upper_brake_bound) > 1:
-        print("%d,%.2f: converged (%d,%d,%d)" % (i,output[i,O_DISTANCE],lower_brake_bound,middle_brake_bound,upper_brake_bound))
+        # print("%d,%.2f: converged (%d,%d,%d)" % (i,output[i,O_DISTANCE],lower_brake_bound,middle_brake_bound,upper_brake_bound))
         # If past the point of crashing and we've not yet successfully bisected to convergence
         lower_brake_bound = middle_brake_bound
         middle_brake_bound = int(float(upper_brake_bound+lower_brake_bound)/2)
         i = middle_brake_bound
         output = np.copy(precrash_output)
       else:
-        print("%d,%.2f: normal op" % (i,output[i-1,O_DISTANCE]))
+        # print("%d,%.2f: normal op" % (i,output[i-1,O_DISTANCE]))
         # normal operation
 
         # quit braking
