@@ -6,8 +6,8 @@ import plottools
 
 times = []
 
-for st in ["four_tires"]: #["one_tire","two_tires","four_tires"]:
-	segments = trackseg.file_to_segments('params/tracks/testtrack.svg',0.2) #AutoX_3_31_2018_ant.LOG
+for st in ["one_tire","four_tires"]: #["one_tire","two_tires","four_tires"]:
+	segments = trackseg.file_to_segments('params/tracks/testtrack.svg',0.35) #AutoX_3_31_2018_ant.LOG
 
 	times.append([])
 	sim = sims.Simulation(st);
@@ -17,7 +17,7 @@ for st in ["four_tires"]: #["one_tire","two_tires","four_tires"]:
 	
 
 	output = sim.solve(vehicle, segments)
-	plottools.plot_velocity_and_events(output,'x',st)
+	plottools.plot_velocity_and_events(output,'t',st)
 	times[-1].append(output[-1,sims.O_TIME])
 	print(st)
 print("Total Times", times)

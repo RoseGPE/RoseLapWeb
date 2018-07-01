@@ -94,6 +94,7 @@ class sim_twotires:
     _, Fr_max_lat = vehicle.f_lat_remain(2, Nr, Fr_lat, False)
 #    print("contribs",brake,Ff_max_lat,Fr_max_lat,Ff_lat,Fr_lat,alpha*vehicle.moi_yaw/vehicle.wheelbase_length)
     if Ff_remaining < 0 or Fr_remaining < 0:
+      print('failpt A')
       return None
 
     # Determine how much force the engine can produce.
@@ -127,7 +128,7 @@ class sim_twotires:
       # @FIXME NOT PLAYED AROUND WITH ENOUGH WITH TWO TIRE MODEL!!!!
       # This logic helps absorb simulation oscillations (brake-accel oscillation on corners)
       # If there's curvature, and we were braking before (we are not anymore) or we were sustaining before with negligible curvature change, continue sustaining
-      if segment.curvature > 0 and (prior_result[O_STATUS] == S_BRAKING  or (abs(prior_result[O_CURVATURE] - segment.curvature)<=1e-5 and prior_result[O_STATUS] == S_SUSTAINING)):
+      if segment.curvature > 0 and (prior_result[O_STATUS] == S_BRAKING  or ((segment.curvature-prior_result[O_CURVATURE])>=-1e-4 and prior_result[O_STATUS] == S_SUSTAINING)):
         status = S_SUSTAINING
         Fr_long = vehicle.drag(v0, aero_mode)
       # If not sustaining, jammalam that throttle
@@ -185,6 +186,7 @@ class sim_twotires:
       # If we were scheduled to coast, we're not using our tires anyways, so we're kinda screwed anyways. 
       # @FIXME: THIS MIGHT BE THE PROBLEM!!!!!!! If you are midway through a shift when you hit a corner, there's no recourse. Not sure how to solve.
       if shifting == IN_PROGRESS and not brake:
+        print('failpt B')
         return None
       valid_entries = []
       for n in range(N_ITERS):
@@ -257,6 +259,7 @@ class sim_twotires:
       # If nothing was valid then nothing will work on this step. Gotta brake earlier.
       if remaining_long_grip[0] < 0 or remaining_long_grip[1] < 0:
         if vf_working is None:
+          print('failpt C')
           return None
 
 
@@ -431,8 +434,9 @@ class sim_twotires:
           bounds_found = False
           failpt = i-1
           precrash_i = i
-          while segments[failpt-1].curvature < segments[failpt].curvature and failpt<len(segments):
-            failpt += 1
+          # while segments[failpt-1].curvature < segments[failpt].curvature and failpt<len(segments):
+          #   failpt += 1
+          upper_brake_bound = i
           lower_brake_bound = i
           i = lower_brake_bound
         elif bounds_found:
@@ -455,6 +459,7 @@ class sim_twotires:
         else:
           # print("%d,%.2f: move back" % (i,output[i,O_DISTANCE]))
           # If we haven't found bounds yet, need to keep moving backwards til a survivable point is reached.
+          upper_brake_bound=lower_brake_bound
           lower_brake_bound-=backup_amount
           i = lower_brake_bound
           output = np.copy(precrash_output)
@@ -475,7 +480,7 @@ class sim_twotires:
       elif failpt>=0 and not bounds_found:
         # print('%d,%.2f: nailed it at %d' % (i, step_result[O_VELOCITY], lower_brake_bound))
         bounds_found = True
-        upper_brake_bound = precrash_i-1 #lower_brake_bound+backup_amount
+        # upper_brake_bound = precrash_i-1 #lower_brake_bound+backup_amount
         middle_brake_bound = int(float(upper_brake_bound+lower_brake_bound)/2)
         i = middle_brake_bound
         output = np.copy(precrash_output)

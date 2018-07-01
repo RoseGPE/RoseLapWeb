@@ -43,8 +43,8 @@ comb_tire_radius: 0.75
 k_roll_front: 100.0 # ft-lbf / deg
 k_roll_rear:  200.0 # ft-lbf / deg
 k_chassis:    800.0 # ft-lbf / deg
-track_front: 4.0
-track_rear:  4.0
+track_front: 4.5
+track_rear:  4.4
 
 # CORRECT: 370 lb car and 180 lb driver
 mass: 550
