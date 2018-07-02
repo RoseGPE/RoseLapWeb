@@ -22,6 +22,7 @@
 \addtolength{\topmargin}{-1.00in}
 \addtolength{\textheight}{1.5in}
 
+\def\D{\mathrm{d}}
 
 \begin{document}
 
@@ -326,11 +327,11 @@ To combat this problem, we simply dictate that the previous speed must be exceed
 \end{algorithmic}
 \end{algorithm}
 
-\section{Dual-Tire, Point-Mass Model}
+\section{Dual-Tire, Yaw-MOI Model}
 
 \subsection{Physics}
 
-A slight improvement can be made by accounting for the longitudinal load transfer induced by acceleration and heave of the vehicle. This enables us to study the effect of center-of-gravity (CG) and center-of-pressure (CP) locations, as well as brake biasing, and any other parameter that would effect or be effected by longitudinal load transfer.
+A slight improvement can be made by accounting for the longitudinal load transfer induced by acceleration and heave of the vehicle, and yaw moment effects. This enables us to study the effect of center-of-gravity (CG) and center-of-pressure (CP) locations, as well as brake biasing, and any other parameter that would effect or be effected by longitudinal load transfer.
 
 The vehicle physics begin with the summation of forces and moments in the vertical, longitudinal, and lateral directions.
 
@@ -342,7 +343,14 @@ The vehicle physics begin with the summation of forces and moments in the vertic
 	\Sigma M_{lat}  = N_{f} l_{wheelbase} + F_{drag}(v_0) h_{CP} - F_{down}(v_0) l_{CP} - m g l_{CG} = m a_{long} h_{CG}
 \end{align}
 
-where subscripts $f$ denote relation to the front tires, and $r$ denote relation to the rear tires. $l{CG}$ and $l_{CP}$ are the longitudinal distance from the rear tires to the CG and CP, respectively. $h_{CG}$ and $h_{CP}$ are the vertical height from the ground to the CG and CP, respectively. $l_{wheelbase}$ is the distance from the rear to front tires.
+where subscripts $f$ denote relation to the front tires, and $r$ denote relation to the rear tires. $l{CG}$ and $l_{CP}$ are the longitudinal distance from the rear tires to the CG and CP, respectively. $h_{CG}$ and $h_{CP}$ are the vertical height from the ground to the CG and CP, respectively. $l_{wheelbase}$ is the distance from the rear to front tires. $I_{yaw}$ is the moment of inertia about the vertical axis passing through the CG. $\alpha$ is the yaw acceleration, which is computed as:
+
+\begin{align}
+	\omega = \frac{v}{r} = v k \\
+	\alpha = \frac{\D \omega}{\D t} = v \frac{\D k}{\D t} + k \frac{\D v}{\D t} \\
+	\alpha = v \frac{\D k}{\D x} \frac{\D x}{\D t} + k a_{long} \\
+	\alpha = v^2 \frac{k_f - k_0}{\Delta x} + k_0 a_{long}
+\end{align}
 
 It should be noted that the summation of forces about the longitudinal axis results in the inertial force of the vehicle being the only thing to produce a moment, and as such, this is ignored, understanding that lateral load transfer is not modeled by this set of equations.
 

@@ -23,15 +23,14 @@ class sim_onetire:
   def __init__(self):
     pass
 
-    def step(self, vehicle, prior_result, segment, segment_next, brake, shifting, gear):
+  def step(self, vehicle, prior_result, segment, segment_next, brake, shifting, gear):
     """
     Takes a vehicle step. Picks the aerodynamic strategy that works out to be the best.
     See substep for return value. If no aero strategy is valid, returns None, else returns the best.
     """
     # return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
     if brake:
-      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_BRK)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and 
-         abs(vehicle.drag(prior_result[O_VELOCITY],AERO_BRK)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
+      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_BRK)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and abs(vehicle.drag(prior_result[O_VELOCITY],AERO_BRK)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
           return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
       out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
       out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
@@ -48,8 +47,7 @@ class sim_onetire:
       else:
         return None
     else:
-      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_DRS)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and 
-         abs(vehicle.drag(prior_result[O_VELOCITY],AERO_DRS)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
+      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_DRS)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and abs(vehicle.drag(prior_result[O_VELOCITY],AERO_DRS)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
           return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
       out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
       out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)

@@ -30,8 +30,7 @@ class sim_fourtires:
     """
     # return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
     if brake:
-      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_BRK)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and 
-         abs(vehicle.drag(prior_result[O_VELOCITY],AERO_BRK)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
+      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_BRK)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and abs(vehicle.drag(prior_result[O_VELOCITY],AERO_BRK)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
           return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
       out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
       out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
@@ -48,8 +47,7 @@ class sim_fourtires:
       else:
         return None
     else:
-      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_DRS)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and 
-         abs(vehicle.drag(prior_result[O_VELOCITY],AERO_DRS)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
+      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_DRS)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and abs(vehicle.drag(prior_result[O_VELOCITY],AERO_DRS)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
           return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
       out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
       out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
@@ -66,25 +64,25 @@ class sim_fourtires:
       else:
         return None
 
-  def compute_Ff_Fr(self, N, vehicle, v, segment, prior_curvature):
-    alpha = -v**2*(derate_curvature(segment.curvature, vehicle.r_add)-derate_curvature(prior_curvature, vehicle.r_add))/segment.length
+  def compute_Ff_Fr(self, N, vehicle, v, a_long, segment, prior_curvature):
+    alpha = v**2*(derate_curvature(segment.curvature, vehicle.r_add)-derate_curvature(prior_curvature, vehicle.r_add))/segment.length + segment.curvature*a_long
     a_lat = derate_curvature(segment.curvature, vehicle.r_add)*v**2
     kf = vehicle.k_roll_front
     kr = vehicle.k_roll_rear
     kcf = vehicle.k_chassis/(vehicle.weight_bias)
     kcr = vehicle.k_chassis/(1-vehicle.weight_bias)
 
-    Mint = -a_lat*vehicle.mass*vehicle.cg_height
+    Mint = a_lat*vehicle.mass*vehicle.cg_height
     Mf = Mint*kcf*kf*(kcr+kr)/(kcf*kcr*kf+kcf*kcr*kr+kcf*kf*kr+kcr*kf*kr)
     Mr = Mint*kcr*kr*(kcf+kf)/(kcf*kcr*kf+kcf*kcr*kr+kcf*kf*kr+kcr*kf*kr)
 
-    Nf1 = N[0]/2 + Mf/vehicle.track_front
-    Nf2 = N[0]/2 - Mf/vehicle.track_front
-    Nr1 = N[1]/2 + Mr/vehicle.track_rear
-    Nr2 = N[1]/2 - Mr/vehicle.track_rear
+    Nf1 = N[0]/2 - Mf/vehicle.track_front
+    Nf2 = N[0]/2 + Mf/vehicle.track_front
+    Nr1 = N[1]/2 - Mr/vehicle.track_rear
+    Nr2 = N[1]/2 + Mr/vehicle.track_rear
 
-    Ff_lat = (vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
-    Fr_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+    Ff_lat = (vehicle.weight_bias)*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+    Fr_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
 
     return (Nf1, Nf2, Nr1, Nr2, Ff_lat, Fr_lat)
     
@@ -105,6 +103,7 @@ class sim_fourtires:
     v0 = prior_result[O_VELOCITY];
     x0 = prior_result[O_DISTANCE];
     t0 = prior_result[O_TIME];
+    a_long = prior_result[O_LONG_ACC]*vehicle.g
     co2_elapsed = prior_result[O_CO2];
     status = S_TOPPED_OUT    
 
@@ -112,15 +111,15 @@ class sim_fourtires:
     Nr = Nr1+Nr2
 
     # Determine how much grip is used keeping the car from skidding away
-    Nf1, Nf2, Nr1, Nr2, Ff_lat, Fr_lat = self.compute_Ff_Fr([Nf,Nr],vehicle, v0, segment, prior_result[O_CURVATURE])
+    Nf1, Nf2, Nr1, Nr2, Ff_lat, Fr_lat = self.compute_Ff_Fr([Nf,Nr],vehicle, v0, a_long, segment, prior_result[O_CURVATURE])
 
     # Determine the remaining longitudinal grip. If there isn't any, then we're out of luck.
     Ff_remaining,_ = vehicle.f_long_remain_pair([Nf1,Nf2], Ff_lat, True)
     Fr_remaining,_ = vehicle.f_long_remain_pair([Nr1,Nr2], Fr_lat, False)
     if min(Ff_remaining+Fr_remaining) < 0:
-      print('failpt A')
-      print([Nf1, Nf2, Nr1, Nr2])
-      print(Ff_remaining+Fr_remaining)
+      # print('failpt A')
+      # print([Nf1, Nf2, Nr1, Nr2])
+      # print(Ff_remaining+Fr_remaining)
       return None
 
     # Determine how much force the engine can produce.
@@ -196,7 +195,7 @@ class sim_fourtires:
         + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
     # Determine how much grip is used keeping the car from skidding away
-    Nf1, Nf2, Nr1, Nr2, Ff_lat, Fr_lat = self.compute_Ff_Fr([Nf,Nr],vehicle, vf, segment_next, segment.curvature)
+    Nf1, Nf2, Nr1, Nr2, Ff_lat, Fr_lat = self.compute_Ff_Fr([Nf,Nr],vehicle, vf, a_long, segment_next, segment.curvature)
 
     # Determine the remaining longitudinal grip. If there isn't any, then we're out of luck.
     Ff_remaining,_ = vehicle.f_long_remain_pair([Nf1,Nf2], Ff_lat, True)
@@ -236,7 +235,7 @@ class sim_fourtires:
             + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
         # Determine how much grip is used keeping the car from skidding away
-        Nf1, Nf2, Nr1, Nr2, Ff_lat, Fr_lat = self.compute_Ff_Fr([Nf,Nr],vehicle, vf, segment_next, segment.curvature)
+        Nf1, Nf2, Nr1, Nr2, Ff_lat, Fr_lat = self.compute_Ff_Fr([Nf,Nr],vehicle, vf, a_long, segment_next, segment.curvature)
 
         # Determine the remaining longitudinal grip. If there isn't any, then we're out of luck.
         Ff_remaining,_ = vehicle.f_long_remain_pair([Nf1,Nf2], Ff_lat, True)
@@ -298,7 +297,7 @@ class sim_fourtires:
       # If nothing was valid then nothing will work on this step. Gotta brake earlier.
       if min(remaining_long_grip) < 0:
         if vf_working is None:
-          print('failpt C')
+          # print('failpt C')
           return None
         vf = vf_working
 
@@ -322,7 +321,7 @@ class sim_fourtires:
             + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
         # Determine how much grip is used keeping the car from skidding away
-        Nf1, Nf2, Nr1, Nr2, Ff_lat, Fr_lat = self.compute_Ff_Fr([Nf,Nr],vehicle, vf, segment_next, segment.curvature)
+        Nf1, Nf2, Nr1, Nr2, Ff_lat, Fr_lat = self.compute_Ff_Fr([Nf,Nr],vehicle, vf, a_long, segment_next, segment.curvature)
 
         # Determine the remaining longitudinal grip. If there isn't any, then we're out of luck.
         Ff_remaining,_ = vehicle.f_long_remain_pair([Nf1,Nf2], Ff_lat, True)
@@ -380,8 +379,8 @@ class sim_fourtires:
     # remaining_long_grip = Ff_remaining+Fr_remaining
     # # print([Nf1, Nf2, Nr1, Nr2])
     # # print(remaining_long_grip)
-    if min(remaining_long_grip) < 0:
-      print('failpt WTF???')
+    # if min(remaining_long_grip) < 0:
+    #   print('failpt WTF???')
 
     output = np.array([
       tf,
@@ -471,7 +470,7 @@ class sim_fourtires:
       if step_result is None:
         # Vehicle crashed. Initiate braking algorithm!
         if not brake:
-          print("%d,%.2f: start braking" % (i,output[i-1,O_DISTANCE]))
+          # print("%d,%.2f: start braking" % (i,output[i-1,O_DISTANCE]))
           # Start braking
 
           # Make a backup (deep) copy of the output matrix prior to crash. (enables bisection algorithm)
@@ -486,7 +485,7 @@ class sim_fourtires:
           lower_brake_bound = i
           i = lower_brake_bound
         elif bounds_found:
-          print("%d,%.2f: too short (%d, %d, %d)" % (i,output[i-1,O_DISTANCE],lower_brake_bound,middle_brake_bound,upper_brake_bound))
+          # print("%d,%.2f: too short (%d, %d, %d)" % (i,output[i-1,O_DISTANCE],lower_brake_bound,middle_brake_bound,upper_brake_bound))
           # If the bounds for braking have been found, then clearly we're on the 'too short' side of the bisection algorithm. Scoot away.
           
           middle_brake_bound_prop = int(float(upper_brake_bound+lower_brake_bound)/2) 
@@ -503,7 +502,7 @@ class sim_fourtires:
             i = middle_brake_bound
           output = np.copy(precrash_output)
         else:
-          print("%d,%.2f: move back" % (i,output[i-1,O_DISTANCE]))
+          # print("%d,%.2f: move back" % (i,output[i-1,O_DISTANCE]))
           # If we haven't found bounds yet, need to keep moving backwards til a survivable point is reached.
           upper_brake_bound=lower_brake_bound
           lower_brake_bound-=backup_amount

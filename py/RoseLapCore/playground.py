@@ -6,13 +6,13 @@ import plottools
 
 times = []
 
-for st in ["one_tire","two_tires","four_tires"]: #["one_tire","two_tires","four_tires"]:
+for st in ['two_tires']:#["one_tire","two_tires","four_tires"]: #["one_tire","two_tires","four_tires"]:
 	segments = trackseg.file_to_segments('params/tracks/testtrack.svg',0.35) #AutoX_3_31_2018_ant.LOG
 
 	times.append([])
 	sim = sims.Simulation(st);
 
-	vehicle  = ipvehicle.Vehicle(yaml.load(open('params/vehicles/rgp007.yaml','r'),True))
+	vehicle  = ipvehicle.Vehicle(yaml.load(open('params/vehicles/START_HERE.yaml','r'),True))
 	vehicle.prep()
 	
 

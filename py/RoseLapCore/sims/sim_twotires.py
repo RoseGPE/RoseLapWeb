@@ -28,43 +28,52 @@ class sim_twotires:
     Takes a vehicle step. Picks the aerodynamic strategy that works out to be the best.
     See substep for return value. If no aero strategy is valid, returns None, else returns the best.
     """
-    # return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    if brake:
-      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_BRK)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and 
-         abs(vehicle.drag(prior_result[O_VELOCITY],AERO_BRK)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
-          return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-      out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
-      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-      if out_nor is not None:
-        if out_brk is not None:
-          if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
-            return out_brk
-          else:
-            return out_nor
-        else:
-          return out_nor
-      elif out_brk is not None:
-        return out_brk
-      else:
-        return None
-    else:
-      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_DRS)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and 
-         abs(vehicle.drag(prior_result[O_VELOCITY],AERO_DRS)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
-          return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-      out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
-      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-      if out_nor is not None:
-        if out_drs is not None:
-          if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
-            return out_drs
-          else:
-            return out_nor
-        else:
-          return out_nor
-      elif out_drs is not None:
-        return out_drs
-      else:
-        return None
+    return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    # if brake:
+    #   if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_BRK)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and abs(vehicle.drag(prior_result[O_VELOCITY],AERO_BRK)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
+    #       return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    #   out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
+    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    #   if out_nor is not None:
+    #     if out_brk is not None:
+    #       if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
+    #         return out_brk
+    #       else:
+    #         return out_nor
+    #     else:
+    #       return out_nor
+    #   elif out_brk is not None:
+    #     return out_brk
+    #   else:
+    #     return None
+    # else:
+    #   if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_DRS)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and abs(vehicle.drag(prior_result[O_VELOCITY],AERO_DRS)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
+    #       return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    #   out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
+    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    #   if out_nor is not None:
+    #     if out_drs is not None:
+    #       if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
+    #         return out_drs
+    #       else:
+    #         return out_nor
+    #     else:
+    #       return out_nor
+    #   elif out_drs is not None:
+    #     return out_drs
+    #   else:
+    #     return None
+
+  def compute_Ff_Fr(self, vehicle, v, a_long, segment, prior_curvature):
+    alpha = v**2*(derate_curvature(segment.curvature, vehicle.r_add)-derate_curvature(prior_curvature, vehicle.r_add))/segment.length + segment.curvature*a_long
+    a_lat = derate_curvature(segment.curvature, vehicle.r_add)*v**2
+
+    alpha = 0
+
+    Ff_lat = (vehicle.weight_bias)*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+    Fr_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+
+    return (Ff_lat, Fr_lat)
     
   def substep(self, vehicle, prior_result, segment, segment_next, brake, shifting, gear, aero_mode):
     """
@@ -81,24 +90,18 @@ class sim_twotires:
     v0 = prior_result[O_VELOCITY];
     x0 = prior_result[O_DISTANCE];
     t0 = prior_result[O_TIME];
+    a_long = prior_result[O_LONG_ACC]*vehicle.g
     co2_elapsed = prior_result[O_CO2];
     status = S_TOPPED_OUT
 
     
 
     # Determine how much grip is used keeping the car from skidding away
-    alpha = -v0**2*(derate_curvature(segment.curvature, vehicle.r_add)-derate_curvature(prior_result[O_CURVATURE], vehicle.r_add))/segment.length
-    a_lat = derate_curvature(segment.curvature, vehicle.r_add)*v0**2
-    Ff_lat = vehicle.weight_bias*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
-    Fr_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
-    
+    Ff_lat, Fr_lat = self.compute_Ff_Fr(vehicle, v0, a_long, segment, prior_result[O_CURVATURE])
 
     # Determine the remaining longitudinal grip. If there isn't any, then we're out of luck.
     Ff_remaining, Ff_max_long = vehicle.f_long_remain(2, Nf, Ff_lat, True)
     Fr_remaining, Fr_max_long = vehicle.f_long_remain(2, Nr, Fr_lat, False)
-    _, Ff_max_lat = vehicle.f_lat_remain(2, Nf, Ff_lat, True)
-    _, Fr_max_lat = vehicle.f_lat_remain(2, Nr, Fr_lat, False)
-#    print("contribs",brake,Ff_max_lat,Fr_max_lat,Ff_lat,Fr_lat,alpha*vehicle.moi_yaw/vehicle.wheelbase_length)
     if Ff_remaining < 0 or Fr_remaining < 0:
       # print('failpt A')
       return None
@@ -176,10 +179,7 @@ class sim_twotires:
         + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
     # Determine lateral force requirements
-    alpha = -vf**2*(derate_curvature(segment_next.curvature, vehicle.r_add)-derate_curvature(segment.curvature, vehicle.r_add))/segment_next.length
-    a_lat = derate_curvature(segment_next.curvature, vehicle.r_add)*vf**2
-    Ff_lat = (vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
-    Fr_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+    Ff_lat, Fr_lat = self.compute_Ff_Fr(vehicle, vf, a_long, segment_next, segment.curvature)
 
     # Figure out how much longitudinal grip remains
     remaining_long_grip = min(vehicle.f_long_remain(2, Nr, Fr_lat, False)[0], vehicle.f_long_remain(2, Nf, Ff_lat, True)[0])
@@ -214,10 +214,7 @@ class sim_twotires:
             + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
         # Calculate required lateral forces
-        alpha = -vf**2*(derate_curvature(segment_next.curvature, vehicle.r_add)-derate_curvature(segment.curvature, vehicle.r_add))/segment_next.length
-        a_lat = derate_curvature(segment_next.curvature, vehicle.r_add)*vf**2
-        Ff_lat = (vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
-        Fr_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+        Ff_lat, Fr_lat = self.compute_Ff_Fr(vehicle, vf, a_long, segment_next, segment.curvature)
 
         # Calculate how much grip there is left
         remaining_long_grip = [vehicle.f_long_remain(2, Nr, Fr_lat, False)[0],vehicle.f_long_remain(2, Nf, Ff_lat, True)[0]]
@@ -282,20 +279,17 @@ class sim_twotires:
         a_long = (vf**2-v0**2)/2/segment.length
 
         # Calculate normal force on each tire
-        Nf = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
+        Nf = ( (vehicle.weight_bias)*vehicle.g*vehicle.mass
             + (vehicle.cp_bias[aero_mode])*vehicle.downforce(vf,aero_mode)
             - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
             - vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
-        Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
+        Nr = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
             + vehicle.downforce(vf,aero_mode)*(1 - vehicle.cp_bias[aero_mode])
             + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
             + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
-        alpha = -vf**2*(derate_curvature(segment_next.curvature, vehicle.r_add)-derate_curvature(segment.curvature, vehicle.r_add))/segment_next.length
-        a_lat = derate_curvature(segment_next.curvature, vehicle.r_add)*vf**2
-        Ff_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
-        Fr_lat = vehicle.weight_bias*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+        Ff_lat, Fr_lat = self.compute_Ff_Fr(vehicle, vf, a_long, segment_next, segment.curvature)
 
 
         remaining_long_grip = [vehicle.f_long_remain(2, Nr, Fr_lat, False)[0],vehicle.f_long_remain(2, Nf, Ff_lat, True)[0]]
