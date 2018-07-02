@@ -28,47 +28,45 @@ class sim_twotires:
     Takes a vehicle step. Picks the aerodynamic strategy that works out to be the best.
     See substep for return value. If no aero strategy is valid, returns None, else returns the best.
     """
-    return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    # if brake:
-    #   if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_BRK)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and abs(vehicle.drag(prior_result[O_VELOCITY],AERO_BRK)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
-    #       return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    #   out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
-    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    #   if out_nor is not None:
-    #     if out_brk is not None:
-    #       if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
-    #         return out_brk
-    #       else:
-    #         return out_nor
-    #     else:
-    #       return out_nor
-    #   elif out_brk is not None:
-    #     return out_brk
-    #   else:
-    #     return None
-    # else:
-    #   if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_DRS)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and abs(vehicle.drag(prior_result[O_VELOCITY],AERO_DRS)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
-    #       return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    #   out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
-    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    #   if out_nor is not None:
-    #     if out_drs is not None:
-    #       if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
-    #         return out_drs
-    #       else:
-    #         return out_nor
-    #     else:
-    #       return out_nor
-    #   elif out_drs is not None:
-    #     return out_drs
-    #   else:
-    #     return None
+    # return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    if brake:
+      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_BRK)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and abs(vehicle.drag(prior_result[O_VELOCITY],AERO_BRK)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
+          return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+      out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
+      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+      if out_nor is not None:
+        if out_brk is not None:
+          if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
+            return out_brk
+          else:
+            return out_nor
+        else:
+          return out_nor
+      elif out_brk is not None:
+        return out_brk
+      else:
+        return None
+    else:
+      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_DRS)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and abs(vehicle.drag(prior_result[O_VELOCITY],AERO_DRS)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
+          return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+      out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
+      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+      if out_nor is not None:
+        if out_drs is not None:
+          if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
+            return out_drs
+          else:
+            return out_nor
+        else:
+          return out_nor
+      elif out_drs is not None:
+        return out_drs
+      else:
+        return None
 
   def compute_Ff_Fr(self, vehicle, v, a_long, segment, prior_curvature):
     alpha = v**2*(derate_curvature(segment.curvature, vehicle.r_add)-derate_curvature(prior_curvature, vehicle.r_add))/segment.length + segment.curvature*a_long
     a_lat = derate_curvature(segment.curvature, vehicle.r_add)*v**2
-
-    alpha = 0
 
     Ff_lat = (vehicle.weight_bias)*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
     Fr_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
