@@ -5,10 +5,10 @@ RoseLap will soon be acessible via a web interface, which includes various plott
 
 ## Getting Acquainted
 
-- Check out the model documentation in model_docs.tex (or model_docs.pdf)
+- [Check out the model documentation in model_docs.pdf](model_docs.pdf)
 
 While the web interface is in progress...
 
-- Check out the vehicle example in params/vehicles/START_HERE.yaml
-- Check out the library of tracks in params/tracks
-- Check out the study example in STUDY_START_HERE.yaml
+- [Check out the vehicle example in params/vehicles/START_HERE.yaml](./params/vehicles/START_HERE.yaml)
+- [Check out the library of tracks in params/tracks](./params/tracks)
+- [Check out the study example in STUDY_START_HERE.yaml](./STUDY_START_HERE.yaml)
