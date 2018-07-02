@@ -11,4 +11,4 @@ While the web interface is in progress...
 
 - [Check out the vehicle example in params/vehicles/START_HERE.yaml](./params/vehicles/START_HERE.yaml)
 - [Check out the library of tracks in params/tracks](./params/tracks)
-- [Check out the study example in STUDY_START_HERE.yaml](./STUDY_START_HERE.yaml)
+- [Check out the study example in params/STUDY_START_HERE.yaml](./params/STUDY_START_HERE.yaml)
