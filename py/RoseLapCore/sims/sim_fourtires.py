@@ -28,45 +28,45 @@ class sim_fourtires:
     Takes a vehicle step. Picks the aerodynamic strategy that works out to be the best.
     See substep for return value. If no aero strategy is valid, returns None, else returns the best.
     """
-    return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    # if brake:
-    #   out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
-    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    #   if out_nor is not None:
-    #     if out_brk is not None:
-    #       if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
-    #         return out_brk
-    #       else:
-    #         return out_nor
-    #     else:
-    #       return out_nor
-    #   elif out_brk is not None:
-    #     return out_brk
-    #   else:
-    #     return None
-    # else:
-    #   out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
-    #   out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
-    #   if out_nor is not None:
-    #     if out_drs is not None:
-    #       if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
-    #         return out_drs
-    #       else:
-    #         return out_nor
-    #     else:
-    #       return out_nor
-    #   elif out_drs is not None:
-    #     return out_drs
-    #   else:
-    #     return None
+    # return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+    if brake:
+      out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
+      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+      if out_nor is not None:
+        if out_brk is not None:
+          if out_brk[O_VELOCITY] < out_nor[O_VELOCITY]:
+            return out_brk
+          else:
+            return out_nor
+        else:
+          return out_nor
+      elif out_brk is not None:
+        return out_brk
+      else:
+        return None
+    else:
+      out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
+      out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
+      if out_nor is not None:
+        if out_drs is not None:
+          if out_drs[O_VELOCITY] > out_nor[O_VELOCITY]:
+            return out_drs
+          else:
+            return out_nor
+        else:
+          return out_nor
+      elif out_drs is not None:
+        return out_drs
+      else:
+        return None
 
   def compute_Ff_Fr(self, N, vehicle, v, segment, prior_curvature):
     alpha = -v**2*(derate_curvature(segment.curvature, vehicle.r_add)-derate_curvature(prior_curvature, vehicle.r_add))/segment.length
     a_lat = derate_curvature(segment.curvature, vehicle.r_add)*v**2
     kf = vehicle.k_roll_front
     kr = vehicle.k_roll_rear
-    kcf = vehicle.k_chassis*(1-vehicle.weight_bias)
-    kcr = vehicle.k_chassis*(vehicle.weight_bias)
+    kcf = vehicle.k_chassis/(vehicle.weight_bias)
+    kcr = vehicle.k_chassis/(1-vehicle.weight_bias)
 
     Mint = -a_lat*vehicle.mass*vehicle.cg_height
     Mf = Mint*kcf*kf*(kcr+kr)/(kcf*kcr*kf+kcf*kcr*kr+kcf*kf*kr+kcr*kf*kr)
@@ -77,8 +77,8 @@ class sim_fourtires:
     Nr1 = N[1]/2 + Mr/vehicle.track_rear
     Nr2 = N[1]/2 - Mr/vehicle.track_rear
 
-    Ff_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
-    Fr_lat = vehicle.weight_bias*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+    Ff_lat = (vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+    Fr_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
 
     return (Nf1, Nf2, Nr1, Nr2, Ff_lat, Fr_lat)
     
@@ -179,13 +179,13 @@ class sim_fourtires:
 
     
     # Calculate normal force on each tire
-    Nf = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
-        + (1 - vehicle.cp_bias[aero_mode])*vehicle.downforce(vf,aero_mode)
+    Nf = ( (vehicle.weight_bias)*vehicle.g*vehicle.mass
+        + (vehicle.cp_bias[aero_mode])*vehicle.downforce(vf,aero_mode)
         - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
         - vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
-    Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
-        + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias[aero_mode]
+    Nr = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
+        + vehicle.downforce(vf,aero_mode)*(1-vehicle.cp_bias[aero_mode])
         + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
         + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
@@ -219,13 +219,13 @@ class sim_fourtires:
         a_long = (vf**2-v0**2)/2/segment.length
 
         # Calculate normal force on each tire
-        Nf = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
-            + (1 - vehicle.cp_bias[aero_mode])*vehicle.downforce(vf,aero_mode)
+        Nf = ( (vehicle.weight_bias)*vehicle.g*vehicle.mass
+            + (vehicle.cp_bias[aero_mode])*vehicle.downforce(vf,aero_mode)
             - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
             - vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
-        Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
-            + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias[aero_mode]
+        Nr = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
+            + vehicle.downforce(vf,aero_mode)*(1-vehicle.cp_bias[aero_mode])
             + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
             + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
@@ -305,13 +305,13 @@ class sim_fourtires:
         a_long = (vf**2-v0**2)/2/segment.length
 
         # Calculate normal force on each tire
-        Nf = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
-            + (1 - vehicle.cp_bias[aero_mode])*vehicle.downforce(vf,aero_mode)
+        Nf = ( (vehicle.weight_bias)*vehicle.g*vehicle.mass
+            + (vehicle.cp_bias[aero_mode])*vehicle.downforce(vf,aero_mode)
             - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
             - vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
-        Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
-            + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias[aero_mode]
+        Nr = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
+            + vehicle.downforce(vf,aero_mode)*(1-vehicle.cp_bias[aero_mode])
             + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
             + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
@@ -422,10 +422,10 @@ class sim_fourtires:
     
     # Initialize the output matrix appropriately
     if output_0 is None:
-      output[0,O_NF] = vehicle.mass*(1-vehicle.weight_bias)*vehicle.g/2
-      output[0,O_NF2] = vehicle.mass*(1-vehicle.weight_bias)*vehicle.g/2
-      output[0,O_NR] = vehicle.mass*vehicle.weight_bias*vehicle.g/2
-      output[0,O_NR2] = vehicle.mass*vehicle.weight_bias*vehicle.g/2
+      output[0,O_NF] = vehicle.mass*(vehicle.weight_bias)*vehicle.g/2
+      output[0,O_NF2] = vehicle.mass*(vehicle.weight_bias)*vehicle.g/2
+      output[0,O_NR] = vehicle.mass*(1-vehicle.weight_bias)*vehicle.g/2
+      output[0,O_NR2] = vehicle.mass*(1-vehicle.weight_bias)*vehicle.g/2
       gear = vehicle.best_gear(output[0,O_VELOCITY], np.inf)
     else:
       output[0,:] = output_0
