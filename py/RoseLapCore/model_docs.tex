@@ -227,6 +227,12 @@ We will first examine a 'step'- how to get from the start state to end state of 
 
 To begin, the final velocity and required accelerations, forces are calculated as described in the "Physics" section. If the tire grip is exceeded, an error is returned. The appropriate vehicle status is computed based on these values. To avoid oscillatory throttle-braking which also decreases cornering performance, a 'sustaining' strategy is utilized. If the vehicle is accelerating, running through a corner, and the prior status was braking, the next thing to do is sustain through the corner. If the vehicle was sustaining beforehand and curvature is relatively the same, continue to sustain. Sustaining is also triggered by running out of grip. Sustaining is simply solving for the steady-state velocity through a corner. Because of the nonlinearity of the equations, this is not a simple task. Something resembling bisection is employed. Luckily, the equations are simple enough that going faster will result in less remaining grip, and going slower will result in more.
 
+Although this model does not allow for studying lateral load transfer, later ones do. To consistently study the effects of varying track, it is allowed to define an 'additional radius' that the vehicle is allotted to take a turn (if less track is provided, the radius is positive; if more track is used, the radius is negative).
+
+\begin{align}
+	k = \frac{k_{raw}}{1 + R_{additional} k_{raw}}
+\end{align}
+
 First, we will define remaining grip:
 
 \begin{align}
@@ -339,7 +345,7 @@ The vehicle physics begin with the summation of forces and moments in the vertic
 	\Sigma F_{vert} = N_{f} + N_{r} - m g - F_{down}(v_0) = m a_{vert} = 0 \\
 	\Sigma F_{lat}  = F_{tire,lat,f} + F_{tire,lat,f} = m a_{lat} = m v^2 k \\
 	\Sigma F_{long} = F_{tire,long,f} + F_{tire,long,f} - F_{drag}(v_0) = m a_{long} \\	
-	\Sigma M_{vert} = F_{tire,lat,f} l_{wheelbase} = m a_{lat} l_{CG} = m v^2 k l_{CG} + I_{yaw} \alpha \\
+	\Sigma M_{vert} = F_{tire,lat,f} l_{wheelbase} = m v^2 k l_{CG} + I_{yaw} \alpha \\
 	\Sigma M_{lat}  = N_{f} l_{wheelbase} + F_{drag}(v_0) h_{CP} - F_{down}(v_0) l_{CP} - m g l_{CG} = m a_{long} h_{CG}
 \end{align}
 
@@ -360,8 +366,8 @@ Solution of this is somewhat ugly, and most importantly, cannot be done explicit
 This method begins by computing the required lateral force for each tire. $N_f, N_r, v0$ are presumed to be known from the previous iteration.
 
 \begin{align}
-	F_{tire,lat,f} = \frac{l_{CG}}{l_{wheelbase}} m v^2 k \\ 
-	F_{tire,lat,r} = (1-\frac{l_{CG}}{l_{wheelbase}}) m v^2 k
+	F_{tire,lat,f} = \frac{l_{CG}}{l_{wheelbase}} m v^2 k + \frac{\alpha I_{yaw}}{l_{wheelbase}}  \\ 
+	F_{tire,lat,r} = (1-\frac{l_{CG}}{l_{wheelbase}}) m v^2 k - \frac{\alpha I_{yaw}}{l_{wheelbase}}
 \end{align}
 
 The remaining longitudinal forces $F_{tire,remaining,long}$ are computed as discussed previously (normal forces are presumed to be known). 
@@ -413,17 +419,24 @@ This method determines the forces on the vehicle given a prescribed $a_{long}$.
 The normal forces on the tires can be found by solving the summation of forces in the and vertical direction, and summation of moments about the lateral axis. This results in:
 
 \begin{align}
-	% Big gross equations, dump em here
+	N_f = (1 - \frac{l_{CG}}{l_{wheelbase}}) m g 
+			+ (1 - \frac{l_{CP}}{l_{wheelbase}}) F_{down}
+			- m a_{long} \frac{h_{CG}}{l_{wheelbase}} 
+			- \frac{h_{CP}}{l_{wheelbase}} F_{drag} \\
+	N_r = \frac{l_{CG}}{l_{wheelbase}} m g 
+			+ \frac{l_{CP}}{l_{wheelbase}} F_{down}
+			+ m a_{long} \frac{h_{CG}}{l_{wheelbase}} 
+			+ \frac{h_{CP}}{l_{wheelbase}} F_{drag}
 \end{align}
 
 The required lateral forces from the tires are also computed:
 
 \begin{align}
-	F_{tire,lat,f} = \frac{l_{CG}}{l_{wheelbase}} m v^2 k \\ 
-	F_{tire,lat,r} = (1-\frac{l_{CG}}{l_{wheelbase}}) m v^2 k
+	F_{tire,lat,f} = \frac{l_{CG}}{l_{wheelbase}} m v^2 k + \frac{\alpha I_{yaw}}{l_{wheelbase}}  \\ 
+	F_{tire,lat,r} = (1-\frac{l_{CG}}{l_{wheelbase}}) m v^2 k - \frac{\alpha I_{yaw}}{l_{wheelbase}}
 \end{align}
 
-From here, the remaining longitudinal tire grip can be computed.
+From here, the required longitudinal tire grip can be computed.
 \begin{align}
 	F_{tire,long,total,required} = \frac{a_{long}}{m} + F_{drag}(v)
 \end{align}
@@ -440,14 +453,14 @@ For the braking case where fixed biasing is used, the process is very simple: di
 	F_{tire,long,f,required} = F_{tire,long,total,required} X_f
 \end{align}
 
-For the braking case where perfect biasing is used, this requires some thinking. Since in this model, the front and rear braking forces are colinear, it makes no difference to where the braking force is distributed (provided that the maximum grip is not exceeded). We will use up all of the rear tire's grip before using the front tire's grip.
+For the braking case where perfect biasing is used, this requires some thinking. Since in this model, the front and rear braking forces are colinear, it makes no difference to where the braking force is distributed (provided that the maximum grip is not exceeded). We will use up all of the more-available tire's grip before using the less-available tire's grip.
 
 \begin{algorithm}[H]
 \caption{Perfect Biasing Braking Algorithm}
 \begin{algorithmic}[1]
-	\State $F_{tire,long,r,required}$ = $F_{tire,long,total,required}$
-	\If{$F_{tire,long,remaining,r} < F_{tire,long,r,required}$}
-	\State	$F_{tire,long,remaining,f}$ = $F_{tire,long,total,required}$ - $F_{tire,long,r,required}$
+	\State $F_{tire,long,more,required}$ = $F_{tire,long,total,required}$
+	\If{$F_{tire,long,remaining,more} < F_{tire,long,more,required}$}
+	\State	$F_{tire,long,remaining,less}$ = $F_{tire,long,total,required}$ - $F_{tire,long,more,required}$
 	\EndIf
 \end{algorithmic}
 \end{algorithm}
@@ -489,6 +502,57 @@ Efficiency score calculation is more complex.
 \end{align}
 
 Lap times, best times at previous tracks, and estimated CO2 production can simply be plugged into these formulae. Estimation of the CO2 production, hopefully, is good enough.
+
+\section{Four-Tire, Yaw-MOI Model}
+
+This model is mostly a tweak of the two-tire model, so the physics changes only will be discussed here.
+
+\subsection{Physics}
+
+Adding four tires to the chassis is fairly simple from this point. We consider the chassis and suspension as a torsional spring assembly as shown below:
+
+\includegraphics{tors_springs.png}
+
+where:
+\begin{itemize}
+\item $M_r$ and $M_f$ are the moments by the rear and front tires
+\item $M_f$ is the moment produced by the front tires
+\item $M_{acc}$ is the moment produced by lateral acceleration
+\item $k_f$ and $k_r$ is the suspension roll stiffness for front and rear
+\item $\theta_f$, $theta_r$, and $theta_c$ is the vehicle roll at the front and rear suspension points, and CG
+\end{itemize}
+
+We can write the following spring equations:
+
+\begin{align}
+	k_r \theta_r = M_r \\
+	k_f \theta_f = M_f \\
+	k_cr (\theta_c-\theta_r) = M_r \\
+	k_cf (\theta_c-\theta_f) = M_f
+\end{align}
+
+Including the torque balance equation leaves us with 5 equations and 5 unknowns ($M_r$, $M_f$, and $\theta$'s):
+\begin{align}
+	M_{acc} = M_r + M_f
+\end{align}
+
+Generally, $k_r$, $k_f$ are roughly known, but $k_cr$ and $k_cf$ are not- but overall chassis $k_c$ stiffness is. We will approximate the chassis as having linearly distributed stiffness. This gives us:
+
+\begin{align}
+	k_cr = \frac{k_c}{\frac{l_{CG}}{l_{wheelbase}}}
+	k_cf = \frac{k_c}{1 - \frac{l_{CG}}{l_{wheelbase}}}
+\end{align}
+
+If we know the forces on the front tires and on the rear tires $N_f$ and $N_r$ we can compute the normal force on each tire. Inside tires have subscript 1, outside subscript 2.
+
+\begin{align}
+	N_{f,1} = \frac{N_{f}}{2} - \frac{M_f}{w_f} \\
+	N_{f,2} = \frac{N_{f}}{2} + \frac{M_f}{w_f} \\
+	N_{r,1} = \frac{N_{r}}{2} - \frac{M_r}{w_r} \\
+	N_{r,2} = \frac{N_{r}}{2} + \frac{M_r}{w_r} \\
+\end{align}
+
+Currently, the tire lateral grips are distributed between tires to try and equalize the longitudinal grip. If this is not possible (i.e. one tire has immense grip), the lateral load is taken completely by the better-loaded tire, and the maximum tire grip for each tire is assumed to be that of the lower one. This enforces the assumption of 50/50 left-right brake bias (a good assumption) and an open differential (a poor assumption).
 
 \section{Post-Processing}
 
