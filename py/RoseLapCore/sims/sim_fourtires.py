@@ -148,7 +148,7 @@ class sim_fourtires:
       # @FIXME NOT PLAYED AROUND WITH ENOUGH WITH TWO TIRE MODEL!!!!
       # This logic helps absorb simulation oscillations (brake-accel oscillation on corners)
       # If there's curvature, and we were braking before (we are not anymore) or we were sustaining before with negligible curvature change, continue sustaining
-      if False and segment.curvature > 0 and (prior_result[O_STATUS] == S_BRAKING  or (abs(segment.curvature - prior_result[O_CURVATURE])<=1e-4 and prior_result[O_STATUS] == S_SUSTAINING)):
+      if segment.curvature > 0 and (prior_result[O_STATUS] == S_BRAKING  or ((segment.curvature - prior_result[O_CURVATURE])>=0 and prior_result[O_STATUS] == S_SUSTAINING)):
         status = S_SUSTAINING
         Fr_long = vehicle.drag(v0, aero_mode)
       # If not sustaining, jammalam that throttle
@@ -208,7 +208,7 @@ class sim_fourtires:
       # If we were scheduled to coast, we're not using our tires anyways, so we're kinda screwed anyways. 
       # @FIXME: THIS MIGHT BE THE PROBLEM!!!!!!! If you are midway through a shift when you hit a corner, there's no recourse. Not sure how to solve.
       if shifting == IN_PROGRESS and not brake:
-        print('failpt B (recovery attempted)')
+        # print('failpt B (recovery attempted)')
         vfu = floor_sqrt(v0**2 + 2*(- vehicle.drag(v0, aero_mode))/vehicle.mass*segment.length)
         # return None
       valid_entries = []

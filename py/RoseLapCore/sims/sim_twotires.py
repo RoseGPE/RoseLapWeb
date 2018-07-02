@@ -128,7 +128,7 @@ class sim_twotires:
       # @FIXME NOT PLAYED AROUND WITH ENOUGH WITH TWO TIRE MODEL!!!!
       # This logic helps absorb simulation oscillations (brake-accel oscillation on corners)
       # If there's curvature, and we were braking before (we are not anymore) or we were sustaining before with negligible curvature change, continue sustaining
-      if segment.curvature > 0 and (prior_result[O_STATUS] == S_BRAKING  or ((segment.curvature-prior_result[O_CURVATURE])>=-1e-4 and prior_result[O_STATUS] == S_SUSTAINING)):
+      if segment.curvature > 0 and (prior_result[O_STATUS] == S_BRAKING  or ((segment.curvature-prior_result[O_CURVATURE])>=0 and prior_result[O_STATUS] == S_SUSTAINING)):
         status = S_SUSTAINING
         Fr_long = vehicle.drag(v0, aero_mode)
       # If not sustaining, jammalam that throttle
