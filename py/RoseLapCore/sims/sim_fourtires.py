@@ -30,6 +30,9 @@ class sim_fourtires:
     """
     # return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
     if brake:
+      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_BRK)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and 
+         abs(vehicle.drag(prior_result[O_VELOCITY],AERO_BRK)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
+          return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
       out_brk = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_BRK)
       out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
       if out_nor is not None:
@@ -45,6 +48,9 @@ class sim_fourtires:
       else:
         return None
     else:
+      if abs(vehicle.downforce(prior_result[O_VELOCITY],AERO_DRS)-vehicle.downforce(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3 and 
+         abs(vehicle.drag(prior_result[O_VELOCITY],AERO_DRS)-vehicle.drag(prior_result[O_VELOCITY],AERO_FULL)) < 1e-3: 
+          return self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
       out_drs = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_DRS)
       out_nor = self.substep(vehicle, prior_result, segment, segment_next, brake, shifting, gear, AERO_FULL)
       if out_nor is not None:
