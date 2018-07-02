@@ -3,7 +3,7 @@ Welcome to RoseLap, a moderately powerful laptime simulation tool used by Rose-H
 
 RoseLap will soon be acessible via a web interface, which includes various plotting and analysis tools.
 
-## Getting Acquainted
+## Getting Acquainted as a User
 
 - [Check out the model documentation in model_docs.pdf](model_docs.pdf)
 
@@ -12,3 +12,13 @@ While the web interface is in progress...
 - [Check out the vehicle example in params/vehicles/START_HERE.yaml](./params/vehicles/START_HERE.yaml)
 - [Check out the library of tracks in params/tracks](./params/tracks)
 - [Check out the study example in params/STUDY_START_HERE.yaml](./params/STUDY_START_HERE.yaml)
+- [If you are dealing with tires, familiarize yourself with the tire utility](./tire_utility)
+
+## Getting Acquainted as a Model Developer
+
+- [Check out the model documentation in model_docs.pdf](model_docs.pdf)
+- [Check out the vehicle example in params/vehicles/START_HERE.yaml](./params/vehicles/START_HERE.yaml)
+- [Check out the track segmenter / generator](./input_processing/track_segementation.py)
+- [Check out the sims in sims](./sims) althought some of the logic is also in [vehicle.py](./input_processing/vehicle.py)
+- [Visit the playground for some example usage](./playground.py)
+- [Note the antiquiated-ish plotting library useful for model development without the web](./plottools.py)
