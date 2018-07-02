@@ -19,7 +19,7 @@ def floor_sqrt(x):
     return math.sqrt(x)
   return 0
 
-class sim_pointmass:
+class sim_onetire:
   def __init__(self):
     pass
 
@@ -101,7 +101,7 @@ class sim_pointmass:
       # This logic helps absorb simulation oscillations (brake-accel oscillation on corners)
       # If there's curvature, and we were braking before (we are not anymore) or we were sustaining before with negligible curvature change, continue sustaining
        # 
-      if segment.curvature > 0 and abs(prior_result[O_CURVATURE] - segment.curvature)<=1e-5 and (prior_result[O_STATUS] == S_BRAKING or prior_result[O_STATUS] == S_SUSTAINING):
+      if segment.curvature > 0 and (prior_result[O_CURVATURE] - segment.curvature)>=0 and (prior_result[O_STATUS] == S_BRAKING or prior_result[O_STATUS] == S_SUSTAINING):
         status = S_SUSTAINING
         Ftire_long = vehicle.drag(v0, aero_mode)
       else:
@@ -165,17 +165,42 @@ class sim_pointmass:
     if not (brake or shifting):
       co2_elapsed += segment.length*F_longitudinal*vehicle.co2_factor/vehicle.e_factor
 
+    # output = np.array([
+    #   tf,
+    #   xf,
+    #   vf,
+    #   vehicle.mass*vehicle.g + vehicle.downforce(v0,aero_mode),
+    #   0,
+    #   segment.sector,
+    #   status,
+    #   gear,
+    #   a_long / vehicle.g, 
+    #   (vavg ** 2) * derate_curvature(segment.curvature,vehicle.r_add) / vehicle.g, 
+    #   Ftire_remaining,
+    #   0,
+    #   segment.curvature,
+    #   eng_rpm,
+    #   co2_elapsed,
+    #   aero_mode
+    # ])
+
     output = np.array([
       tf,
       xf,
       vf,
-      vehicle.mass*vehicle.g + vehicle.downforce(v0,aero_mode),
       0,
+      0,
+      vehicle.mass*vehicle.g + vehicle.downforce(v0,aero_mode),
+      0, 
       segment.sector,
       status,
       gear,
       a_long / vehicle.g, 
-      (vavg ** 2) * derate_curvature(segment.curvature,vehicle.r_add) / vehicle.g, 
+      (v0 ** 2) * derate_curvature(segment.curvature, vehicle.r_add) / vehicle.g, 
+      0,
+      0,
+      0,
+      0,
       Ftire_remaining,
       0,
       segment.curvature,
@@ -218,6 +243,7 @@ class sim_pointmass:
     backup_amount = int(7.0/segments[0].length)
     bounds_found = False
     failpt = -1
+    precrash_i = -1
     middle_brake_bound = -1
     lower_brake_bound = -1
     upper_brake_bound = -1
@@ -235,9 +261,12 @@ class sim_pointmass:
         if not brake:
           # Start braking
           precrash_output = np.copy(output)
+          precrash_i = i
           brake = True
           bounds_found = False
           failpt = i
+          # while segments[failpt-1].curvature < segments[failpt].curvature and failpt<len(segments):
+          #   failpt += 1
           lower_brake_bound = i
           i = lower_brake_bound
         elif bounds_found:
@@ -266,7 +295,7 @@ class sim_pointmass:
       elif failpt>=0 and not bounds_found:
         bounds_found = True
 
-        upper_brake_bound = failpt-1 #lower_brake_bound+backup_amount
+        upper_brake_bound = precrash_i-1 #lower_brake_bound+backup_amount
 
         middle_brake_bound = int((upper_brake_bound+lower_brake_bound)/2)
         
