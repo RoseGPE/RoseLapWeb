@@ -83,8 +83,8 @@ class sim_twotires:
     # Determine how much grip is used keeping the car from skidding away
     alpha = -v0**2*(derate_curvature(segment.curvature, vehicle.r_add)-derate_curvature(prior_result[O_CURVATURE], vehicle.r_add))/segment.length
     a_lat = derate_curvature(segment.curvature, vehicle.r_add)*v0**2
-    Ff_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
-    Fr_lat = vehicle.weight_bias*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+    Ff_lat = vehicle.weight_bias*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+    Fr_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
     
 
     # Determine the remaining longitudinal grip. If there isn't any, then we're out of luck.
@@ -159,12 +159,12 @@ class sim_twotires:
 
     
     # Calculate normal force on each tire
-    Nf = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
+    Nf = ( (vehicle.weight_bias)*vehicle.g*vehicle.mass
         + (1 - vehicle.cp_bias[aero_mode])*vehicle.downforce(vf,aero_mode)
         - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
         - vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
-    Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
+    Nr = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
         + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias[aero_mode]
         + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
         + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
@@ -172,8 +172,8 @@ class sim_twotires:
     # Determine lateral force requirements
     alpha = -vf**2*(derate_curvature(segment_next.curvature, vehicle.r_add)-derate_curvature(segment.curvature, vehicle.r_add))/segment_next.length
     a_lat = derate_curvature(segment_next.curvature, vehicle.r_add)*vf**2
-    Ff_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
-    Fr_lat = vehicle.weight_bias*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+    Ff_lat = (vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+    Fr_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
 
     # Figure out how much longitudinal grip remains
     remaining_long_grip = min(vehicle.f_long_remain(2, Nr, Fr_lat, False)[0], vehicle.f_long_remain(2, Nf, Ff_lat, True)[0])
@@ -197,12 +197,12 @@ class sim_twotires:
         a_long = (vf**2-v0**2)/2/segment.length
 
         # Calculate normal force on each tire
-        Nf = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
+        Nf = ( (vehicle.weight_bias)*vehicle.g*vehicle.mass
             + (1 - vehicle.cp_bias[aero_mode])*vehicle.downforce(vf,aero_mode)
             - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
             - vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
 
-        Nr = ( vehicle.weight_bias*vehicle.g*vehicle.mass
+        Nr = ( (1-vehicle.weight_bias)*vehicle.g*vehicle.mass
             + vehicle.downforce(vf,aero_mode)*vehicle.cp_bias[aero_mode]
             + vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
             + vehicle.drag(vf,aero_mode)*vehicle.cp_height[aero_mode]/vehicle.wheelbase_length )
@@ -210,8 +210,8 @@ class sim_twotires:
         # Calculate required lateral forces
         alpha = -vf**2*(derate_curvature(segment_next.curvature, vehicle.r_add)-derate_curvature(segment.curvature, vehicle.r_add))/segment_next.length
         a_lat = derate_curvature(segment_next.curvature, vehicle.r_add)*vf**2
-        Ff_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
-        Fr_lat = vehicle.weight_bias*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+        Ff_lat = (vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length
+        Fr_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
 
         # Calculate how much grip there is left
         remaining_long_grip = [vehicle.f_long_remain(2, Nr, Fr_lat, False)[0],vehicle.f_long_remain(2, Nf, Ff_lat, True)[0]]
