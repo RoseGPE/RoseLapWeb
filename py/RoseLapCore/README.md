@@ -10,7 +10,7 @@ RoseLap will soon be acessible via a web interface, which includes various plott
 
 While the web interface is in progress...
 
-- Check out [the example vehicle definition]](./params/vehicles/VEHICLE_START_HERE.yaml)
+- Check out [the example vehicle definition](./params/vehicles/VEHICLE_START_HERE.yaml)
 - Check out [the currently available tracks](./params/tracks)
 - Read through [an introductory study definition file](./params/STUDY_START_HERE.yaml)
 
