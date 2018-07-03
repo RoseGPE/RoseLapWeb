@@ -5,14 +5,14 @@ RoseLap will soon be acessible via a web interface, which includes various plott
 
 ## Getting Acquainted as a User
 
-- [Check out the model documentation in model_docs.pdf](model_docs.pdf)
-- [If you are dealing with tires, familiarize yourself with the tire utility](./tire_utility)
+- Check out the model documentation in [model_docs.pdf](model_docs.pdf)
+- If you are dealing with tires, familiarize yourself with [the tire utility](./tire_utility)
 
 While the web interface is in progress...
 
-- [Check out the vehicle example in params/vehicles/START_HERE.yaml](./params/vehicles/START_HERE.yaml)
-- [Check out the library of tracks in params/tracks](./params/tracks)
-- [Check out the study example in params/STUDY_START_HERE.yaml](./params/STUDY_START_HERE.yaml)
+- Check out [the example vehicle definition]](./params/vehicles/VEHICLE_START_HERE.yaml)
+- Check out [the currently available tracks](./params/tracks)
+- Read through [an introductory study definition file](./params/STUDY_START_HERE.yaml)
 
 
 ## Getting Acquainted as a Model Developer
