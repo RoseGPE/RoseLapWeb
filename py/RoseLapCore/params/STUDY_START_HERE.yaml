@@ -7,7 +7,8 @@
 # Specify which vehicle you'd like to use as a baseline
 vehicle: VEHICLE_START_HERE.yaml 
 
-# Specify which model to use in this study
+# Specify which model to use in this study.
+# You should select the model with the least tires possible to capture the effects of the parameters to study.
 model: one_tire 
 
 # Specify a list of tracks to run on.
