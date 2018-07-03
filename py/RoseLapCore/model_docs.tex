@@ -1,4 +1,9 @@
 \documentclass{article}
+\usepackage{listings}
+\usepackage{courier}
+
+\lstset{basicstyle=\footnotesize\ttfamily,breaklines=true}
+\lstset{framextopmargin=50pt,frame=bottomline}
 \usepackage{amsmath}
 
 \usepackage{algorithm}
@@ -27,7 +32,7 @@
 \begin{document}
 
 \title{RoseLap v4: Lap Time and Point Simulation}
-\author{Thaddeus Hughes}
+\author{Thaddeus Hughes (hughes.thad@gmail.com) \\ Evë Maquelin (evelyne@maquelin.com)}
 
 \maketitle
 
@@ -75,7 +80,66 @@ User adjustments can be made by changing confidence intervals, bins, or even ove
 
 \subsection{Vehicle Data Entry}
 
-\subsection{Track Definition}
+Vehicle data entry is accomplished with .YAML files. See the Example Vehicle Definition File in the Appendix.
+
+\subsection{Tracks}
+
+Tracks may be defined in three ways:
+\begin{itemize}
+\item an SVG file (preferably using a spiro path)
+\item a trackwalker .LOG file with a header file
+\item a DXF file consisting of lines and circular arcs (NOT supported with $I_{yaw} \neq 0$)
+\end{itemize}
+
+Option 3 is becoming less supported but may come back into favor with some updates. This is because the introduction of yaw moment effects requires a track with continuous curvature; otherwise $\frac{\D k}{\D x}$ is, when numerically evaluated, effectively infinite, requiring infinite tire grip to initiate a corner.
+
+SVG file import is accomplished with \texttt{svgpathtools}. This begins by loading all the SVG paths and computing the raw x, y, and curvature of each point at the specified mesh density. After this, a univariate spline of 2nd degree is fitted with a smoothing factor of 0.005 to the curvature data. This ensures that curvature is continuous and differentiable. The degree and smoothing parameter could be modified.
+
+.LOG file import begins by reading a 1-line JSON file at the beginning with the following parameters:
+\begin{itemize}
+\item \texttt{cutoff\_start}: how many entries to cut off from the start of a track
+\item \texttt{cutoff\_end}: the entry number to stop at
+\item \texttt{d\_nom}: the diameter of the wheels on the trackwalker
+\item \texttt{d\_scale}: the ratio of diameters between two wheels
+\item \texttt{D}: the width of the trackwalker
+\item \texttt{maxcurv}: a hard limit on how much curvature can be allowed
+\item \texttt{smoothing}: the amount of smoothing to apply to the spline fit
+\item \texttt{savgol\_amount}: the number of entries the savgol filter should average
+\item \texttt{savgol\_dof}: the number of degrees of freedom to use with the savgol filter
+\end{itemize}
+
+An example of this is as follows:
+
+\begin{lstlisting}
+{"cutoff_start": 30,"cutoff_end": 1280,"d_nom": 5.74,"d_scale": 1.0185, "D": 23.0, "maxcurv": 0.15, "smoothing":0.03, "savgol_amt":351, "savgol_dof":2}
+0,0
+15,4
+26,11
+36,22
+50,36
+...
+\end{lstlisting}
+
+The trackwalker log is then processed to determine distance, curvature, and cartesian coordinates for all points on the track.
+\begin{align}
+	\Delta l_{i} = 2 (l_{1,i}-l_{1,i-1}-l_{2,i}+l_{2,i-1})\\
+	d_i = \frac{l_{1,i}-l_{1,i-1} + l_{2,i} - l_{2,i-1}}{2}\\
+	k_i = \frac{\Delta l_i}{D d_i}\\
+	\theta_i = theta_{i-1} + d_i k_i\\
+	x_i = x_{i-1} + \sin(\theta_i) d_i
+	y_i = y_{i-1} + \cos(\theta_i) d_i
+	l_i = l_{i-1} + d_i
+\end{align}
+
+The most important data is in the $l$, $d$, and $k$ vectors. Any element in $k$ greater in absolute value than \texttt{maxcurv} will be truncated to $\pm$ \texttt{maxcurv}. The $k$ vector is passed through a savgol filter with the specified degrees of freedom and smoothing. This removes most of the noise but still leaves a curvature profile that is rough and jagged. This filtered data is then passed through a univariate spline with 5 degrees of freedom and the specified amount of smoothing.
+
+Visually, this looks as follows:
+
+\includegraphics[width=\textwidth]{tw_filtering.png}
+
+the unfiltered $k$ vector is the blue dots, the filtered data is the orange line, and the smoothed data is the green curve.
+
+The fitting process can be employed by using \texttt{input\_processing.py} as a command-line tool. Usage: \texttt{input\_processing.py path/to/logfile.log <segment size>}
 
 \section{Component Models}
 
@@ -536,12 +600,21 @@ Including the torque balance equation leaves us with 5 equations and 5 unknowns 
 	M_{acc} = M_r + M_f
 \end{align}
 
+Solving these equations yields:
+
+\begin{align}
+	M_f = M_{acc} k_{cf} k_f \frac{k_{cr}+k_r}{k_{cf} k_{cr} k_f+k_{cf} k_{cr} k_r+k_{cf} k_f k_r+k_{cr} k_f k_r}\\
+    M_r = M_{acc} k_{cr} k_r \frac{k_{cf}+k_f}{k_{cf} k_{cr} k_f+k_{cf} k_{cr} k_r+k_{cf} k_f k_r+k_{cr} k_f k_r}
+\end{align}
+
 Generally, $k_r$, $k_f$ are roughly known, but $k_cr$ and $k_cf$ are not- but overall chassis $k_c$ stiffness is. We will approximate the chassis as having linearly distributed stiffness. This gives us:
 
 \begin{align}
-	k_cr = \frac{k_c}{\frac{l_{CG}}{l_{wheelbase}}}
+	k_cr = \frac{k_c}{\frac{l_{CG}}{l_{wheelbase}}}\\
 	k_cf = \frac{k_c}{1 - \frac{l_{CG}}{l_{wheelbase}}}
 \end{align}
+
+It is important to note that this assumes that the ground is flat, and assumes steady state (that us, no dampers nor roll acceleration).
 
 If we know the forces on the front tires and on the rear tires $N_f$ and $N_r$ we can compute the normal force on each tire. Inside tires have subscript 1, outside subscript 2.
 
@@ -549,17 +622,21 @@ If we know the forces on the front tires and on the rear tires $N_f$ and $N_r$ w
 	N_{f,1} = \frac{N_{f}}{2} - \frac{M_f}{w_f} \\
 	N_{f,2} = \frac{N_{f}}{2} + \frac{M_f}{w_f} \\
 	N_{r,1} = \frac{N_{r}}{2} - \frac{M_r}{w_r} \\
-	N_{r,2} = \frac{N_{r}}{2} + \frac{M_r}{w_r} \\
+	N_{r,2} = \frac{N_{r}}{2} + \frac{M_r}{w_r}
 \end{align}
 
 Currently, the tire lateral grips are distributed between tires to try and equalize the longitudinal grip. If this is not possible (i.e. one tire has immense grip), the lateral load is taken completely by the better-loaded tire, and the maximum tire grip for each tire is assumed to be that of the lower one. This enforces the assumption of 50/50 left-right brake bias (a good assumption) and an open differential (a poor assumption).
 
-\section{Post-Processing}
+% \section{Post-Processing}
+
+% Evë please write something, thanks.
 
 \section{Future Plans}
-Write your conclusion here.
 
-Tire temps would be interesting???
-CVTs maybe yo
+RoseLap 
+
+\section{Appendix}
+
+\lstinputlisting[basicstyle=\small,caption={Example Vehicle Definition File},label=vehicle_start_here]{params/vehicles/VEHICLE_START_HERE.yaml}
 
 \end{document}
