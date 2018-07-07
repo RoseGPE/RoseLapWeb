@@ -11,7 +11,6 @@ option = {
     tooltip: {formatter:function(params, ticket, callback){
         // console.log(params);
         return params.value[2] + (selected_data%2 ? ' s' : ' pts') + '</br>'
-             + yData[parseInt(params.value[1])] + '</br>'
              + xData[parseInt(params.value[0])];
     }},
     xAxis: {
@@ -36,16 +35,6 @@ option = {
         axisLabel: {
             formatter: function(x) {return x}
         }
-    },
-    visualMap: {
-        min: Math.min.apply(Math,data[0].map(a => a[2])),
-        max: Math.max.apply(Math,data[0].map(a => a[2])),
-        calculable: true,
-        realtime: true,
-        inRange: {
-            color: range_ryb
-        },
-        show:false
     },
     legend: {
       type: 'scroll',
@@ -74,7 +63,7 @@ option = {
 
 app.setOption(option);
 
-function handle_sel(a){
+function handle_clk(a){
   var i=0;
   for(;i<data.length;i++) {
     if (data_names[i] == a.name)
@@ -90,11 +79,10 @@ function handle_sel(a){
   selected_data = i;
 };
 
-function handle_clk(a){
-    console.log(a);
-  alert('You clicked on datapoint ' + a.dataIndex + ' AKA ' + a.data[0] + ', ' + a.data[1]);
-};
+app.on('legendselectchanged',handle_clk);
 
-app.on('legendselectchanged',handle_sel);
-
-app.on('click',handle_clk);
+// app.setOption({
+//   visualMap: {
+//   min: Math.min.apply(Math,data[0]['times'].map(a => a[2])),
+//   max: Math.max.apply(Math,data[0]['times'].map(a => a[2]))
+// }})

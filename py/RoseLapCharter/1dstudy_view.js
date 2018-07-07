@@ -10,8 +10,7 @@ option = {
     title: {text: chart_title,show:true},
     tooltip: {formatter:function(params, ticket, callback){
         // console.log(params);
-        return params.value[2] + (selected_data%2 ? ' s' : ' pts') + '</br>'
-             + yData[parseInt(params.value[1])] + '</br>'
+        return params.value[1] + (selected_data%2 ? ' s' : ' pts') + '</br>'
              + xData[parseInt(params.value[0])];
     }},
     xAxis: {
@@ -22,30 +21,35 @@ option = {
         nameGap: 30,
         axisLabel: {
             formatter: function(x) {return x}
+        },
+        axisLine: {
+            onZero: false
         }
     },
     yAxis: {
-        type : 'category',
-        data: yData,
-        right: 10,
-        top: 20,
-        bottom: 20,
-        name: chart_title_y,
-        nameLocation: 'middle',
-        nameGap: 60,
-        axisLabel: {
-            formatter: function(x) {return x}
-        }
-    },
-    visualMap: {
-        min: Math.min.apply(Math,data[0].map(a => a[2])),
-        max: Math.max.apply(Math,data[0].map(a => a[2])),
-        calculable: true,
-        realtime: true,
-        inRange: {
-            color: range_ryb
+        type: 'value',
+    min: Math.floor(Math.min.apply(Math,data[0].map(a => a[1])) ),
+    max: Math.ceil( Math.max.apply(Math,data[0].map(a => a[1])) ),
+        axisLine: {
+            onZero: false
         },
-        show:false
+        name: 'Points',
+        top: 20,
+        bottom:20,
+        right: 10,
+        nameLocation: 'middle',
+        nameGap: 60
+    //     type : 'category',
+    //     data: yData,
+    //     right: 10,
+    //     top: 20,
+    //     bottom: 20,
+    //     name: chart_title_y,
+    //     nameLocation: 'middle',
+    //     nameGap: 60,
+    //     axisLabel: {
+    //         formatter: function(x) {return x}
+    //     }
     },
     legend: {
       type: 'scroll',
@@ -59,7 +63,7 @@ option = {
     },
     series: [...Array(data_names.length).keys()].map(i => ({
         name: data_names[i],
-        type: 'heatmap',
+        type: 'line',
         data: data[i],
         itemStyle: {
             emphasis: {
@@ -80,19 +84,16 @@ function handle_sel(a){
     if (data_names[i] == a.name)
       break;
   }
-  app.setOption({visualMap:{
-    min:Math.min.apply(Math,data[i].map(a => a[2])),
-    max: Math.max.apply(Math,data[i].map(a => a[2])),
-        inRange: {
-            color: (i%2 ? range_gyo : range_ryb)
-        }
+  app.setOption({yAxis:{
+    min: Math.floor(Math.min.apply(Math,data[i].map(a => a[1])) ),
+    max: Math.ceil( Math.max.apply(Math,data[i].map(a => a[1])) ),
+        name: i%2 ? 'Points' : 'Time (s)'
   } })
   selected_data = i;
 };
 
 function handle_clk(a){
-    console.log(a);
-  alert('You clicked on datapoint ' + a.dataIndex + ' AKA ' + a.data[0] + ', ' + a.data[1]);
+  alert('You clicked on datapoint ' + a.dataIndex);
 };
 
 app.on('legendselectchanged',handle_sel);
