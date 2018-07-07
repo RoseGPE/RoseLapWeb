@@ -3,7 +3,7 @@ import pointsim
 import copy
 import translation
 
-def make_plot(result, fn_prefix):
+def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
   data = []
   data_names = []
   points_total = None
@@ -67,7 +67,7 @@ def make_plot(result, fn_prefix):
       <script src="./2dstudy_view.js"></script>
 
     </body>
-  """ % tuple(json.dumps(s) for s in [translation.names,translation.units,data,data_names,"Chart Overall Title",xlabel,ylabel,xvals,yvals])
+  """ % tuple(json.dumps(s) for s in [translation.names,translation.units,data,data_names,overall_title,xlabel,ylabel,xvals,yvals])
 
 
 

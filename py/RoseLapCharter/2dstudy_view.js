@@ -1,13 +1,19 @@
 var app = echarts.init(document.getElementById('main'));
 
 app.title = 'title';
+var selected_data = 0;
 
 range_ryb = ['#d73027','#dd472e','#e35936','#e86a3f','#ed7948','#f18851','#f5965b','#f8a466','#fbb170','#fdbe7b','#ffca87','#ffd693','#ffe29f','#ffeeab','#fff9b8','#fafcc2','#f0f6c8','#e5efcd','#dae8d2','#d0dfd6','#c4d6d9','#b9ccdc','#adc2df','#a1b7e1','#94abe2','#879fe3','#7992e3','#6985e3','#5777e2','#4169e1'];
-range_gyo = ['#228b22','#399a24','#4da726','#60b326','#71be27','#82c827','#92d026','#a2d725','#b0dc23','#bfe021','#cce21e','#d9e21a','#e5e115','#f0de0e','#fada05','#ffd400','#ffcd00','#ffc500','#ffbe00','#ffb600','#ffad00','#ffa500','#ff9c00','#ff9200','#ff8800','#ff7d00','#ff7100','#ff6500','#ff5600','#ff4500'];
+range_gyo = ['#228b22','#399a25','#4ca728','#5eb42c','#6fbf32','#7fc938','#8ed23f','#9cda46','#aae04f','#b7e557','#c3e860','#cfea6a','#d9eb73','#e3ea7d','#ece887','#f2e285','#f5d977','#f8d069','#fbc65c','#fcbd50','#feb345','#ffa93a','#ff9f2f','#ff9526','#ff8a1c','#ff7e13','#ff720a','#ff6503','#ff5600','#ff4500'];
 
 option = {
     title: {text: chart_title,show:true},
-    tooltip: {},
+    tooltip: {formatter:function(params, ticket, callback){
+        // console.log(params);
+        return params.value[2] + (selected_data%2 ? ' s' : ' pts') + '</br>'
+             + yData[parseInt(params.value[1])] + '</br>'
+             + xData[parseInt(params.value[0])];
+    }},
     xAxis: {
         type : 'category',
         data: xData,
@@ -38,7 +44,8 @@ option = {
         realtime: true,
         inRange: {
             color: range_ryb
-        }
+        },
+        show:false
     },
     legend: {
       type: 'scroll',
@@ -80,6 +87,7 @@ function handle_clk(a){
             color: (i%2 ? range_gyo : range_ryb)
         }
   } })
+  selected_data = i;
 };
 
 app.on('legendselectchanged',handle_clk);
