@@ -54,7 +54,7 @@ These lap times can be used with point formulas and other data to determine the 
 \section{Pre-Processing and Input Data}
 
 \subsection{Tire Data Fitting}
-As discussed in the 'Tires' section, tire models used in RoseLap v4 are rather simplistic, but are more sophisticated than the constant COF presumed in v3 and prior. To determine the four parameters, some fitting must be done.
+As discussed in the 'Tires' section, tire models used in RoseLap v5 are rather simplistic, but are more sophisticated than the constant COF presumed in v4 and prior. To determine the four parameters, some fitting must be done.
 
 Tire data is obtained through physical testing. We use the data purchased from the Milliken Tire Test Consortium (TTC). This contains drive-brake and combined loading, with sweeps over various conditions.
 
@@ -83,6 +83,8 @@ User adjustments can be made by changing confidence intervals, bins, or even ove
 Vehicle data entry is accomplished with .YAML files. See the Example Vehicle Definition File in the Appendix.
 
 \subsection{Tracks}
+
+In RoseLap, tracks are sets of 'segments' analagous to an FEA mesh. A segment is parameterized as having a distance ($\Delta x$) and curvature ($k$).
 
 Tracks may be defined in three ways:
 \begin{itemize}
@@ -139,13 +141,17 @@ Visually, this looks as follows:
 
 the unfiltered $k$ vector is the blue dots, the filtered data is the orange line, and the smoothed data is the green curve.
 
-The fitting process can be employed by using \texttt{input\_processing.py} as a command-line tool. Usage: \texttt{input\_processing.py path/to/logfile.log <segment size>}
+The fitting process is done at runtime, but the track can be previewed by using \texttt{input\_processing.py} as a command-line tool so that the fitting parameters may be adjusted. Usage: \texttt{input\_processing.py path/to/logfile.log <segment size>}
 
 \section{Component Models}
 
 \subsection{Tires}
 
 Tire models are extremely complicated if they are to be accurate- but this complexity can be a distraction from the major characteristics of tires that concern us. This behavior is that tires do not have a constant coefficient of friction- it decreases with additional normal force. Alternatively, we can model the tires as having some baseline, or 'offset' grip at zero normal force, and as normal force increases, maximum grip increases linearly.
+
+\begin{center}
+\includegraphics[height=0.3\textwidth]{tire_line.png}
+\end{center}
 
 \begin{align}
 	F_{tire,max,lat} = F_{tire,offset,lat} + \mu_{tire,lat} N \\
@@ -161,13 +167,19 @@ The parameters here are only for one tire. If we wish to look at the lumped char
 
 The parameters ($\mu$ and $F_{tire,offset}$) can be found from experimental tire data for various tires. The easiest method is to find lines that meet the outer capabilities of the tires, which will be at optimal operating conditions (camber, toe, slip rate, slip angle, and temperature).
 
-Of course, a racecar tire is rarely purely in one of these conditions- we must determine the limits in a multi-axis loading. At a given normal force, a 'friction ellipse' can be produced that intercepts these limits. This can be written as
+Of course, a racecar tire is rarely purely in one of these conditions- we must determine the limits in a multi-axis loading. At a given normal force, a 'friction ellipse' can be produced that intercepts these limits.
+
+\begin{center}
+\includegraphics[width=\textwidth]{tire_ellipse.png}
+\end{center}
+
+This can be written as
 
 \begin{align}
 	\frac{F_{tire,lat}^2}{F_{tire,max,lat}^2} + \frac{F_{tire,long}^2}{F_{tire,max,long}^2} <= 1
 \end{align}
 
-We can solve, then, for the 'remaining' lateral or longitudinal force given the other (this is still for one tire, but the lateral force is for the vehicle as a whole).
+We can solve, then, for the 'remaining' lateral or longitudinal force that the tire can apply before slipping (this is still for one tire, but the lateral force is for the vehicle as a whole).
 
 \begin{align}
 	F_{tire,remaining,long} = F_{tire,max,long} \sqrt{1-(\frac{F_{tire,lateral}}{n_{tires} F_{tire,max,lat}})^2} 
@@ -201,7 +213,7 @@ The force developed by the powertrain at the tires is modeled as a function of v
 
 Where $N$ is a gear ratio, $i_{gear}$ is the gear number, and $\omega_{crank}$ is the angular velocity of the crankshaft. $T_{engine}$ is a linear interpolation representing the torque curve of the engine. For velocities that cause the engine to hit its 'rev limiter', the engine is modeled as producing zero power. For velocities that are below the lowest datapoint specified in the torque curve, the engine is modeled as producing the torque at the lowest specified RPM.
 
-It takes a finite amount of time, $t_shift$ in order for a shift to occur. During this time, the powertrain produces no power. Another gear is chosen with a different gear than the currently selected one will yield a higher $F_{tire}$. When this happens, the driver shifts in the direction of this gear (the transmission is sequential, not fully manual). When the vehicle brakes, the gear is 'reset', and when the powertrain is used again, the best available gear is used, regardless of what was engaged prior.
+It takes a finite amount of time, $t_{shift}$ in order for a shift to occur. During this time, the powertrain produces no power. Another gear is chosen with a different gear than the currently selected one will yield a higher $F_{tire}$. When this happens, the driver shifts in the direction of this gear (the transmission is sequential, not fully manual). When the vehicle brakes, the gear is 'reset', and when the powertrain is used again, the best available gear is used, regardless of what was engaged prior.
 
 % FIXME: Efficiency (C02)
 
@@ -218,10 +230,15 @@ These physics which are reused throughout different overall vehicle models are i
 
 The physics behind a racecar are rather complicated. However, they can be simplified with the point mass assumption. This is the assumption that the car acts as a single point where all loads are applied, with no suspension to complicate tire grip and steering or tire characteristics.
 
+\begin{center}
+\includegraphics[width=0.4\textwidth]{single_fbd.png}
+\end{center}
+
 Now, we can begin the vehicle physics. The forces in the vertical direction, with no vertical acceleration (I.E. perfectly flat ground) are:
 
 \begin{align}
-    -F_{down} -m g + N = m a_{z} = 0, \\
+	\Sigma F_z = m a_z \\
+    -F_{down} -m g + N  = 0 \\
     N = m g + F_{down} \label{eq_z}
 \end{align}
 
@@ -248,6 +265,7 @@ where $a_{lat}$ is lateral acceleration, $v$ is instantaneous vehicle velocity, 
 The longitudinal forces acting on the vehicle are that of the tire and drag:
 
 \begin{align}
+	\Sigma F_{longitudinal} = m a_{longitudinal} \\
     a_{longitudinal} = \frac{\Sigma F_{longitudinal}}{m}\\
     a_{longitudinal} = \frac{F_{long,tire} - F_{drag} }{m} \label{eq_accel}
 \end{align}
@@ -300,7 +318,7 @@ Although this model does not allow for studying lateral load transfer, later one
 First, we will define remaining grip:
 
 \begin{align}
-	F_{excess} = F_{long,remaining}(n_{tires} = 4, N = m g + F_{down}(v_f), F_{lat} = m v_f^2 k) - F_{drag}(v_f)
+	F_{long,remaining} = F_{long,remaining}(n_{tires} = 4, N = m g + F_{down}(v_f), F_{lat} = m v_f^2 k) - F_{drag}(v_f)
 \end{align}
 
 We will also determine the initial range of velocities we can use.
@@ -403,10 +421,22 @@ To combat this problem, we simply dictate that the previous speed must be exceed
 
 A slight improvement can be made by accounting for the longitudinal load transfer induced by acceleration and heave of the vehicle, and yaw moment effects. This enables us to study the effect of center-of-gravity (CG) and center-of-pressure (CP) locations, as well as brake biasing, and any other parameter that would effect or be effected by longitudinal load transfer.
 
+\begin{center}
+\includegraphics[width=\textwidth]{twotire_fbd.png}
+\end{center}
+
 The vehicle physics begin with the summation of forces and moments in the vertical, longitudinal, and lateral directions.
 
 \begin{align}
-	\Sigma F_{vert} = N_{f} + N_{r} - m g - F_{down}(v_0) = m a_{vert} = 0 \\
+	\Sigma F_{vert} = m a_{vert} \\
+	\Sigma F_{lat} = m a_{lat} \\
+	\Sigma F_{long} = m a_{long} \\
+	\Sigma M_{vert} = \Sigma m a \times r + I_{yaw} \alpha \\
+	\Sigma M_{lat} = \Sigma m a \times r + I_{yaw} \alpha \\
+\end{align}
+
+\begin{align}	
+	\Sigma F_{vert} = N_{f} + N_{r} - m g - F_{down}(v_0) = 0 \\
 	\Sigma F_{lat}  = F_{tire,lat,f} + F_{tire,lat,f} = m a_{lat} = m v^2 k \\
 	\Sigma F_{long} = F_{tire,long,f} + F_{tire,long,f} - F_{drag}(v_0) = m a_{long} \\	
 	\Sigma M_{vert} = F_{tire,lat,f} l_{wheelbase} = m v^2 k l_{CG} + I_{yaw} \alpha \\
@@ -436,7 +466,7 @@ This method begins by computing the required lateral force for each tire. $N_f, 
 
 The remaining longitudinal forces $F_{tire,remaining,long}$ are computed as discussed previously (normal forces are presumed to be known). 
 
-Two models of braking may be employed: perfect brake biasing, and fixed brake biasing. Perfect brake biasing is simple:
+Two models of braking may be employed: perfect brake biasing, and fixed brake biasing. Perfect brake biasing is simple; just use all available grip to decelerate:
 
 \begin{align}
 	F_{tire,long,f} = -F_{tire,remaining,long,f} \\
@@ -631,9 +661,9 @@ Currently, the tire lateral grips are distributed between tires to try and equal
 
 % Evë please write something, thanks.
 
-\section{Future Plans}
+% \section{Future Plans}
 
-RoseLap 
+% RoseLap 
 
 \section{Appendix}
 
