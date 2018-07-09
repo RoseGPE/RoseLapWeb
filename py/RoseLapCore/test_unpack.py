@@ -3,7 +3,9 @@ import plotter
 import numpy as np
 
 print('unpacking')
-r = packer.unpack('c:/wamp/www/RoseLap/py/RoseLapCore/out/dp_circle_results-1525455147/dp_circle_results-1525455147.rslp')
+r = packer.unpack('c:\wamp\www\RoseLap\py\RoseLapCore/out/test_batch_results-1530501717/test_batch_results-1530501717.rslp')
+print(r)
+exit()
 # r = packer.unpack('C:/wamp/www/RoseLap/py/RoseLapCore/out/test_batch_results-1521152969/test_batch_results-1521152969.rslp')
 # print(r)
 # r = packer.unpack('C:/wamp/www/RoseLap/py/RoseLapCore/out/test_batch_results-1521154903/test_batch_results-1521154903.rslp')

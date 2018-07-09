@@ -40,6 +40,6 @@ def process_web_input(conf):
 
 def process_track(x, ap=""):
 	if "dxf" in x.name:
-		return (track_segmentation.dxf_to_segments(ap + x.name, x.segment_distance), x.steady_state, x.name)
+		return (track_segmentation.dxf_to_segments(ap + x.path, x.segment_distance), x.steady_state, x.name)
 	else:
-		return (track_segmentation.rlt_to_segments(x.name), x.steady_state, x.name)
+		return (track_segmentation.rlt_to_segments(x.path), x.steady_state, x.name)

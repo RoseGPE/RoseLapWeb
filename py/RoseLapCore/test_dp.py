@@ -3,7 +3,7 @@ sys.path.append(os.path.dirname(__file__))
 
 import input_processing
 import batcher
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt, mpld3
 import math
 import plotter
 import numpy as np
@@ -16,7 +16,7 @@ class Object(object):
 def makeSegment():
 	x = Object()
 	x.length = 2.
-	x.curvature = 0.
+	x.curvature = 0
 	x.sector = 0
 
 	return x
@@ -46,10 +46,13 @@ def draw_track(segs):
     	dy = math.degrees(math.cos(math.radians(t[-1]*s.length)))
     	y.append(y[-1] + dy)
 
-    plt.axis('equal')
-    plt.scatter(x, y, marker=".")
-    plt.savefig("track-" + name)
 
+   	fig, ax = plt.subplots()
+    ax.axis('equal')
+    ax.scatter(x, y, marker=".")
+    mpld3.save_html(fig, "mpld3-" + name)
+    fig.savefig("track2-" + name
+)
 circle = [makeCurvedSegment(15) for x in range(15)]
 tight = [makeCurvedSegment(3) for x in range(15)]
 supertight = [makeCurvedSegment(1) for x in range(15)]
@@ -87,6 +90,7 @@ tracks = [(complexturns, False, "track name")]
 
 print(len(tracks[0][0]))
 draw_track(tracks[0][0])
+exit()
 
 results = batcher.batch(tests, vehicle, tracks, model, out[1] != 0)
 

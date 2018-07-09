@@ -14,7 +14,7 @@
 	    	$query = sprintf("CALL con_Add_Track_Config(%s, '%s', '%s')", $_SESSION['userid'], $name, $path);
 	    	$insert = mysqli_query($conn, $query);
 
-			header("Location: ../secretpage.php");
+			header("Location: ../");
 		}
 	}
 ?>

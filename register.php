@@ -11,7 +11,7 @@
 <br>
 <h1>Register</h1>
 
-<form action="post/registeruser.php" method="post">
+<form id="registerForm" action="post/registeruser.php" method="post">
 	<div class="form-group">
 	    <label for="name">Name</label><br/>
 	    <input class="form-control" type="text" name="name" maxlength="50"/><br/>

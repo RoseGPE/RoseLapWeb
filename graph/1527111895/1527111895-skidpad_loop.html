@@ -1,0 +1,54 @@
+
+    	<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <link href="https://www.highcharts.com/highslide/highslide.css" rel="stylesheet" />
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/highcharts.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/highcharts-more.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/modules/heatmap.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/modules/exporting.js"></script>
+    </head>
+    <body style="margin:0;padding:0">
+                <div id="container" style="width:500px;height:500px;">Loading....</div>
+
+
+    <script>
+        $(function(){
+
+
+
+
+
+            Highcharts.setOptions({"lang": {}, "global": {}});
+            var option = {"loading": {}, "subtitle": {}, "xAxis": {"categories": ["500.0", "520.0", "540.0", "570.0", "600.0", "640.0"], "title": {"text": "'mass'"}}, "title": {"text": "Track Times: 'mass' vs. 'downforce_35mph'"}, "series": {}, "labels": {}, "chart": {"width": 500, "renderTo": "container", "marginTop": 40, "marginBottom": 80, "type": "heatmap", "plotBorderWidth": 1, "height": 500}, "tooltip": {"style": {"padding": 0, "pointerEvents": "auto"}, "formatter": function() {
+                                return this.point.value +
+                                '<br><a style="color:blue; text-decoration:underline;" target="_blank" href="1527111895-skidpad_loop/' + parseInt(this.point.x) + '-' + parseInt(this.point.y) + '.png">details</a>';
+                            }}, "plotOptions": {}, "yAxis": {"categories": ["0.0", "0.05", "0.1", "0.15000000000000002", "0.2"], "title": {"text": "'downforce_35mph'"}}, "credits": {"enabled": false}, "colors": {}, "pane": {}, "exporting": {}, "drilldown": {}, "navigation": {}, "legend": {"symbolHeight": 280, "layout": "vertical", "y": 25, "verticalAlign": "top", "align": "right", "margin": 0}, "colorAxis": {"max": 5.005613780580777, "maxColor": "#FF2ECC", "minColor": "#E0FF4F", "min": 4.853178495986374}};
+
+
+ 
+
+            var chart = new Highcharts.Chart(option);
+
+            var data = [{"data": [[0, 0, 4.853705724852039], [0, 1, 4.853445133347415], [0, 2, 4.853472604549935], [0, 3, 4.853351913975931], [0, 4, 4.853178495986374], [1, 0, 4.874711552544368], [1, 1, 4.874506532051625], [1, 2, 4.8744476631047124], [1, 3, 4.874360882109508], [1, 4, 4.874360781218517], [2, 0, 4.896392938351585], [2, 1, 4.896291974793434], [2, 2, 4.896194391673694], [2, 3, 4.89603535295481], [2, 4, 4.895912732785295], [3, 0, 4.9288137526009335], [3, 1, 4.928787201681934], [3, 2, 4.9286051081753355], [3, 3, 4.928491296836867], [3, 4, 4.928214393505314], [4, 0, 4.961379899143004], [4, 1, 4.9612532769638795], [4, 2, 4.96096005164425], [4, 3, 4.961051399767072], [4, 4, 4.96107422105435], [5, 0, 5.005613780580777], [5, 1, 5.005459850274661], [5, 2, 5.005330646590862], [5, 3, 5.005240464628818], [5, 4, 5.005233253130921]], "type": "heatmap", "name": "Track Times"}];
+            var dataLen = data.length;
+            for (var ix = 0; ix < dataLen; ix++) {
+                chart.addSeries(data[ix]);
+            }
+ 
+
+
+
+
+
+
+
+        
+    });
+        </script>
+
+    </body>
+</html>
+    	

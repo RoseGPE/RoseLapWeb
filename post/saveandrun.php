@@ -31,6 +31,6 @@
 			die();
 		}
 
-		header("Location: ../secretpage.php");
+		header("Location: ../");
 	}
 ?>

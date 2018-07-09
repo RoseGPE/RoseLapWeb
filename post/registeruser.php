@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			mysqli_query($conn, $query) 
 				or die(print_r(mysqli_error($conn), true));
 
-        	echo '<script type="text/javascript">alert("Registration successful!"); location.href = "../RoseLap"</script>';
+        	echo '<script type="text/javascript">alert("Registration successful!"); location.href = "../"</script>';
 
 	        $name = '';
 	        $email = '';

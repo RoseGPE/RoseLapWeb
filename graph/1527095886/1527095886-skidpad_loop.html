@@ -1,0 +1,54 @@
+
+    	<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <link href="https://www.highcharts.com/highslide/highslide.css" rel="stylesheet" />
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/highcharts.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/highcharts-more.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/modules/heatmap.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/modules/exporting.js"></script>
+    </head>
+    <body style="margin:0;padding:0">
+                <div id="container" style="width:500px;height:500px;">Loading....</div>
+
+
+    <script>
+        $(function(){
+
+
+
+
+
+            Highcharts.setOptions({"lang": {}, "global": {}});
+            var option = {"loading": {}, "subtitle": {}, "xAxis": {"categories": ["500.0", "520.0", "540.0", "570.0", "600.0", "640.0"], "title": {"text": "'mass'"}}, "title": {"text": "Track Times: 'mass' vs. 'drag_35mph', 'downforce_35mph'"}, "series": {}, "labels": {}, "chart": {"width": 500, "renderTo": "container", "marginTop": 40, "marginBottom": 80, "type": "heatmap", "plotBorderWidth": 1, "height": 500}, "tooltip": {"style": {"padding": 0, "pointerEvents": "auto"}, "formatter": function() {
+                                return this.point.value +
+                                '<br><a style="color:blue; text-decoration:underline;" target="_blank" href="1527095886-skidpad_loop/' + parseInt(this.point.x) + '-' + parseInt(this.point.y) + '.png">details</a>';
+                            }}, "plotOptions": {}, "yAxis": {"categories": ["10, 0", "15, 10", "20, 20", "25, 30", "30, 40", "35, 50", "40, 60", "45, 70", "50, 80"], "title": {"text": "'drag_35mph', 'downforce_35mph'"}}, "credits": {"enabled": false}, "colors": {}, "pane": {}, "exporting": {}, "drilldown": {}, "navigation": {}, "legend": {"symbolHeight": 280, "layout": "vertical", "y": 25, "verticalAlign": "top", "align": "right", "margin": 0}, "colorAxis": {"max": 5.005757157340813, "maxColor": "#FF2ECC", "minColor": "#E0FF4F", "min": 4.649379652798423}};
+
+
+ 
+
+            var chart = new Highcharts.Chart(option);
+
+            var data = [{"data": [[0, 0, 4.851640580252629], [0, 1, 4.8262287248005045], [0, 2, 4.801338909535513], [0, 3, 4.775359176700175], [0, 4, 4.750408501438183], [0, 5, 4.725440834591015], [0, 6, 4.700458764049374], [0, 7, 4.6743820888329175], [0, 8, 4.649379652798423], [1, 0, 4.8727752578665395], [1, 1, 4.849092030530443], [1, 2, 4.825388308224503], [1, 3, 4.801667448189768], [1, 4, 4.776900201878468], [1, 5, 4.753149407339543], [1, 6, 4.729394357220413], [1, 7, 4.7056409243913], [1, 8, 4.680837561908651], [2, 0, 4.894478216436311], [2, 1, 4.871885476028336], [2, 2, 4.849281827199479], [2, 3, 4.826670688058198], [2, 4, 4.803057357739787], [2, 5, 4.7804341614015735], [2, 6, 4.75781509582927], [2, 7, 4.735205916427676], [2, 8, 4.711589855159773], [3, 0, 4.934275528685309], [3, 1, 4.905983460766859], [3, 2, 4.88488613598941], [3, 3, 4.863792408715269], [3, 4, 4.841755550518452], [3, 5, 4.820670862328589], [3, 6, 4.799601310691153], [3, 7, 4.7785524767977865], [3, 8, 4.756558203455529], [4, 0, 4.962622091673156], [4, 1, 4.93997287820576], [4, 2, 4.920232046940206], [4, 3, 4.900503940209748], [4, 4, 4.880792786775974], [4, 5, 4.860187038245252], [4, 6, 4.840511931953497], [4, 7, 4.820865709228878], [4, 8, 4.800326025787232], [5, 0, 5.005757157340813], [5, 1, 4.985981031090967], [5, 2, 4.967016467418557], [5, 3, 4.948914441312682], [5, 4, 4.930837801427463], [5, 5, 4.911929633893391], [5, 6, 4.89390821568859], [5, 7, 4.8759254138217845], [5, 8, 4.8571109096299105]], "type": "heatmap", "name": "Track Times"}];
+            var dataLen = data.length;
+            for (var ix = 0; ix < dataLen; ix++) {
+                chart.addSeries(data[ix]);
+            }
+ 
+
+
+
+
+
+
+
+        
+    });
+        </script>
+
+    </body>
+</html>
+    	

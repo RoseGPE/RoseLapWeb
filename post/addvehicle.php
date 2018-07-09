@@ -14,7 +14,7 @@
 	    	$query = sprintf("CALL con_Add_Vehicle_Config(%s, '%s', '%s')", $_SESSION['userid'], $name, $text);
 	    	$insert = mysqli_query($conn, $query);
 
-			header("Location: ../secretpage.php");
+			header("Location: ../");
 		}
 	}
 ?>

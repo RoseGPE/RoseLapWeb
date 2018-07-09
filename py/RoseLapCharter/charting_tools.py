@@ -5,12 +5,29 @@ def makeLabel(d):
     label = []
 
     for i in range(len(data[0])):
-        label.append(str([v[i] for v in data])[1:-1])
+        label.append(str([round(v[i], 5) for v in data])[1:-1])
 
     return (str([k for k in list(d.keys())])[1:-1], label)
 
+def generateTimeseries(times):
+    return [time[1] for time in times]
+
 def makeGraphFolder(foldername):
-	os.makedirs("C:\wamp\www\RoseLap\graph\\" + foldername)
+    dname = "C:\wamp\www\RoseLap\graph\\" + foldername
+    try:
+        os.makedirs(dname)
+    except Exception:
+        pass
+    return dname
+
+def displayDirectory(filename):
+    return 'C:\wamp\www\RoseLap\graph\\' + filename + "\\"
+
+def getHead():
+    styles = '<link rel="stylesheet" type="text/css" href="../../css/col-bootstrap.min.css">'
+    with open("../../display/head.php", "r") as head:
+        with open("../../display/nav.php", "r") as nav:
+            return head.read() + styles + nav.read()
 
 def writeHTML(H, filename):
     with open("C:\wamp\www\RoseLap\graph\\" + filename, "w") as chart:
