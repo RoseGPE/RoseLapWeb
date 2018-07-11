@@ -10,6 +10,7 @@ import json
 import matplotlib.pyplot as plt
 
 epsilon = 1e-4
+option_names = ['dl', 'd_nom', 'd_scale', 'D', 'maxcurv', 'smoothing', 'savgol_amt', 'savgol_dof']
 
 def load_dxf(path_to_file):
   #print(path_to_file)
@@ -149,7 +150,7 @@ def pointify_dxf(dxf_output, connectivity, dl):
       intermediates.append(len(pts))
   return (np.array(pts),intermediates)
 
-def points_in_each_seg_slow(path, dx, plot):
+def points_in_each_seg_slow(path, dx, plot, opts={}):
   a = np.array([])
   s = np.array([])
   k = np.array([])
@@ -168,8 +169,10 @@ def points_in_each_seg_slow(path, dx, plot):
   for i in range(1,len(a)):
     l = np.append(l, l[-1]+math.hypot(a.real[i]-a.real[i-1],-a.imag[i]+a.imag[i-1]))
   # print(k)
-  spl = UnivariateSpline(l, k, k=2)
-  spl.set_smoothing_factor(0.005)
+  smoothing = opts['smoothing'] if 'smoothing' in opts else 0.005
+  smoothing_dof = opts['smoothing_dof'] if 'smoothing_dof' in opts else 2
+  spl = UnivariateSpline(l, k, k=smoothing_dof)
+  spl.set_smoothing_factor(smoothing)
   lsp = l #np.linspace(min(l),max(l), l[-1]/dx)
   knew = spl(lsp)
 
@@ -223,7 +226,7 @@ class RLT(object):
     self.length = l
     self.sector = s
     
-def seg_points_trackwalker(fn,dx,plot=False):
+def seg_points_trackwalker(fn,dx,plot=False,opts={}):
   f = open(fn,'r')
   params = json.loads(f.readline())
   f.close()
@@ -265,12 +268,16 @@ def seg_points_trackwalker(fn,dx,plot=False):
   if plot:
     plt.figure()
     plt.plot(l,k,'.',ms=1)
-  l = signal.savgol_filter(l,params["savgol_amt"],params["savgol_dof"])
-  k = signal.savgol_filter(k,params["savgol_amt"],params["savgol_dof"])
+  savgol_amt = opts['savgol_amt'] if 'savgol_amt' in opts else params["savgol_amt"]
+  savgol_dof = opts['savgol_dof'] if 'savgol_dof' in opts else params["savgol_dof"]
+  smoothing = opts['smoothing'] if 'smoothing' in opts else params["smoothing"]
+  smoothing_dof = opts['smoothing_dof'] if 'smoothing_dof' in opts else 5
+  l = signal.savgol_filter(l,savgol_amt,savgol_dof)
+  k = signal.savgol_filter(k,savgol_amt,savgol_dof)
   if plot:
     plt.plot(l,k,'-',lw=1)
-  spl = UnivariateSpline(l, k, k=5)
-  spl.set_smoothing_factor(params["smoothing"])
+  spl = UnivariateSpline(l, k, k=smoothing_dof)
+  spl.set_smoothing_factor(smoothing)
   lsp = np.linspace(min(l),max(l), l_tot/dx)
   k = spl(lsp)
   l = lsp
@@ -369,7 +376,7 @@ def plot_segments(segments):
 
   plt.show()
 
-def file_to_segments(filename, dl, plot=False):
+def file_to_segments(filename, dl, plot=False, opts={}):
   if filename[-4:].lower() == '.dxf':
     dxf_geometry,connectivity,open_ended = load_dxf(filename)
     points,intermediates = pointify_dxf(dxf_geometry,connectivity,dl)
@@ -378,16 +385,16 @@ def file_to_segments(filename, dl, plot=False):
     testpath,attrs = svg2paths(filename) 
     # print(testpath)
     testpath = testpath[0]
-    pts,sectors = points_in_each_seg_slow(testpath, dl, plot)
+    pts,sectors = points_in_each_seg_slow(testpath, dl, plot, opts)
     return seg_points_svg(pts, max(abs(pts[0,:]-pts[-1,:])) > epsilon)
   elif filename[-4:].lower() == '.log':
-    return seg_points_trackwalker(filename, dl, plot)
+    return seg_points_trackwalker(filename, dl, plot, opts)
   elif filename[-4:].lower() == '.rlt':
-    return rlt_to_segments(filenam)
+    return rlt_to_segments(filenam, opts)
   else:
     return None
 
-def rlt_to_segments(filename):
+def rlt_to_segments(filename, opts={}):
   with open(filename, "r") as rlt:
     segs = []
 
