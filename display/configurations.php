@@ -37,7 +37,7 @@
 </div>
 
 <div class="modal fade" id="addConfigModal">
-	<div class="modal-dialog modal-lg" role="document">
+	<div class="modal-dialog modal-lg full-screen" role="document">
 		<div class="modal-content">
 			<form id="addConfigForm" action="post/addconfig.php" method="post">
 				<div class="modal-header">
@@ -64,7 +64,7 @@
 </div>
 
 <div class="modal fade" id="editConfigModal">
-	<div class="modal-dialog modal-lg" role="document">
+	<div class="modal-dialog modal-lg full-screen" role="document">
 		<div class="modal-content">
 			<form id="editConfigForm" action="post/saveandrun.php" method="post" onsubmit="window.location = window.location.href;">
 				<div class="modal-header">
@@ -104,3 +104,8 @@
 		});
 	}
 </script>
+<style type="text/css">
+	.full-screen {
+	    max-width: 85%;
+	}
+</style>
