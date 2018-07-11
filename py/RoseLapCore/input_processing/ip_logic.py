@@ -10,17 +10,13 @@ def process_input(config_filename):
 	with open('./params/batcher_config/' + config_filename) as data:
 		conf = fancyyaml.load(data, True)
 
-	tracks = [process_track(x, "./params/DXFs/") for x in conf.tracks]
+	tracks = [process_track(x, "./params/tracks/") for x in conf.tracks]
 	model = sims.Simulation(conf.model)
 	out = (conf.filename, conf.data_percentage)
 
 	return (conf.tests, conf.vehicle, tracks, model, out)
 
 def process_web_config(config_text):
-	# load config file
-	# load vehicle into conf
-	# return input pieces
-
 	config_stream = StringIO.StringIO(config_text)
 	conf = fancyyaml.load(config_stream, False)
 	config_stream.close()
@@ -38,8 +34,5 @@ def process_web_input(conf):
 
 	return (conf.tests, conf.vehicle, tracks, model, out)
 
-def process_track(x, ap=""):
-	if "dxf" in x.name:
-		return (track_segmentation.dxf_to_segments(ap + x.path, x.segment_distance), x.steady_state, x.name)
-	else:
-		return (track_segmentation.rlt_to_segments(x.path), x.steady_state, x.name)
+def process_track(x, pre=""):
+	return (track_segmentation.file_to_segments(pre + x.file, x.segment_distance), x.steady_state, x.name)

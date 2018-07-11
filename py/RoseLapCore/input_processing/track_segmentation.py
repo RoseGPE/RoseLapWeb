@@ -382,6 +382,8 @@ def file_to_segments(filename, dl, plot=False):
     return seg_points_svg(pts, max(abs(pts[0,:]-pts[-1,:])) > epsilon)
   elif filename[-4:].lower() == '.log':
     return seg_points_trackwalker(filename, dl, plot)
+  elif filename[-4:].lower() == '.rlt':
+    return rlt_to_segments(filenam)
   else:
     return None
 

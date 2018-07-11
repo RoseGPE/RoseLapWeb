@@ -62,6 +62,5 @@ tests:
         range_step: 10
 
 ##### OUTPUT SPECIFICATION #####
-# I'm not sure what this is. Maybe don't fuck with it. Or ask Eve. - Thad
 filename: test_batch_results
-data_percentage: 0 # 0 -> just plot points
+data_percentage: 100 # 100 -> all data, 0 -> just plot points
