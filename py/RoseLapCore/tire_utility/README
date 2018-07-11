@@ -1,0 +1,12 @@
+#Credit
+Thad Hughes - hughes.thad@gmail.com
+Rose-Hulman Grand Prix Engineering
+
+#Dependencies:
+- matplotlib
+- numpy
+
+#Usage
+Tire data should go in a folder named 'data'. This is NOT provided as it would be a copyright breach. Please consult your Technical Director for how to obtain tire data from the TTC (or other sources).
+
+Things labeled USERDEF are intended to be modified by the user, and you will likely want to do this. This is not a fully automated process.

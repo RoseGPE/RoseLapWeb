@@ -12,21 +12,33 @@ O_TIME = 0
 O_DISTANCE = 1
 O_VELOCITY = 2
 O_NF = 3
-O_NR = 4
-O_SECTORS = 5
-O_STATUS = 6
-O_GEAR = 7
-O_LONG_ACC = 8
-O_LAT_ACC = 9
-O_FF_REMAINING = 10
-O_FR_REMAINING = 11
+O_NF2 = 4
+O_NR = 5
+O_NR2 = 6
+O_SECTORS = 7
+O_STATUS = 8
+O_GEAR = 9
+O_LONG_ACC = 10
+O_LAT_ACC = 11
+O_YAW_ACC = 12
+O_YAW_VEL = 13
+O_FF_REMAINING = 14
+O_FF2_REMAINING = 15
+O_FR_REMAINING = 16
+O_FR2_REMAINING = 17
 
-O_CURVATURE = 12
-O_ENG_RPM = 13
+O_CURVATURE = 18
+O_ENG_RPM = 19
 
-O_CO2 = 14
+O_CO2 = 20
 
-O_MATRIX_COLS = 15
+O_AERO_MODE = 21
+
+O_MATRIX_COLS = 22
+O_NAMES = ["Time","Distance","Velocity","Front Normal Force","Front Normal Force 2","Rear Normal Force","Rear Normal Force 2",
+           "Sector","Status","Gear","Longitudinal Acc.","Lateral Acc.","Yaw Acceleration", "Yaw Velocity",
+           "Remaining Front Force","Remaining Front Force 2", "Remaining Rear Force", "Remaining Rear Force 2", "Curvature", "Engine Speed", "CO2", "Aero Mode"]
+O_UNITS = ["s","ft","ft/s","lb","lb","lb","lb","","","","G's","G's","rad/s^2","rad/s","lb","lb","lb","lb","ft^-1","RPM","lbm",""]
 
 # Shifting status codes
 IN_PROGRESS = 0
@@ -50,3 +62,7 @@ G_DECISION = 4 # int
 G_COST = 5 # float
 G_VELOCITY = 6 # float
 G_GEAR_DATA = 7 # tuple(int, int, float)
+
+AERO_FULL = 0
+AERO_DRS = 1
+AERO_BRK = 2
