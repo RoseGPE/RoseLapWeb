@@ -11,9 +11,8 @@
 
 	if(isset($_SESSION['userid']) && !empty($_SESSION['userid'])) {
 		$loggedin = true;
-		//echo "Someone is logged in: User #" . $_SESSION['userid'];
-	} else if ($_SERVER['REQUEST_URI'] == '/RoseLap/register.php') {
-		//echo "yes this is where register";
+	} else if ($_SERVER['REQUEST_URI'] == '/RoseLap/register.php' ||
+				$_SERVER['REQUEST_URI'] == '/RoseLap/post/registeruser.php') {
 		$loggedin = true;
 	} else {
 		//echo "Not logged in";
