@@ -3,6 +3,11 @@ import numpy as np
 import math
 import itertools as it
 import time
+from svgpathtools import *
+from scipy import signal
+from scipy.interpolate import UnivariateSpline
+import json
+import matplotlib.pyplot as plt
 
 epsilon = 1e-4
 
@@ -144,26 +149,73 @@ def pointify_dxf(dxf_output, connectivity, dl):
       intermediates.append(len(pts))
   return (np.array(pts),intermediates)
 
+def points_in_each_seg_slow(path, dx, plot):
+  a = np.array([])
+  s = np.array([])
+  k = np.array([])
+  d = np.array([])
+  l = np.array([0])
+  firsttime = True
+  sectors = []
+  for seg in path:
+    ls = np.linspace(0,1,seg.length()/dx)[:-1]
+    x = seg.poly()(ls)
+    for i in ls:
+      k = np.append(k, seg.curvature(i))
+    a = np.append(a, x)
+    s = np.append(s, np.ones_like(x)*len(sectors))
+    sectors.append(a.shape[0])
+  for i in range(1,len(a)):
+    l = np.append(l, l[-1]+math.hypot(a.real[i]-a.real[i-1],-a.imag[i]+a.imag[i-1]))
+  # print(k)
+  spl = UnivariateSpline(l, k, k=2)
+  spl.set_smoothing_factor(0.005)
+  lsp = l #np.linspace(min(l),max(l), l[-1]/dx)
+  knew = spl(lsp)
+
+  if plot:
+    plt.plot(l,k,'.')
+    plt.plot(lsp,knew, lw=2)
+
+  return (np.stack((a.real,-a.imag,knew,s.real),axis=1),sectors)
+
 class Segment(object):
-  def __init__(self,x1,y1,x2,y2,x3,y3,sector,endpoint):
-    self.x_m=x1; self.x=x2; self.x_p=x3; self.y_m=y1; self.y=y2; self.y_p=y3;
-    self.length_m = math.hypot(self.x_m-self.x, self.y_m-self.y)
-    self.length_p = math.hypot(self.x_p-self.x, self.y_p-self.y)
-    self.length_secant = math.hypot(self.x_p-self.x_m, self.y_p-self.y_m)
-    self.length = (self.length_m+self.length_p)/2
-    self.sector = sector;
+  def __init__(self,x1=None,y1=None,x2=None,y2=None,x3=None,y3=None,sector=0,endpoint=False,length=None,curvature=None):
+    if length is None:
+      self.x_m=x1; self.x=x2; self.x_p=x3; self.y_m=y1; self.y=y2; self.y_p=y3;
+      self.length_m = math.hypot(self.x_m-self.x, self.y_m-self.y)
+      self.length_p = math.hypot(self.x_p-self.x, self.y_p-self.y)
+      self.length_secant = math.hypot(self.x_p-self.x_m, self.y_p-self.y_m)
+      self.length = (self.length_m+self.length_p)/2
+      self.sector = sector;
 
-    if endpoint:
-      self.curvature = 0
+      if endpoint:
+        self.curvature = 0
+      else:
+        p = (self.length_m+self.length_p+self.length_secant)/2
+        #print(p, self.length_m, self.length_p, self.length_secant)
+        try:
+          area = math.sqrt(p*(p-self.length_m)*(p-self.length_p)*(p-self.length_secant))
+        except ValueError:
+          area=0
+
+        if self.length_m <= 0 or self.length_p <=0:
+          self.curvature = 0
+        else:
+          self.curvature = 4*area/(self.length_m*self.length_p*self.length_secant)
+      if not (curvature is None):
+        # print('override curv')
+        self.curvature = curvature
     else:
-      p = (self.length_m+self.length_p+self.length_secant)/2
-      #print(p, self.length_m, self.length_p, self.length_secant)
-      try:
-        area = math.sqrt(p*(p-self.length_m)*(p-self.length_p)*(p-self.length_secant))
-      except ValueError:
-        area=0
-
-      self.curvature = 4*area/(self.length_m*self.length_p*self.length_secant)
+      # print('override all')
+      self.x = x2
+      self.y = y2
+      self.length = length
+      self.length_m = length
+      self.length_p = length
+      self.length_secant = length
+      self.curvature = curvature
+      self.sector = sector
 
 class RLT(object):
   def __init__(self, k, l, s):
@@ -171,6 +223,80 @@ class RLT(object):
     self.length = l
     self.sector = s
     
+def seg_points_trackwalker(fn,dx,plot=False):
+  f = open(fn,'r')
+  params = json.loads(f.readline())
+  f.close()
+
+  encoder_data = np.loadtxt(fn,delimiter=',',skiprows=1)
+  x1 = encoder_data[:,0]/(600.0*4)*(params["d_nom"]/12.0*math.pi)
+  x2 = encoder_data[:,1]/(600.0*4)*(params["d_nom"]*params["d_scale"]/12.0*math.pi)
+
+  if not (params["cutoff_start"] is None or params["cutoff_end"] is None):
+    cut_low = x1.searchsorted(params["cutoff_start"],'right')-1
+    cut_high = x1.searchsorted(params["cutoff_end"],'left')-1
+    x1 = x1[cut_low:cut_high]
+    x2 = x2[cut_low:cut_high]
+  x1 = x1-x1[0]
+  x2 = x2-x2[0]
+
+  k = np.zeros(x1.shape,dtype=float)
+  d = np.zeros(x1.shape,dtype=float)
+  l = np.zeros(x1.shape,dtype=float)
+  theta = np.zeros(x1.shape,dtype=float)
+  x = np.zeros(x1.shape,dtype=float)
+  y = np.zeros(x1.shape,dtype=float)
+
+  D = params["D"]/12.0
+
+  for i in range(1,np.size(x1)):
+    d[i] = (x1[i]-x1[i-1]+x2[i]-x2[i-1])/2
+    k[i] = 2/D *(x1[i]-x1[i-1]-x2[i]+x2[i-1])/(x1[i]-x1[i-1]+x2[i]-x2[i-1])
+    theta[i] = theta[i-1] + d[i]*k[i]
+    x[i] = x[i-1] + math.sin(theta[i])*d[i]
+    y[i] = y[i-1] + math.cos(theta[i])*d[i]
+    l[i] = l[i-1] + d[i]
+
+  l=l[1:]*np.sign(np.sum(l))
+  k=np.clip(k[1:], -params["maxcurv"], params["maxcurv"])
+
+  l_tot = l[-1]-l[1]
+
+  if plot:
+    plt.figure()
+    plt.plot(l,k,'.',ms=1)
+  l = signal.savgol_filter(l,params["savgol_amt"],params["savgol_dof"])
+  k = signal.savgol_filter(k,params["savgol_amt"],params["savgol_dof"])
+  if plot:
+    plt.plot(l,k,'-',lw=1)
+  spl = UnivariateSpline(l, k, k=5)
+  spl.set_smoothing_factor(params["smoothing"])
+  lsp = np.linspace(min(l),max(l), l_tot/dx)
+  k = spl(lsp)
+  l = lsp
+  if plot:
+    plt.plot(lsp,k, lw=2)
+    plt.title('Filtered l-k')
+
+  d = np.zeros(l.shape,dtype=float)
+  theta = np.zeros(l.shape,dtype=float)
+  xf = np.zeros(l.shape,dtype=float)
+  yf = np.zeros(l.shape,dtype=float)
+  for i in range(1,np.size(l)):
+    d[i] = (l[i]-l[i-1])
+    theta[i] = theta[i-1] + d[i]*k[i]
+    xf[i] = xf[i-1] + math.sin(theta[i])*d[i]
+    yf[i] = yf[i-1] + math.cos(theta[i])*d[i]
+  if plot:
+    plt.figure()
+    plt.plot(x,y,'.b',ms=1)
+    plt.plot(xf,yf,'.r',ms=2)
+  segs = []
+  for i in range(len(k)):
+    segs.append(Segment(0,0, xf[i],yf[i], 0,0, 0,False,dx,abs(k[i])))
+
+  return segs
+
 
 def seg_points(points,intermediates,open_ended):
   segs=[]
@@ -194,7 +320,34 @@ def seg_points(points,intermediates,open_ended):
     segs[i].curvature = (segs[i-1].curvature+segs[i+1].curvature)/2
   return segs
 
+def seg_points_svg(points,open_ended):
+  segs=[]
+  for i in range(points.shape[0]):
+    overk = False
+    im=i-1
+    if im < 0:
+      im = points.shape[0]-1
+      if open_ended:
+        overk = True
+        im = 0
+    ip=i+1
+    if ip >= points.shape[0]:
+      ip = 0
+      if open_ended:
+        overk = True
+        ip = i
+    segs.append(Segment(points[im,0], points[im,1], points[i,0], points[i,1], points[ip,0], points[ip,1], points[i,3], overk, curvature=points[i,2]))
+  # for i in range(1,len(segs)-1):
+  #   d1 = segs[i].curvature-segs[i-1].curvature
+  #   d2 = segs[i].curvature-segs[i+1].curvature
+
+  #   if d1 > 0.005 and d2 > 0.005:
+  #     segs[i].curvature = (segs[i-1].curvature+segs[i+1].curvature)/2
+
+  return segs
+
 def plot_segments(segments):
+  plt.figure()
   sectors = []
   labels = []
   i=0
@@ -216,13 +369,21 @@ def plot_segments(segments):
 
   plt.show()
 
-def dxf_to_segments(filename, dl):
-  # The function you came here for. Hand it a filename and desired segment distance, you get segments of the track.
-  dxf_geometry,connectivity,open_ended = load_dxf(filename)
-  points,intermediates = pointify_dxf(dxf_geometry,connectivity,dl)
-  #print (connectivity)
-  segs = seg_points(points,intermediates,open_ended)
-  return segs
+def file_to_segments(filename, dl, plot=False):
+  if filename[-4:].lower() == '.dxf':
+    dxf_geometry,connectivity,open_ended = load_dxf(filename)
+    points,intermediates = pointify_dxf(dxf_geometry,connectivity,dl)
+    return seg_points(points,intermediates,open_ended)
+  elif filename[-4:].lower() == '.svg':
+    testpath,attrs = svg2paths(filename) 
+    # print(testpath)
+    testpath = testpath[0]
+    pts,sectors = points_in_each_seg_slow(testpath, dl, plot)
+    return seg_points_svg(pts, max(abs(pts[0,:]-pts[-1,:])) > epsilon)
+  elif filename[-4:].lower() == '.log':
+    return seg_points_trackwalker(filename, dl, plot)
+  else:
+    return None
 
 def rlt_to_segments(filename):
   with open(filename, "r") as rlt:
@@ -240,6 +401,12 @@ def rlt_to_segments(filename):
   return segs
 
 if __name__ == '__main__':
-  segs = dxf_to_segments('./track.dxf', 2)
+  import sys
+  segs = file_to_segments(sys.argv[1], float(sys.argv[2]), True)
+  
   #[print(x.x, x.y, x.curvature, x.sector) for x in segs]
-  plot_segments(segs)
+  # try:
+  #   plot_segments (segs)
+  # except:
+  #   print("plot_segments failed")
+  plt.show()
