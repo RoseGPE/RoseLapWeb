@@ -61,6 +61,9 @@ option = {
       selectedMode: 'single',
       data: data_names
     },
+    grid: {
+        height: 480
+    },
     series: [...Array(data_names.length).keys()].map(i => ({
         name: data_names[i],
         type: 'line',

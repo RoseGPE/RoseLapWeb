@@ -23,6 +23,8 @@ class Simulation:
 			return sim_onetire()
 		elif self.name == "two_tires":
 			return sim_twotires()
+		elif self.name == "four_tires":
+			return sim_fourtires()
 		elif self.name == "dp_nd":
 			return sim_dp_nd_template()
 

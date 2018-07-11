@@ -2,7 +2,9 @@ import sys, os
 sys.path.append('C:\wamp\www\RoseLap\py')
 
 import singleaxis
+import singleaxis_v2
 import heatmap
+import heatmap_v2
 import mapview
 import detail
 import packer
@@ -18,15 +20,18 @@ def make_dashboard(results, display_name):
 	axes = len(results["axiscontents"])
 
 	if axes == 1:
-		summary_plot = singleaxis.make_plot(results, display_name)
+		summary_plot = singleaxis_v2.make_plot(results, display_name)
+		sum2 = singleaxis.make_plot(results, display_name)
+		plots = make_row(make_col(summary_plot, 6)+ make_col(sum2, 6))
 	elif axes == 2:
-		summary_plot = heatmap.make_plot(results, display_name)
+		summary_plot = heatmap_v2.make_plot(results, display_name)
+		plots = make_row(make_col(summary_plot, 12))
 	else:
 		print("Unsupported plot dimensions! Please submit data with 1 or 2 axes.") 
 		exit()
 
-	map_plot = mapview.make_plot(results, display_name)
-	plots = make_row(make_col(map_plot, 6) + make_col(summary_plot, 6))
+	# map_plot = mapview.make_plot(results, display_name)
+	
 
 	metadata = make_col(append_raw("", generate_metadata(results, display_name)), 6)
 

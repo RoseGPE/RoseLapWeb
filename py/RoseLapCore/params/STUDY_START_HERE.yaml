@@ -47,19 +47,23 @@ tests:
         - [14.3, 16.2, 17.4, 16.5, 15.5, 13.8, 13.9]
         - [24.3, 26.2, 27.4, 26.5, 25.5, 23.8, 23.9]
         - [34.3, 36.2, 37.4, 36.5, 35.5, 33.8, 33.9]
+      labels:
+        - A
+        - B
+        - C
     - target: mass
       operation: product         # for this target, we will multiply the baseline parameter by the specified values.
       test_vals: [0.8, 1.0, 1.2] # these are the values that we will multiply by. (bracketed lists are as much of lists as dashed lists like above.)
 
   - axis: # This is the Y-axis
-    - target: downforce_35mph
+    - target: shift_time
       operation: replace
       test_vals:
         # This is a weird exception to the YAML spec that we have defined for convenience.
         # This generates the list 0,10,20,...,80 automatically! Very useful for big sweeps.
         range_start: 0
-        range_end: 80
-        range_step: 10
+        range_end: 0.4
+        range_step: 0.1
 
 ##### OUTPUT SPECIFICATION #####
 filename: test_batch_results

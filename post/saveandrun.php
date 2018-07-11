@@ -13,6 +13,7 @@
 			$past = $_POST['pastName'];
 		    $name = $_POST['editName'];
 			$text = $_POST['editText'];
+			$text = str_replace("'", "''", $text);
 
 	    	$query = sprintf("CALL con_Edit_Batch_Config('%s', %s, '%s', '%s')", $past, $_SESSION['userid'], $name, $text);
 	    	$edit = mysqli_query($conn, $query);

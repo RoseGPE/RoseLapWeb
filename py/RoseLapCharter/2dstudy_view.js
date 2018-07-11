@@ -91,8 +91,10 @@ function handle_sel(a){
 };
 
 function handle_clk(a){
-    console.log(a);
-  alert('You clicked on datapoint ' + a.dataIndex + ' AKA ' + a.data[0] + ', ' + a.data[1]);
+  //console.log(a);
+  //alert('You clicked on datapoint ' + a.dataIndex + ' AKA ' + a.data[0] + ', ' + a.data[1]);
+  var win = window.open(a.seriesName.split(" ")[0].split(".")[0] + '/' + a.value[0] + '-' + a.value[1] + '.html', '_blank');
+  win.focus();
 };
 
 app.on('legendselectchanged',handle_sel);

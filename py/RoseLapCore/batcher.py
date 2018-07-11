@@ -13,8 +13,10 @@ def batch(tests, vehicle, tracks, model, include_output):
 	permutations, targets, flatTargets, test_vals = listify(tests, vehicle)
 
 	batch["axes"] = len(test_vals)
-	batch["axiscontents"] = buildContents(targets, test_vals)
-	batch["track_data"] = batch_run(flatTargets, permutations, batch["axiscontents"], vehicle, tracks, model, include_output)
+	batch["test_vals"] = buildContents(targets, test_vals)
+	batch["track_data"] = batch_run(flatTargets, permutations, batch["test_vals"], vehicle, tracks, model, include_output)
+
+	batch["axiscontents"] = appendLabels(batch["test_vals"], tests)
 
 	return batch
 
@@ -28,6 +30,16 @@ def buildContents(targets, test_vals):
 		contents.append(d)
 
 	return contents
+
+def appendLabels(ac, tests):
+	for i, axis in enumerate(tests):
+		axis = axis.axis
+		for target in axis:
+			if "labels" in target.__dict__.keys():
+				ac[i][target.target] = target.labels
+
+	return ac
+
 
 def listify(tests, vehicle):
 	targets = [[t.target for t in test.axis] for test in tests]
@@ -82,6 +94,15 @@ def run_permutation(thread_data):
 	else:
 		return args
 
+
+def generate_co2s(outputs):
+	co2s = []
+
+	for output in outputs:
+		co2s.append(output[-1][-1][20])
+
+	return co2s
+
 def batch_run(targets, permutations, contents, vehicle, tracks, model, include_output):
 	test_data = []
 	n_threads = partitions(len(permutations))
@@ -97,7 +118,7 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
 	print "running..."
 
 	for track in tracks:
-		segments, steady_state, name = track
+		segments, steady_state, name, point_formula, mins = track
 
 		t0 = time.time()
 
@@ -126,6 +147,10 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
 
 		track_data["times"] = times
 		track_data["outputs"] = outputs
+		track_data["min_time"] = mins[0]
+		track_data["min_co2"] = mins[1]
+		track_data["scoring"] = point_formula
+		track_data["co2s"] = generate_co2s(outputs)
 
 		test_data.append(track_data)
 

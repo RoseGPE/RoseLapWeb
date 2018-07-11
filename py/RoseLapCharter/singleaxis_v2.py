@@ -36,7 +36,7 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
  
   html = """
     <head>
-    <script src="./echarts.min.js"></script>
+    <script src="../../py/RoseLapCharter/echarts.min.js"></script>
     
     </head>
 
@@ -52,7 +52,7 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
         var chart_title_x = %s;
         var xData = %s;
       </script>
-      <script src="./1dstudy_view.js"></script>
+      <script src="../../py/RoseLapCharter/1dstudy_view.js"></script>
 
     </body>
   """ % tuple(json.dumps(s) for s in [translation.names,translation.units,data,data_names,overall_title,xlabel,xvals])

@@ -28,6 +28,10 @@ def process_web_input(conf):
 	conf.vehicle = vehicle.Vehicle(fancyyaml.load(vehicle_stream, False))
 	vehicle_stream.close()
 
+	for x in conf.tracks:
+		x.name = x.file
+		x.file = x.path
+
 	tracks = [process_track(x) for x in conf.tracks]
 	model = sims.Simulation(conf.model)
 	out = (conf.filename, conf.data_percentage)
@@ -35,4 +39,8 @@ def process_web_input(conf):
 	return (conf.tests, conf.vehicle, tracks, model, out)
 
 def process_track(x, pre=""):
-	return (track_segmentation.file_to_segments(pre + x.file, x.segment_distance), x.steady_state, x.name)
+	if x.point_formula == "endurance":
+		mins = (x.min_time, x.min_co2)
+	else:
+		mins = (x.min_time, 0.0)
+	return (track_segmentation.file_to_segments(pre + x.file, x.segment_distance), x.steady_state, x.name, x.point_formula, mins)

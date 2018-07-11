@@ -2,6 +2,8 @@ import json
 import pointsim
 import copy
 import translation
+import detail
+from charting_tools import *
 
 def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
   data = []
@@ -46,7 +48,7 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
 
   html = """
     <head>
-    <script src="./echarts.min.js"></script>
+    <script src="../../py/RoseLapCharter/echarts.min.js"></script>
     
     </head>
 
@@ -64,12 +66,23 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
         var xData = %s;
         var yData = %s;
       </script>
-      <script src="./2dstudy_view.js"></script>
+      <script src="../../py/RoseLapCharter/2dstudy_view.js"></script>
 
     </body>
   """ % tuple(json.dumps(s) for s in [translation.names,translation.units,data,data_names,overall_title,xlabel,ylabel,xvals,yvals])
 
+  for track in td:
+    outputs = track['outputs']
+    filename = track['name'].split(".")[0]
 
+    if len(outputs) > 0:
+        disp = makeGraphFolder(fn_prefix + "\\" + filename) + "\\"
+
+        for output in outputs:
+            x, y, outdata = output
+            iname = disp + str(x) + "-" + str(y)
+            with open(iname + ".html", "w") as plot:
+                plot.write(detail.make_sub_plot(outdata))
 
   return html
 

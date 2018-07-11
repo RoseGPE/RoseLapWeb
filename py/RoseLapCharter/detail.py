@@ -4,7 +4,26 @@ from charting_tools import *
 from RoseLapCore import sims
 from sims.constants import *
 
-def make_sub_plot(output, axis='distance', title='Velocity and Events', saveimg=False, imgname="broken.png"):
+def make_sub_plot(output):
+    html = '''
+        <div id="distance" style="display: none;">%s</div>
+        <div id="time" style="display: block;">%s</div>
+        <button onclick="setDistance()">Distance</button>
+        <button onclick="setTime()">Time</button>
+        <script type="text/javascript">
+            var setDistance = function () {
+                document.getElementById("distance").style.display = "block";
+                document.getElementById("time").style.display = "none";
+            }
+            var setTime = function () {
+                document.getElementById("time").style.display = "block";
+                document.getElementById("distance").style.display = "none";
+            }
+        </script>
+    '''
+    return html % (plotter(output), plotter(output, 'time'))
+
+def plotter(output, axis='distance', title='Velocity and Events', saveimg=False, imgname="broken.png"):
     output = np.array(output)
 
     fig, ax = plt.subplots(5, sharex=True)
