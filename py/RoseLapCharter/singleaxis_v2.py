@@ -2,6 +2,8 @@ import json
 import pointsim
 import copy
 import translation
+import detail
+from charting_tools import *
 
 def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
   data = []
@@ -57,7 +59,18 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
     </body>
   """ % tuple(json.dumps(s) for s in [translation.names,translation.units,data,data_names,overall_title,xlabel,xvals])
 
+  for track in td:
+    outputs = track['outputs']
+    filename = track['name'].split(".")[0]
 
+    if len(outputs) > 0:
+        disp = makeGraphFolder(fn_prefix + "\\" + filename) + "\\"
+
+        for output in outputs:
+            x, outdata = output
+            iname = disp + str(x)
+            with open(iname + ".html", "w") as plot:
+                plot.write(detail.make_sub_plot(outdata))
 
   return html
 

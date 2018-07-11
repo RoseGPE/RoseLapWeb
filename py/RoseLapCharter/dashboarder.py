@@ -64,7 +64,7 @@ def make_col(text, size):
 	return '<div class="col-sm-' + str(size) + '">' + text + "</div>"
 
 def make_row(text):
-	return '<div class="row">' + text + "</div>"
+	return '<div style="height: 480px" class="row">' + text + "</div>"
 
 def finalize_page(page):
 	return getHead() + '<div class="container">' + page + "</div>"

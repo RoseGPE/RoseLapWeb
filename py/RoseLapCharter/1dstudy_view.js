@@ -61,9 +61,6 @@ option = {
       selectedMode: 'single',
       data: data_names
     },
-    grid: {
-        height: 480
-    },
     series: [...Array(data_names.length).keys()].map(i => ({
         name: data_names[i],
         type: 'line',
@@ -80,6 +77,7 @@ option = {
 };
 
 app.setOption(option);
+app.resize({height: 480});
 
 function handle_sel(a){
   var i=0;
@@ -97,6 +95,8 @@ function handle_sel(a){
 
 function handle_clk(a){
   alert('You clicked on datapoint ' + a.dataIndex);
+  var win = window.open(a.seriesName.split(" ")[0].split(".")[0] + '/' + a.value[0] + '.html', '_blank');
+  win.focus();
 };
 
 app.on('legendselectchanged',handle_sel);
