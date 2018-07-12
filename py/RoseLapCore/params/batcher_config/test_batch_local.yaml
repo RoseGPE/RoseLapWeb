@@ -50,11 +50,12 @@ tests:
         - 1.0
         - 0.3
         - 0.1
-      labels:
+    - target: label
+      operation: replace
+      test_vals:
         - A
         - B
         - C
-
   - axis: # This is the Y-axis
     - target: shift_time
       operation: replace

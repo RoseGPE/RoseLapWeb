@@ -232,8 +232,8 @@ def seg_points_trackwalker(fn,dx,plot=False,opts={}):
   f.close()
 
   encoder_data = np.loadtxt(fn,delimiter=',',skiprows=1)
-  x1 = encoder_data[:,0]/(600.0*4)*(params["d_nom"]/12.0*math.pi)
-  x2 = encoder_data[:,1]/(600.0*4)*(params["d_nom"]*params["d_scale"]/12.0*math.pi)
+  x1 = encoder_data[:,0]/(600.0*4)*((opts["d_nom"] if "d_nom" in opts else params["d_nom"])/12.0*math.pi)
+  x2 = encoder_data[:,1]/(600.0*4)*((opts["d_nom"] if "d_nom" in opts else params["d_nom"])*(opts["d_scale"] if "d_scale" in opts else params["d_scale"])/12.0*math.pi)
 
   if not (params["cutoff_start"] is None or params["cutoff_end"] is None):
     cut_low = x1.searchsorted(params["cutoff_start"],'right')-1
@@ -250,7 +250,7 @@ def seg_points_trackwalker(fn,dx,plot=False,opts={}):
   x = np.zeros(x1.shape,dtype=float)
   y = np.zeros(x1.shape,dtype=float)
 
-  D = params["D"]/12.0
+  D = (opts["D"] if "D" in opts else params["D"])/12.0
 
   for i in range(1,np.size(x1)):
     d[i] = (x1[i]-x1[i-1]+x2[i]-x2[i-1])/2
