@@ -4,6 +4,7 @@ import multiprocessing
 from multiprocessing import Pool as ThreadPool
 import time
 import copy as shallow
+import input_processing.track_segmentation as track_segmentation
 
 def batch(tests, vehicle, tracks, model, include_output):
 	batch = {}
@@ -81,7 +82,8 @@ def permutation_extend(base, extensions):
 	return permutation_extend(res, extensions[1 :])
 
 def run_permutation(thread_data):
-	index, prepped_vehicle, solver, steady_state, include_output, segments = thread_data
+	index, prepped_vehicle, solver, steady_state, include_output, segments, perm = thread_data
+	print('\tRunning Permutation: %s' % (repr(perm)))
 
 	data = solver.steady_solve(prepped_vehicle, segments) if steady_state else solver.solve(prepped_vehicle, segments)
 
@@ -118,7 +120,9 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
 	print "running..."
 
 	for track in tracks:
-		segments, steady_state, name, point_formula, mins = track
+		fn, dl_default, steady_state, name, point_formula, mins = track
+		print('making segments for %s at %f' % (fn, dl_default))
+		
 
 		t0 = time.time()
 
@@ -127,7 +131,39 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
 		track_data["ss"] = steady_state
 
 		indicies = generateIndicies(contents)
-		thread_data = [(indicies[i], set_values(vehicle, targets, permutations[i]), model.copy(), steady_state, include_output, segments) for i in range(len(indicies))]
+		# thread_data = [(indicies[i], set_values(vehicle, targets, permutations[i]), model.copy(),
+		# steady_state, include_output, segments[i]) for i in range(len(indicies))]
+		# [(index, vehicle, model, steady_state, inclue_output, segments), ...]
+
+		thread_data = []
+		for i in range(len(indicies)):
+			v = shallow.copy(vehicle)
+			dl = dl_default
+			opts = {}
+			repres = {}
+			for j, target in enumerate(targets):
+				repres[target] = permutations[i][j]
+				if target == 'label':
+					pass
+				elif target[:6] == 'track.':
+					if target[6:] == 'segment_distance':
+						dl = permutations[i][j]
+					else:
+						opts[target[6:]] = permutations[i][j]
+				else:
+					setattr(vehicle, target, permutations[i][j])
+			segments = track_segmentation.file_to_segments(fn, dl, opts=opts)
+			v.prep()
+			td = (indicies[i],
+				v,
+				model.copy(),
+				steady_state,
+				include_output,
+				segments,
+				repres)
+			# print(fn, dl, opts)
+			thread_data.append(td)
+				
 
 		# thread_results = pool.map(run_permutation, thread_data)
 		thread_results = [run_permutation(d) for d in thread_data]
@@ -163,14 +199,14 @@ def generateIndicies(contents):
 
 	return list(inds)
 
-def set_values(vehicle, targets, permutation):
-	v = shallow.copy(vehicle)
+# def set_values(vehicle, targets, permutation):
+# 	v = shallow.copy(vehicle)
 
-	for i, target in enumerate(targets):
-		setattr(v, target, permutation[i])
+# 	for i, target in enumerate(targets):
+# 		setattr(v, target, permutation[i])
 
-	v.prep()
-	return v
+# 	v.prep()
+# 	return v
 
 def stretch(i):
 	while i < 2**25:

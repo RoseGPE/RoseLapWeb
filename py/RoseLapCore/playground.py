@@ -3,26 +3,33 @@ import input_processing.vehicle as ipvehicle
 import input_processing.fancyyaml as yaml
 import input_processing.track_segmentation as trackseg
 import plottools
+import input_processing.ip_logic as ip_logic
+import batcher
 
-times = []
+a = ip_logic.process_input('test_batch_local.yaml')
+conf_tests, conf_vehicle, tracks, model, out = a
+b = batcher.batch(conf_tests, conf_vehicle, tracks, model, out)
+# print(b)
 
-for st in ['two_tires']:#["one_tire","two_tires","four_tires"]: #["one_tire","two_tires","four_tires"]:
-	segments = trackseg.file_to_segments('params/tracks/testtrack.svg',0.35) #AutoX_3_31_2018_ant.LOG
+# times = []
 
-	times.append([])
-	sim = sims.Simulation(st);
+# for st in ["one_tire","two_tires","four_tires"]: #["one_tire","two_tires","four_tires"]:
+# 	segments = trackseg.file_to_segments('params/tracks/acceleration.dxf',0.2) #AutoX_3_31_2018_ant.LOG
 
-	vehicle  = ipvehicle.Vehicle(yaml.load(open('params/vehicles/START_HERE.yaml','r'),True))
-	vehicle.prep()
+# 	times.append([])
+# 	sim = sims.Simulation(st);
+
+# 	vehicle  = ipvehicle.Vehicle(yaml.load(open('params/vehicles/VEHICLE_START_HERE.yaml','r'),True))
+# 	vehicle.prep()
 	
 
-	output = sim.solve(vehicle, segments)
-	plottools.plot_velocity_and_events(output,'t',st)
-	times[-1].append(output[-1,sims.O_TIME])
-	print(st)
-print("Total Times", times)
+# 	output = sim.solve(vehicle, segments)
+# 	plottools.plot_velocity_and_events(output,'t',st)
+# 	times[-1].append(output[-1,sims.O_TIME])
+# 	print(st)
+# print("Total Times", times)
 
-plottools.plt.show();
+# plottools.plt.show();
 
 # import sims
 # import input_processing.vehicle as ipvehicle

@@ -43,4 +43,4 @@ def process_track(x, pre=""):
 		mins = (x.min_time, x.min_co2)
 	else:
 		mins = (x.min_time, 0.0)
-	return (track_segmentation.file_to_segments(pre + x.file, x.segment_distance), x.steady_state, x.name, x.point_formula, mins)
+	return (pre + x.file, x.segment_distance, x.steady_state, x.name, x.point_formula, mins)
