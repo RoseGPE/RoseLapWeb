@@ -25,3 +25,4 @@ While the web interface is in progress...
 - [Note the antiquiated-ish plotting library useful for model development without the web](./py/RoseLapCore/plottools.py)
 
 ## Getting Acquainted as a UX Developer
+- [This is the current state of affairs](http://rosegpe.ddns.net/RoseLap/)
