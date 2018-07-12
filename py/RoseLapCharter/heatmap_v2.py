@@ -76,7 +76,11 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
     filename = track['name'].split(".")[0]
 
     if len(outputs) > 0:
-        disp = makeGraphFolder(fn_prefix + "\\" + filename) + "\\"
+        disp = fn_prefix + "\\" + overall_title + "\\"
+        try:
+          os.makedirs(disp)
+        except Exception:
+          pass
 
         for output in outputs:
             x, y, outdata = output

@@ -1,6 +1,9 @@
 import sys,os,traceback
 sys.path.append('C:\wamp\www\RoseLap\py')
 
+import logging
+logging.basicConfig(filename='logs/temp.log', level=logging.INFO)
+
 import input_processing
 import batcher
 import packer
@@ -12,11 +15,6 @@ if __name__ == "__main__":
 	db = sql.connect("localhost", "rlapp", "gottagofast", "roselap")
 	cur = db.cursor()
 
-	# cur.execute('''UPDATE batch_run
-	# SET Status = 'Queued'
-	# WHERE RunID = 113''')
-	# db.commit()
-
 	cur.execute("SELECT run_Get_Next_Batch_Run()")
 	ids = cur.fetchall()[0][0]
 
@@ -24,8 +22,8 @@ if __name__ == "__main__":
 	runID = int(r)
 	bcID = int(b)
 
-	cur.execute("SELECT BCText FROM batch_config WHERE BCID = %s", [bcID])
-	bcText = cur.fetchall()[0][0]
+	cur.execute("SELECT BCText, Name FROM batch_config WHERE BCID = %s", [bcID])
+	bcText, bcName = cur.fetchall()[0]
 
 	cur.execute("CALL run_Process_Batch_Run(%s)", [runID])
 	db.commit()
@@ -37,30 +35,41 @@ if __name__ == "__main__":
 		conf.vehicle = cur.fetchall()[0][0]
 
 		for i, track in enumerate(conf.tracks):
-			print(track.__dict__)
+			logging.info(track.__dict__)
 			cur.execute("SELECT Path FROM track_config WHERE Name = %s", [track.file])
 			conf.tracks[i].path = cur.fetchone()[0]
 		
 		tests, vehicle, tracks, model, out = input_processing.process_web_input(conf)
 
-		print('batching...')
+		logging.info('batching...')
 		results = batcher.batch(tests, vehicle, tracks, model, out[1] != 0)
 
-		print('packing...')
+		logging.info('packing...')
 		result_path = packer.pack(results, out[0])
-		display_name = str(time.time()).split(".")[0]
-		display_path = "http://rosegpe.ddns.net/RoseLap/graph/" + display_name
-		display_link = display_path + "/" + display_name + "-dashboard.php"
 
-		cur.execute("CALL run_Finish_Batch_Run(%s, %s, %s)", [runID, result_path, display_link])
+		unique_id = str(time.time()).split(".")[0]
+		log_path = 'http://rosegpe.ddns.net/RoseLap/py/RoseLapCore/logs/' + unique_id + ".log"
+		
+		display_path = "../../graph/" + unique_id
+		os.makedirs(display_path)
+		display_link = "http://rosegpe.ddns.net/RoseLap/graph/" + unique_id + "/" + bcName + "-dashboard.php"
+
+		cur.execute("CALL run_Finish_Batch_Run(%s, %s, %s, %s)", [runID, result_path, log_path, display_link])
 		db.commit()
 
-		print('charting...')
+		logging.info('charting...')
 
-		print(display_name)
-		dashboarder.make_dashboard(results, display_name)
+		dashboarder.make_dashboard(results, bcName, display_path)
 
-		print('done!')
+		logging.info('done!')
 	except Exception:
-		cur.execute("CALL run_Fail_Batch_Run(%s, %s)", [runID, traceback.format_exc()])
+		err = traceback.format_exc()
+		logging.exception(err)
+
+		cur.execute("CALL run_Fail_Batch_Run(%s, %s, %s)", [runID, log_path, err])
 	 	db.commit()
+
+ 	with open("logs/temp.log", "r+") as temp:
+		with open("logs/" + unique_id + ".log", "w") as log:
+			log.write(temp.read())
+		temp.truncate(0)
