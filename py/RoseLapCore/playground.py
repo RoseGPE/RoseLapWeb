@@ -9,7 +9,7 @@ import batcher
 a = ip_logic.process_input('test_batch_local.yaml')
 conf_tests, conf_vehicle, tracks, model, out = a
 b = batcher.batch(conf_tests, conf_vehicle, tracks, model, out)
-print(b)
+# print(b)
 
 # times = []
 

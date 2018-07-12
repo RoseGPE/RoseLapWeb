@@ -54,9 +54,6 @@ tests:
         - A
         - B
         - C
-    - target: mass
-      operation: product         # for this target, we will multiply the baseline parameter by the specified values.
-      test_vals: [0.8, 1.0, 1.2] # these are the values that we will multiply by. (bracketed lists are as much of lists as dashed lists like above.)
 
   - axis: # This is the Y-axis
     - target: shift_time
@@ -67,6 +64,9 @@ tests:
         range_start: 0
         range_end: 0.4
         range_step: 0.1
+    - target: track.smoothing
+      operation: replace         # for this target, we will multiply the baseline parameter by the specified values.
+      test_vals: [0.005, 0.01, 0.03, 0.04, 0.05] # these are the values that we will multiply by. (bracketed lists are as much of lists as dashed lists like above.)
 
 ##### OUTPUT SPECIFICATION #####
 filename: test_batch_results

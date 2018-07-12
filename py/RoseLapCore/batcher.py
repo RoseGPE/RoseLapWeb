@@ -82,7 +82,8 @@ def permutation_extend(base, extensions):
 	return permutation_extend(res, extensions[1 :])
 
 def run_permutation(thread_data):
-	index, prepped_vehicle, solver, steady_state, include_output, segments = thread_data
+	index, prepped_vehicle, solver, steady_state, include_output, segments, perm = thread_data
+	print('\tRunning Permutation: %s' % (repr(perm)))
 
 	data = solver.steady_solve(prepped_vehicle, segments) if steady_state else solver.solve(prepped_vehicle, segments)
 
@@ -139,7 +140,9 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
 			v = shallow.copy(vehicle)
 			dl = dl_default
 			opts = {}
+			repres = {}
 			for j, target in enumerate(targets):
+				repres[target] = permutations[i][j]
 				if target == 'label':
 					pass
 				elif target[:6] == 'track.':
@@ -151,14 +154,15 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
 					setattr(vehicle, target, permutations[i][j])
 			segments = track_segmentation.file_to_segments(fn, dl, opts=opts)
 			v.prep()
-
-			thread_data.append((
-				indicies[i],
+			td = (indicies[i],
 				v,
 				model.copy(),
 				steady_state,
 				include_output,
-				segments))
+				segments,
+				repres)
+			# print(fn, dl, opts)
+			thread_data.append(td)
 				
 
 		# thread_results = pool.map(run_permutation, thread_data)
