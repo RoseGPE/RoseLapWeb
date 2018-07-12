@@ -39,7 +39,7 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
   html = """
     <head>
     <script src="../../py/RoseLapCharter/echarts.min.js"></script>
-    
+     <meta charset="utf-8" />
     </head>
 
     <body>
