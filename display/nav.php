@@ -20,5 +20,10 @@
 				}
 			?>
 		</ul>
+		<?php
+		if ($loggedin) {
+			echo '<span class="navbar-text">Logged in as ' . $_SESSION['username'] . '</span>';
+		}
+		?>
 	</div>
 </nav>
