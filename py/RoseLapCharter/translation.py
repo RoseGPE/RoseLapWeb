@@ -35,7 +35,16 @@ units = {
 	"engine_reduction":			 "-",
 	"gears":					 "-",
 	"final_drive_reduction":	 "-",
-	"shift_time":				 "s"
+	"shift_time":				 "s",
+	"track.segment_distance":    "ft",
+	"track.d_nom":               "in",
+	"track.d_scale":             "in",
+	"track.D":					 "in",
+	"track.maxcurv":             "ft^-1",
+	"track.savgol_amt":          "entries",
+	"track.savgol_dof":          "-",
+	"track.smoothing":           "-",
+	"track.smoothing_dof":       "-"
 }
 
 names = {
@@ -75,5 +84,14 @@ names = {
 	"engine_reduction":			 "Engine Gear Ratio",
 	"gears":					 "Transmission Ratios",
 	"final_drive_reduction":	 "Final Drive Ratio",
-	"shift_time":				 "Shift Time"
+	"shift_time":				 "Shift Time",
+	"track.segment_distance":    "Segment Size",
+	"track.d_nom":               "Trackwalker d_nom",
+	"track.d_scale":             "Trackwalker d_scale",
+	"track.D":					 "Trackwalker D",
+	"track.maxcurv":             "Track Max Curvature",
+	"track.savgol_amt":          "Track Savgol Amount",
+	"track.savgol_dof":          "Track Savgol DOF",
+	"track.smoothing":           "Track Smoothing Amount",
+	"track.smoothing_dof":       "Track Smoothing DOF"
 }
