@@ -54,7 +54,7 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
 
     <body>
 
-      <div id="main" style="width: 100%%; height:100%%;"></div>
+      <div id="main" style="width: 100%%; height:90%%;"></div>
       <script type="text/javascript">
         var translate_names = %s;
         var translate_units = %s;
