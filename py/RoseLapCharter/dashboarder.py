@@ -12,36 +12,28 @@ import pprint
 
 from charting_tools import *
 
-def make_dashboard(results, display_name):
-	graph_dir = makeGraphFolder(display_name)
-
-	spawn_details(results, display_name)
-
+def make_dashboard(results, display_name, display_path):
 	axes = len(results["axiscontents"])
 
 	if axes == 1:
-		summary_plot = singleaxis_v2.make_plot(results, display_name)
+		summary_plot = singleaxis_v2.make_plot(results, display_path, display_name)
 		sum2 = singleaxis.make_plot(results, display_name)
-		plots = make_row(make_col(summary_plot, 6)+ make_col(sum2, 6))
+		plots = make_row(make_col(summary_plot, 6) + make_col(sum2, 6))
 	elif axes == 2:
-		summary_plot = heatmap_v2.make_plot(results, display_name)
+		summary_plot = heatmap_v2.make_plot(results, display_path, display_name)
 		plots = make_row(make_col(summary_plot, 12))
 	else:
 		print("Unsupported plot dimensions! Please submit data with 1 or 2 axes.") 
-		exit()
-
-	# map_plot = mapview.make_plot(results, display_name)
-	
+		exit()	
 
 	metadata = make_col(append_raw("", generate_metadata(results, display_name)), 6)
-
 
 	dashboard = ""
 	dashboard = dashboard + plots
 	dashboard = append_raw(dashboard, metadata)
 	dashboard = finalize_page(dashboard)
 
-	with open(graph_dir + "\\" + display_name + "-dashboard.php", "w") as file:
+	with open(display_path + "\\" + display_name + "-dashboard.php", "w") as file:
 		file.write(dashboard)
 
 def generate_metadata(results, display_name):
@@ -68,10 +60,6 @@ def make_row(text):
 
 def finalize_page(page):
 	return getHead() + '<div class="container">' + page + "</div>"
-
-def spawn_details(results, display_name):
-	pass
-	# print detail.make_sub_plot(results["track_data"][0]["outputs"][0][axes])
 
 if __name__ == "__main__":
 	# r = packer.unpack('C:\wamp\www\RoseLap\py\RoseLapCore/out/test_batch_results-1530737683/test_batch_results-1530737683.rslp')

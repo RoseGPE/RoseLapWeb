@@ -6,8 +6,9 @@
 <th class="col-xs-2">Batch Name</th>
 <th class="col-xs-2">Submit Time</th>
 <th class="col-xs-2">Batcher</th>
-<th class="col-xs-2">Status</th>
+<th class="col-xs-1">Status</th>
 <th class="col-xs-2">Complete Time</th>
+<th class="col-xs-1">Logs</th>
 <th class="col-xs-2">Results</th>
 </tr>
 </thead>
@@ -23,7 +24,8 @@
 		echo "<td class=\"col-xs-2\">". $row[2] . "</td>";
 		echo "<td class=\"col-xs-2\">". $row[3] . "</td>";
 		echo "<td class=\"col-xs-2\">". $row[4] . "</td>";
-		echo "<td class=\"col-xs-2\"><a href='". $row[6] . "'>View</a></td>";
+		echo "<td class=\"col-xs-2\"><a href='". $row[6] . "'>Log</a></td>";
+		echo "<td class=\"col-xs-2\"><a href='". $row[7] . "'>Dashboard</a></td>";
 		echo "</tr>";
 	}
 ?>
