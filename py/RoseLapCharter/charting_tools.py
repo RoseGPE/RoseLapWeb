@@ -1,3 +1,4 @@
+import config
 import os
 
 def makeLabel(d):
@@ -20,13 +21,10 @@ def makeGraphFolder(foldername):
         pass
     return dname
 
-def displayDirectory(filename):
-    return 'C:\wamp\www\RoseLap\graph\\' + filename + "\\"
-
 def getHead():
     styles = '<link rel="stylesheet" type="text/css" href="../../css/col-bootstrap.min.css">'
-    with open("../../display/head.php", "r") as head:
-        with open("../../display/nav.php", "r") as nav:
+    with open(config.file_dir + "/display/head.php", "r") as head:
+        with open(config.file_dir + "/display/nav.php", "r") as nav:
             return head.read() + styles + nav.read()
 
 def writeHTML(H, filename):

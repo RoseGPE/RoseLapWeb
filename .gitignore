@@ -1,4 +1,7 @@
 __pycache__/
 *.pyc
 /py/RoseLapCore/out/*
+/py/RoseLapCore/logs/*
+/graph/*
 *.html
+/py/config.py

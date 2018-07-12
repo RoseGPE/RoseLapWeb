@@ -6,7 +6,7 @@ import translation
 import detail
 from charting_tools import *
 
-def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
+def make_plot(result, display_dir, overall_title="Chart Overall Title"):
   data = []
   data_names = []
   points_total = None
@@ -77,7 +77,7 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
     filename = track['name'].split(".")[0]
 
     if len(outputs) > 0:
-        disp = fn_prefix + "\\" + overall_title + "\\"
+        disp = display_dir + "/" + filename + "/"
         try:
           os.makedirs(disp)
         except Exception:
@@ -85,8 +85,8 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
 
         for output in outputs:
             x, y, outdata = output
-            iname = disp + str(x) + "-" + str(y)
-            with open(iname + ".html", "w") as plot:
+            iname = disp + str(x) + "-" + str(y) + ".html"
+            with open(iname, "w") as plot:
                 plot.write(detail.make_sub_plot(outdata))
 
   return html

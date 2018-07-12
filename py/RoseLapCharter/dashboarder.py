@@ -12,15 +12,14 @@ import pprint
 
 from charting_tools import *
 
-def make_dashboard(results, display_name, display_path):
+def make_dashboard(results, display_name, display_dir):
 	axes = len(results["axiscontents"])
 
 	if axes == 1:
-		summary_plot = singleaxis_v2.make_plot(results, display_path, display_name)
-		sum2 = singleaxis.make_plot(results, display_name)
-		plots = make_row(make_col(summary_plot, 6) + make_col(sum2, 6))
+		summary_plot = singleaxis_v2.make_plot(results, display_dir, display_name)
+		plots = make_row(make_col(summary_plot, 12))
 	elif axes == 2:
-		summary_plot = heatmap_v2.make_plot(results, display_path, display_name)
+		summary_plot = heatmap_v2.make_plot(results, display_dir, display_name)
 		plots = make_row(make_col(summary_plot, 12))
 	else:
 		print("Unsupported plot dimensions! Please submit data with 1 or 2 axes.") 
@@ -33,7 +32,7 @@ def make_dashboard(results, display_name, display_path):
 	dashboard = append_raw(dashboard, metadata)
 	dashboard = finalize_page(dashboard)
 
-	with open(display_path + "\\" + display_name + "-dashboard.php", "w") as file:
+	with open(display_dir + "/" + display_name + "-dashboard.php", "w") as file:
 		file.write(dashboard)
 
 def generate_metadata(results, display_name):

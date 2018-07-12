@@ -1,14 +1,17 @@
-import sys,os,traceback
-sys.path.append('C:\wamp\www\RoseLap\py')
+import sys,os,traceback,inspect
+sys.path.append(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) + '/../')
+import config
 
-import logging
-logging.basicConfig(filename='logs/temp.log', level=logging.INFO)
+import logging,time
+unique_id = str(time.time()).split(".")[0]
+log_dir = config.file_dir + '/py/RoseLapCore/logs/' + unique_id + '.log'
+log_path = config.web_dir + '/py/RoseLapCore/logs/' + unique_id + ".log"
+logging.basicConfig(filename=log_dir, level=logging.INFO)
 
 import input_processing
 import batcher
 import packer
 import MySQLdb as sql
-import time
 from RoseLapCharter import dashboarder
 
 if __name__ == "__main__":
@@ -25,8 +28,10 @@ if __name__ == "__main__":
 	cur.execute("SELECT BCText, Name FROM batch_config WHERE BCID = %s", [bcID])
 	bcText, bcName = cur.fetchall()[0]
 
-	cur.execute("CALL run_Process_Batch_Run(%s)", [runID])
+	cur.execute("CALL run_Process_Batch_Run(%s, %s)", [runID, log_path])
 	db.commit()
+
+	logging.info("starting up...")
 
 	try:
 		conf = input_processing.process_web_config(bcText)
@@ -46,30 +51,30 @@ if __name__ == "__main__":
 
 		logging.info('packing...')
 		result_path = packer.pack(results, out[0])
-
-		unique_id = str(time.time()).split(".")[0]
-		log_path = 'http://rosegpe.ddns.net/RoseLap/py/RoseLapCore/logs/' + unique_id + ".log"
 		
-		display_path = "../../graph/" + unique_id
-		os.makedirs(display_path)
-		display_link = "http://rosegpe.ddns.net/RoseLap/graph/" + unique_id + "/" + bcName + "-dashboard.php"
+		display_dir = config.file_dir + "/graph/" + unique_id
+		os.makedirs(display_dir)
+		display_link = config.web_dir + "/graph/" + unique_id + "/" + bcName + "-dashboard.php"
 
-		cur.execute("CALL run_Finish_Batch_Run(%s, %s, %s, %s)", [runID, result_path, log_path, display_link])
-		db.commit()
-
-		logging.info('charting...')
-
-		dashboarder.make_dashboard(results, bcName, display_path)
-
-		logging.info('done!')
+		logging.info('done batching!')
 	except Exception:
 		err = traceback.format_exc()
 		logging.exception(err)
 
 		cur.execute("CALL run_Fail_Batch_Run(%s, %s, %s)", [runID, log_path, err])
 	 	db.commit()
+	 	exit()
 
- 	with open("logs/temp.log", "r+") as temp:
-		with open("logs/" + unique_id + ".log", "w") as log:
-			log.write(temp.read())
-		temp.truncate(0)
+	try:
+		logging.info('charting...')
+		dashboarder.make_dashboard(results, bcName, display_dir)
+		logging.info('charted!')
+
+		cur.execute("CALL run_Finish_Batch_Run(%s, %s, %s)", [runID, result_path, display_link])
+		db.commit()
+	except:
+		err = traceback.format_exc()
+		logging.exception(err)
+
+		cur.execute("CALL run_Fail_Batch_Run(%s, %s, %s)", [runID, log_path, err])
+	 	db.commit()

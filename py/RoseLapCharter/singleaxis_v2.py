@@ -4,9 +4,8 @@ import pointsim
 import copy
 import translation
 import detail
-from charting_tools import *
 
-def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
+def make_plot(result, display_dir, overall_title="Chart Overall Title"):
   data = []
   data_names = []
   points_total = None
@@ -64,7 +63,7 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
     outputs = track['outputs']
 
     if len(outputs) > 0:
-        disp = fn_prefix + "\\" + overall_title + "\\"
+        disp = display_dir + "/" + overall_title + "/"
         try:
           os.makedirs(disp)
         except Exception:
@@ -72,8 +71,8 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
 
         for output in outputs:
             x, outdata = output
-            iname = disp + str(x)
-            with open(iname + ".html", "w") as plot:
+            iname = disp + str(x) + ".html"
+            with open(iname, "w") as plot:
                 plot.write(detail.make_sub_plot(outdata))
 
   return html

@@ -24,8 +24,16 @@
 		echo "<td class=\"col-xs-2\">". $row[2] . "</td>";
 		echo "<td class=\"col-xs-2\">". $row[3] . "</td>";
 		echo "<td class=\"col-xs-2\">". $row[4] . "</td>";
-		echo "<td class=\"col-xs-2\"><a href='". $row[6] . "'>Log</a></td>";
-		echo "<td class=\"col-xs-2\"><a href='". $row[7] . "'>Dashboard</a></td>";
+		if ($row[6] != "") {
+			echo "<td class=\"col-xs-2\"><a target=\"_blank\" href='". $row[6] . "'>Log</a></td>";
+		} else {
+			echo "<td class=\"col-xs-2\"></td>";
+		}
+		if ($row[7] != "") {
+			echo "<td class=\"col-xs-2\"><a target=\"_blank\" href='". $row[7] . "'>Dashboard</a></td>";
+		} else {
+			echo "<td class=\"col-xs-2\"></td>";
+		}
 		echo "</tr>";
 	}
 ?>
