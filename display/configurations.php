@@ -107,5 +107,6 @@
 <style type="text/css">
 	.full-screen {
 	    max-width: 85%;
+		max-height: 85%;
 	}
 </style>
