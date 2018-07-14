@@ -87,6 +87,7 @@ def permutation_extend(base, extensions):
 def run_permutation(thread_data):
     index, prepped_vehicle, solver, steady_state, include_output, segments, perm = thread_data
     print('\tRunning Permutation: %s' % (repr(perm)))
+    logging.info("Running Permutation: %s" % repr(perm))
 
     data = solver.steady_solve(prepped_vehicle, segments) if steady_state else solver.solve(prepped_vehicle, segments)
 

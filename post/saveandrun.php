@@ -20,16 +20,20 @@
 		}
 
 		if (isset($_POST["run"])) {
-			$query = sprintf("CALL run_Queue_Batch_Run(%s, '%s')", $_SESSION['userid'], $name);
+			$query = sprintf("SELECT run_Queue_Batch_Run(%s, '%s')", $_SESSION['userid'], $name);
 	    	$run = mysqli_query($conn, $query);
 
-	    	if ($run) {
-	    		$WshShell = new COM("WScript.Shell");
-				$oExec = $WshShell->Run("python c:/wamp/www/RoseLap/py/RoseLapCore/webrunner.py", 0, false);
-				//file_put_contents("c:/wamp/www/RoseLap/py/RoseLapCore/pylog.txt", $oExec, FILE_APPEND);
-	    	}
+	    	while ($data = mysqli_fetch_array($run)) {
+	    		$row = explode(".", $data[0]);
+	    			    	var_dump($row);
 
-			header("Location: ../waiting.php");
+
+	    		$WshShell = new COM("WScript.Shell");
+				$oExec = $WshShell->Run("python c:/wamp/www/RoseLap/py/RoseLapCore/webrunner.py " . $row[0] . " " . $row[1], 0, false);
+				//file_put_contents("c:/wamp/www/RoseLap/py/RoseLapCore/pylog.txt", $oExec, FILE_APPEND);
+		    }
+
+			header("Location: ../");
 			die();
 		}
 

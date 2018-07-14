@@ -1,6 +1,6 @@
 import sys,os,traceback,inspect
 # sys.stdout = open('c:/wamp/www/RoseLap/py/, 'w')
-print("hi mom")
+# print("hi mom")
 sys.path.append(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) + '/../')
 import config
 
@@ -8,7 +8,7 @@ import logging,time
 unique_id = str(time.time()).split(".")[0]
 log_dir = config.file_dir + '/py/RoseLapCore/logs/' + unique_id + '.log'
 log_path = config.web_dir + '/py/RoseLapCore/logs/' + unique_id + ".log"
-logging.basicConfig(filename=log_dir, level=logging.DEBUG)
+logging.basicConfig(filename=log_dir, level=logging.DEBUG, format='%(asctime)-15s | %(levelname)-8s: %(message)s')
 
 logging.info("start of log")
 
@@ -28,16 +28,19 @@ except:
 
 if __name__ == "__main__":
     try:
+        runID = sys.argv[1]
+        bcID = sys.argv[2]
+
         db = sql.connect("localhost", "rlapp", "gottagofast", "roselap")
         cur = db.cursor()
 
-        cur.execute("SELECT run_Get_Next_Batch_Run()")
-        ids = cur.fetchall()[0][0]
-        logging.debug("IDs: %s" % repr(ids))
+        # cur.execute("SELECT run_Get_Next_Batch_Run()")
+        # ids = cur.fetchall()[0][0]
+        # logging.debug("IDs: %s" % repr(ids))
 
-        r, b = ids.strip().split('|')
-        runID = int(r)
-        bcID = int(b)
+        # r, b = ids.strip().split('|')
+        # runID = int(r)
+        # bcID = int(b)
 
         cur.execute("SELECT BCText, Name FROM batch_config WHERE BCID = %s", [bcID])
         cfa = cur.fetchall()
