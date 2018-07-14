@@ -63,17 +63,16 @@ def make_plot(result, display_dir, overall_title="Chart Overall Title"):
     outputs = track['outputs']
 
     if len(outputs) > 0:
-        disp = display_dir + "/" + overall_title + "/"
-        try:
-          os.makedirs(disp)
-        except Exception:
-          pass
-
-        for output in outputs:
-            x, outdata = output
-            iname = disp + str(x) + ".html"
-            with open(iname, "w") as plot:
-                plot.write(detail.make_sub_plot(outdata))
+      disp = display_dir + "/" + overall_title + "/"
+      try:
+        os.makedirs(disp)
+      except Exception:
+        pass
+      for output in outputs:
+        x, outdata = output
+        iname = disp + str(x) + ".html"
+        with open(iname, "w") as plot:
+          detail.make_sub_plot(plot,outdata)
 
   return html
 

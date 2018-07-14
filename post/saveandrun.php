@@ -26,6 +26,7 @@
 	    	if ($run) {
 	    		$WshShell = new COM("WScript.Shell");
 				$oExec = $WshShell->Run("python c:/wamp/www/RoseLap/py/RoseLapCore/webrunner.py", 0, false);
+				//file_put_contents("c:/wamp/www/RoseLap/py/RoseLapCore/pylog.txt", $oExec, FILE_APPEND);
 	    	}
 
 			header("Location: ../waiting.php");
