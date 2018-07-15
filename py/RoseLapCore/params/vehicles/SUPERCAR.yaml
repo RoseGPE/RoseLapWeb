@@ -1,5 +1,5 @@
-### Starter Vehicle File ###
-# An example vehicle to help you get started in creating a vehicle
+### Supercar Vehicle File ###
+# Top of the line, makes immense power, downforce, and weighs nothing.
 # units are lbf, ft, s
 # updated 7/2/2018
 
@@ -14,8 +14,8 @@
 # third is 'airbrake' configuration.
 # To 'omit' a configuration, simply make the values the same as the 'full' configuration.
 
-downforce_35mph: [61.0, 61.0, 61.0] # lbf - the downforce produced at 35 MPH
-drag_35mph:      [40.0, 40.0, 40.0] # lbf - the drag produced at 35 MPH
+downforce_35mph: [90.0, 30.0, 90.0] # lbf - the downforce produced at 35 MPH
+drag_35mph:      [40.0, 70.0, 40.0] # lbf - the drag produced at 35 MPH
 cp_height: [0.9, 0.9, 0.9]          # ft - the height of the center of pressure
 cp_bias:   [0.4, 0.4, 0.4]          # fraction - the amount of the downforce that acts on the front tires
 
@@ -64,15 +64,15 @@ k_chassis:    800.0 # ft-lbf / deg - the roll stiffness of the chassis
 
 ## Mass Parameters ##
 # Note: as long as we use imperial units, lbm is used, but internally, the value is converted to slugs.
-mass: 550      # lbm - The overall mass of the vehicle including driver
-moi_yaw: 1250  # lbm*ft^2 - The overall moment of inertia including driver about the vertical axis passing through the CG.
-cg_height: 0.6 # ft - The height of the center of gravity from the ground at static height
+mass: 450      # lbm - The overall mass of the vehicle including driver
+moi_yaw: 1100  # lbm*ft^2 - The overall moment of inertia including driver about the vertical axis passing through the CG.
+cg_height: 0.4 # ft - The height of the center of gravity from the ground at static height
 
 ## Size Parameters ##
-wheelbase_length: 5 # ft - The length of the wheelbase
+wheelbase_length: 5.1666667 # ft - The length of the wheelbase
 weight_bias: 0.45   # fraction - the amount of weight that is on the front tires
 track_front: 4.5    # ft - the track width of the front tires
-track_rear:  4.5    # ft - the track width of the rear tires
+track_rear:  4.4    # ft - the track width of the rear tires
 r_add: 0 # ft - additional radius that can be employed to make a turn. This allows us to see the impact of increasing/decreasing track width on tightness of turns.
 
 ### Brakes ###
@@ -82,22 +82,8 @@ brake_bias: 0.67         # fraction - the amount of braking force to have on the
 
 ### Engine ###
 # An engine curve given by two lists.
-engine_rpms: # RPM
-  - 3500
-  - 4500
-  - 5500
-  - 6500
-  - 7500
-  - 8500
-  - 9500
-engine_torque: # ft-lbf
-  - 24.3
-  - 26.2
-  - 27.4
-  - 26.5
-  - 25.5
-  - 23.8
-  - 23.9
+engine_rpms: [6459, 6643, 6829, 7006, 7300, 7557, 8030, 8363, 8714, 8928, 9399]
+engine_torque: [39.53, 42.11, 40.49, 39.39, 39.9, 43.15, 43.96, 42.48, 39.98, 37.32, 33.41, 31.27, 21.24]
 
 # Correlated efficiency factors for 100 Octane gasoline
 co2_factor: 2.31 #kg/L - The amount of CO2 produced per liter of fuel consumed
@@ -106,13 +92,8 @@ e_factor: 3.5e6 #ft*lbf/L - The amount of useful mechanical energy produced per 
 ### Transmission ###
 # Note: overall transmission ratio is calculated as engine_reduction*gear[gear_no]*final_drive_reduction
 engine_reduction: 2.81 # ratio - A reduction applied to all gears
-gears:    # ratio - a list of reductions available to the driver (any number of gears can be specified)
-  - 2.416
-  - 1.92
-  - 1.562
-  - 1.277
-  - 1.05
+gears: [2.75, 2, 1.667, 1.444, 1.304, 1.208]
 final_drive_reduction: 2.7692 # ratio - the final drive reduction
 
-shift_time: 0.2 # s - the time taken to complete a shift
+shift_time: 0.02 # s - the time taken to complete a shift
 
