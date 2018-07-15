@@ -1,11 +1,11 @@
+import os
 import json
 import pointsim
 import copy
 import translation
 import detail
-from charting_tools import *
 
-def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
+def make_plot(result, display_dir, overall_title="Chart Overall Title"):
   data = []
   data_names = []
   points_total = None
@@ -39,12 +39,12 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
   html = """
     <head>
     <script src="../../py/RoseLapCharter/echarts.min.js"></script>
-    
+     <meta charset="utf-8" />
     </head>
 
     <body>
 
-      <div id="main" style="width: 100%%; height:100%%;"></div>
+      <div id="main" style="width: 100%%; height:90%%;"></div>
       <script type="text/javascript">
         var translate_names = %s;
         var translate_units = %s;
@@ -61,16 +61,18 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
 
   for track in td:
     outputs = track['outputs']
-    filename = track['name'].split(".")[0]
 
     if len(outputs) > 0:
-        disp = makeGraphFolder(fn_prefix + "\\" + filename) + "\\"
-
-        for output in outputs:
-            x, outdata = output
-            iname = disp + str(x)
-            with open(iname + ".html", "w") as plot:
-                plot.write(detail.make_sub_plot(outdata))
+      disp = display_dir + "/" + overall_title + "/"
+      try:
+        os.makedirs(disp)
+      except Exception:
+        pass
+      for output in outputs:
+        x, outdata = output
+        iname = disp + str(x) + ".html"
+        with open(iname, "w") as plot:
+          detail.make_sub_plot(plot,outdata)
 
   return html
 

@@ -1,22 +1,27 @@
+import os
 import json
 import pointsim
 import copy
 import translation
 import detail
 from charting_tools import *
+import logging
 
-def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
+def make_plot(result, display_dir, overall_title="Chart Overall Title"):
+  logging.info('Making a Heatmap')
   data = []
   data_names = []
   points_total = None
   td = result['track_data']
   for trk in td:
     compute_pts = []
-    for i in range(len(trk['times'])):
+    for i in range(len(trk['times'])):      
       pts = pointsim.compute_points(trk['scoring'], trk['min_time'], trk['min_co2'], trk['times'][i][2], trk['co2s'][i])
       # print(trk['scoring'],trk['times'][i][2],pts)
       if not (points_total is None):
         points_total[i][2] = points_total[i][2] + pts
+        
+    # logging.debug(repr(trk['times']))
       compute_pts.append([trk['times'][i][0], trk['times'][i][1], pts])
     if points_total is None:
       points_total = copy.deepcopy(compute_pts)
@@ -26,6 +31,7 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
     data_names.append(trk['name'] + ' Times')
   data.append(points_total)
   data_names.append("Total Points")
+  
 
   xlabel = ''
   xvals = []
@@ -49,12 +55,12 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
   html = """
     <head>
     <script src="../../py/RoseLapCharter/echarts.min.js"></script>
-    
+    <meta charset="utf-8" />
     </head>
 
     <body>
 
-      <div id="main" style="width: 100%%; height:100%%;"></div>
+      <div id="main" style="width: 100%%; height:90%%;"></div>
       <script type="text/javascript">
         var translate_names = %s;
         var translate_units = %s;
@@ -71,18 +77,23 @@ def make_plot(result, fn_prefix, overall_title="Chart Overall Title"):
     </body>
   """ % tuple(json.dumps(s) for s in [translation.names,translation.units,data,data_names,overall_title,xlabel,ylabel,xvals,yvals])
 
+  # logging.debug('display_dir = %s' % display_dir)
   for track in td:
     outputs = track['outputs']
     filename = track['name'].split(".")[0]
-
+    # logging.debug('outputs = %s' % repr(outputs))
     if len(outputs) > 0:
-        disp = makeGraphFolder(fn_prefix + "\\" + filename) + "\\"
+      disp = display_dir + "/" + filename + "/"
+      try:
+        os.makedirs(disp)
+      except Exception:
+        pass
 
-        for output in outputs:
-            x, y, outdata = output
-            iname = disp + str(x) + "-" + str(y)
-            with open(iname + ".html", "w") as plot:
-                plot.write(detail.make_sub_plot(outdata))
+      for output in outputs:
+        x, y, outdata = output
+        iname = disp + str(x) + "-" + str(y) + ".html"
+        with open(iname, "w") as plot:
+          detail.make_sub_plot(plot,outdata)
 
   return html
 

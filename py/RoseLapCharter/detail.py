@@ -4,11 +4,12 @@ from charting_tools import *
 from RoseLapCore import sims
 from sims.constants import *
 
-def make_sub_plot(output):
-    html = '''
-        <div id="distance" style="display: none;">%s</div>
-        <div id="time" style="display: block;">%s</div>
-        <button onclick="setDistance()">Distance</button>
+def make_sub_plot(file, output):
+    file.write('<div id="distance" style="display: none;">')
+    plotter(output, file=file)
+    file.write('</div><div id="time" style="display: block;">')
+    plotter(output, 'time', file=file)
+    file.write('''</div><button onclick="setDistance()">Distance</button>
         <button onclick="setTime()">Time</button>
         <script type="text/javascript">
             var setDistance = function () {
@@ -19,11 +20,9 @@ def make_sub_plot(output):
                 document.getElementById("time").style.display = "block";
                 document.getElementById("distance").style.display = "none";
             }
-        </script>
-    '''
-    return html % (plotter(output), plotter(output, 'time'))
+        </script>''')
 
-def plotter(output, axis='distance', title='Velocity and Events', saveimg=False, imgname="broken.png"):
+def plotter(output, axis='distance', title='Velocity and Events', saveimg=False, imgname="broken.png", file=None):
     output = np.array(output)
 
     fig, ax = plt.subplots(5, sharex=True)
@@ -44,7 +43,7 @@ def plotter(output, axis='distance', title='Velocity and Events', saveimg=False,
     alat = output[:, O_LAT_ACC]
     eng_rpm = output[:, O_ENG_RPM]
 
-    curv = output[:, O_CURVATURE]*100
+    curv = output[:, O_CURVATURE]
 
     if axis == 'time':
         plt.xlabel('Elapsed time')
@@ -66,7 +65,7 @@ def plotter(output, axis='distance', title='Velocity and Events', saveimg=False,
 
     ax[3].plot(xaxis,output[:, O_GEAR]+1,lw=4,label='Gear')
     ax[3].plot(xaxis,output[:, O_ENG_RPM]/1000, lw=4, label='RPM x1000')
-    ax[3].set_ylim(0, 10)
+    ax[3].set_ylim(0, 18)
 
     forces = output[:, [O_NF, O_NR, O_FF_REMAINING, O_FR_REMAINING]]
     force_lim = max(forces.min(), forces.max(), key=abs)*1.05
@@ -99,4 +98,10 @@ def plotter(output, axis='distance', title='Velocity and Events', saveimg=False,
         a.grid(True)
         a.legend()
 
-    return mpld3.fig_to_html(fig)
+    if file is None:
+        x = mpld3.fig_to_html(fig)
+        plt.close(fig)
+        return x
+    else:
+        mpld3.save_html(fig, file)
+        plt.close(fig)
