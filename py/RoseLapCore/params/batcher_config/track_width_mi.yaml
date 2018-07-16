@@ -1,0 +1,83 @@
+### Study Example and Tutorial ###
+# Welcome to the big deal with lapsim: studies (AKA sweeps, AKA batches)!
+##### BATCH CONFIGURATION EXAMPLE ####
+##### INPUT SPECIFICATION #####
+# Specify which vehicle you'd like to use as a baseline
+vehicle: VEHICLE_START_HERE.yaml 
+# Specify which model to use in this study.
+# You should select the model with the least tires possible to capture the effects of the parameters to study.
+model: one_tire 
+# Specify a list of tracks to run on.
+tracks:
+  - file: acceleration.dxf      # the definition file
+    segment_distance: 0.2       # the size of segments to use
+    steady_state: false         # whether or not to use steady state conditions (expensive as it requires running a sim to the end and re-launching. Generally, don't do this)
+    point_formula: acceleration # what type of track this is in the FSAE event
+    min_time: 4.1               # the minimum time for this track at an FSAE event (to get scores right)
+    min_co2: 0
+  - file: skidpad_loop.dxf
+    segment_distance: 0.2
+    steady_state: false
+    point_formula: skidpad
+    min_time: 4.8
+    min_co2: 0
+  - file: mi_2018_endurance.svg
+    segment_distance: 0.2
+    steady_state: false
+    point_formula: endurance_noeff
+    min_time: 78.342
+    min_co2: 0
+  - file: mi_2018_autox.svg
+    segment_distance: 0.2
+    steady_state: false
+    point_formula: autox
+    min_time: 45.741
+    min_co2: 0
+    
+##### TEST SPECIFICATION #####
+# Specify how to vary parameters.
+# This is a 2-d study. If only one axis entry is provided, that's as much as we will get.
+tests:
+  - axis: # This is the X-axis
+    # An axis can have multiple values.
+    # This allows you to sweep through engine packages by varying both weight and power. That is what this sweep will do.
+    - target: track_front
+      operation: replace
+      test_vals:
+        - 3.0
+        - 3.5
+        - 4.0
+        - 4.5
+        - 5.0
+        - 5.5
+        - 6.0
+        - 6.5
+
+    - target: track_rear
+      operation: replace
+      test_vals:
+        - 3.0
+        - 3.5
+        - 4.0
+        - 4.5
+        - 5.0
+        - 5.5
+        - 6.0
+        - 6.5
+
+    - target: r_add
+      operation: replace
+      test_vals:
+        - 0.75
+        - 0.5
+        - 0.25
+        - 0.0
+        - -0.25
+        - -0.5
+        - -0.75
+        - -1.0
+
+##### OUTPUT SPECIFICATION #####
+# I'm not sure what this is. Maybe don't fuck with it. Or ask Eve. - Thad
+filename: test_batch_results
+data_percentage: 100 # 0 -> just plot points
