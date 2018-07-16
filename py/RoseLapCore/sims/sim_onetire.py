@@ -256,7 +256,8 @@ class sim_onetire:
     while i<len(segments):
       if i<0:
         print('damnit bobby')
-        return None
+        output[:] = np.nan 
+        return output
       if (gear is None) and shiftpt < 0:
         gear = vehicle.best_gear(output[i-1,O_VELOCITY], output[i,O_FF_REMAINING])
 
@@ -347,6 +348,7 @@ class sim_onetire:
 
   def steady_solve(self, vehicle, segments):
     output = self.solve(vehicle,segments)
+    output[-1,O_VELOCITY] = output[-1,O_VELOCITY]*0.95
     return self.solve(vehicle,segments,output[-1, :])
 
   def colorgen(num_colors, idx):

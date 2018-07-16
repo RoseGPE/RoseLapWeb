@@ -418,7 +418,8 @@ class sim_twotires:
     while i<len(segments):
       if i<0:
         # print('sim_twotires.solve had a major catastrophe; index moved below zero. Unable to restart.')
-        return None
+        output[:] = np.nan 
+        return output
 
       # If the gear was undefined and the point where shifting happened is not defined, pick the best gear right off
       if (gear is None) and shiftpt < 0:
@@ -531,6 +532,7 @@ class sim_twotires:
 
   def steady_solve(self, vehicle,segments):
     output = self.solve(vehicle,segments)
+    output[-1,O_VELOCITY] = output[-1,O_VELOCITY]*0.95
     return self.solve(vehicle,segments,output[-1, :])
 
   def colorgen(num_colors, idx):
