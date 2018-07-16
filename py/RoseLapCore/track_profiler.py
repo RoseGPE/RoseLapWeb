@@ -11,7 +11,14 @@ import numpy as np
 # conf_tests, conf_vehicle, tracks, model, out = a
 # b = batcher.batch(conf_tests, conf_vehicle, tracks, model, out)
 
-for track in ['acceleration.dxf','mi_2018_autox.svg','mi_2018_endurance.svg','ne_2015_autox.svg','ne_2015_endurance.svg','skidpad_loop.dxf','skidpad_start.dxf']:
+for track in [
+	# 'acceleration.dxf',
+	# 'mi_2018_autox.svg',
+	'mi_2018_endurance.svg',
+	# 'ne_2015_autox.svg',
+	'ne_2015_endurance.svg'
+	# 'skidpad_loop.dxf'
+	]:
 	times = []
 	gears = np.arange(1.0,6.0,0.2)
 	for gr in gears:
@@ -25,6 +32,6 @@ for track in ['acceleration.dxf','mi_2018_autox.svg','mi_2018_endurance.svg','ne
 
 		output = sim.solve(vehicle, segments)
 		# plottools.plot_velocity_and_events(output,'t',st)
-		times.append((track,output[-1,sims.O_TIME],gr))
-		print('\t%s: %.3f s, gr=%.2f' % times[-1])
-	print('Best time for %s was %.3f at fdr=%.2f' % min(times, key=lambda x:x[1]))
+		times.append((track,output[-1,sims.O_TIME],gr,output[-1,sims.O_CO2]))
+		print('\t%s: %.3f s, gr=%.2f, co2=%.6f' % times[-1])
+	print('Best time for %s was %.3f at fdr=%.2f and co2 emissions %.6f' % min(times, key=lambda x:x[1]))
