@@ -52,14 +52,20 @@ def listify(tests, vehicle):
     scaled_vals = [scale(targets[i], test_vals[i], ops[i], vehicle) for i in range(len(tests))]
 
     # list of pivoted test values
-    values = [[[t[i] for t in axis] for i in range(len(axis[0]))] for axis in scaled_vals]
+    values = [[[t[i] for t in axis] for i in range(len(axis[0]))] for axis in scaled_vals] # I don't understand the axis[0] here - Thad
+
 
     bases = values[0]
     extensions = values[1 :]
     permutations = []
 
+    # logging.debug('values = %s, bases = %s, extensions = %s' % (repr(values),repr(bases),repr(extensions)))
+
     for base in bases:
-        permutations.extend(permutation_extend(base, extensions))
+        if len(tests) > 1:
+            permutations.extend(permutation_extend(base, extensions))
+        else:
+            permutations.append(permutation_extend(base, extensions))
 
     # list of flat lists of values that line up with targets
     flatTargets = sum(targets, [])
@@ -103,7 +109,7 @@ def run_permutation(thread_data):
 
 
 def generate_co2s(outputs):
-    logging.debug('generating co2s for %s' % outputs)
+    # logging.debug('generating co2s for %s' % outputs)
     co2s = []
 
     for output in outputs:
@@ -115,6 +121,8 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
 
     test_data = []
     n_threads = partitions(len(permutations))
+
+    # logging.debug('permutations = %s' % repr(permutations))
     
     if type(permutations[0]) != list:
         permutations = [[p] for p in permutations]
@@ -130,7 +138,7 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
     for track in tracks:
         fn, dl_default, steady_state, name, point_formula, mins = track
         # print('making segments for %s at %f' % (fn, dl_default))
-        logging.debug('hi there')
+        # logging.debug('hi there')
         
 
         t0 = time.time()
@@ -151,6 +159,7 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
             opts = {}
             repres = {}
             for j, target in enumerate(targets):
+                # logging.debug("i=%d, j=%d, perm=%s" % (i,j,repr(permutations)))
                 repres[target] = permutations[i][j]
                 if target == 'label':
                     pass
