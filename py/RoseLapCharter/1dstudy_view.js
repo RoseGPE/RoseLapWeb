@@ -92,7 +92,8 @@ function handle_sel(a){
 
 function handle_clk(a){
   // alert('You clicked on datapoint ' + a.dataIndex);
-  var win = window.open(a.seriesName.split(" ")[0].split(".")[0] + '/' + a.value[0] + '.html', '_blank');
+  console.log(a);
+  var win = window.open(a.seriesName.split(".")[0] + '/' + a.value[0] + '.html', '_blank');
   win.focus();
 };
 

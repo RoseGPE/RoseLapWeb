@@ -63,7 +63,8 @@ def make_plot(result, display_dir, overall_title="Chart Overall Title"):
     outputs = track['outputs']
 
     if len(outputs) > 0:
-      disp = display_dir + "/" + overall_title + "/"
+      # disp = display_dir + "/" + overall_title + "/"
+      disp = display_dir + "/" + filename + "/"
       try:
         os.makedirs(disp)
       except Exception:
