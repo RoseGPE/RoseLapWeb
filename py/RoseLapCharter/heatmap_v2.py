@@ -9,6 +9,7 @@ import logging
 
 def make_plot(result, display_dir, overall_title="Chart Overall Title"):
   logging.info('Making a Heatmap')
+  # logging.debug(repr(result))
   data = []
   data_names = []
   points_total = None

@@ -4,6 +4,7 @@ import pointsim
 import copy
 import translation
 import detail
+import logging
 
 def make_plot(result, display_dir, overall_title="Chart Overall Title"):
   data = []

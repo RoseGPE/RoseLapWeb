@@ -2,6 +2,7 @@ import numpy as np
 import math
 
 from constants import *
+import logging
 
 """
 Point mass model
@@ -221,6 +222,8 @@ class sim_onetire:
     return vehicle.f_long_remain(4, vehicle.mass*vehicle.g+vehicle.downforce(vf, aero_mode), vehicle.mass*vf**2*derate_curvature(segment.curvature,vehicle.r_add))[0] - vehicle.drag(vf, aero_mode)
 
   def solve(self, vehicle, segments, output_0 = None):
+    logging.debug("Segments is %d long" % len(segments))
+    logging.debug("Gear ratio is %.5f" % vehicle.final_drive_reduction)
     # set up initial stuctures
     output = np.zeros((len(segments), O_MATRIX_COLS))
     precrash_output = np.zeros((len(segments), O_MATRIX_COLS))
@@ -266,6 +269,7 @@ class sim_onetire:
         #print('crash at',i)
         if not brake:
           # Start braking
+          del precrash_output
           precrash_output = np.copy(output)
           precrash_i = i
           brake = True
@@ -281,11 +285,13 @@ class sim_onetire:
           middle_brake_bound = int((upper_brake_bound + lower_brake_bound) / 2)
           
           i = middle_brake_bound
+          del output
           output = np.copy(precrash_output)
         else:
           # Try again from an earlier point
           lower_brake_bound-=backup_amount
           i = lower_brake_bound
+          del output
           output = np.copy(precrash_output)
         # reset shifting params
         gear = None
@@ -306,6 +312,7 @@ class sim_onetire:
         middle_brake_bound = int((upper_brake_bound+lower_brake_bound)/2)
         
         i = middle_brake_bound
+        del output
         output = np.copy(precrash_output)
       elif failpt>=0 and bounds_found and abs(lower_brake_bound - upper_brake_bound) > 1:
         lower_brake_bound = middle_brake_bound
@@ -313,6 +320,7 @@ class sim_onetire:
         middle_brake_bound = int((upper_brake_bound+lower_brake_bound)/2)
         
         i = middle_brake_bound
+        del output
         output = np.copy(precrash_output)
       else:
         # normal operation

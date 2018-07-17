@@ -5,7 +5,7 @@ from multiprocessing import Pool as ThreadPool
 import time
 import copy as shallow
 import input_processing.track_segmentation as track_segmentation
-
+# import gc
 from sims import constants
 import logging
 
@@ -53,7 +53,7 @@ def listify(tests, vehicle):
 
     # list of pivoted test values
     values = [[[t[i] for t in axis] for i in range(len(axis[0]))] for axis in scaled_vals] # I don't understand the axis[0] here - Thad
-
+    logging.debug("values = %s" % repr(values))
 
     bases = values[0]
     extensions = values[1 :]
@@ -66,9 +66,10 @@ def listify(tests, vehicle):
             permutations.extend(permutation_extend(base, extensions))
         else:
             permutations.append(permutation_extend(base, extensions))
+    logging.debug("permutations = %s" % permutations)
 
     # list of flat lists of values that line up with targets
-    flatTargets = sum(targets, [])
+    flatTargets = sum(targets, []) # what does this mean / do, wtf? - Thad; whatever
     return (permutations, targets, flatTargets, test_vals)
 
 def scale(targets, vals, ops, vehicle):
@@ -81,6 +82,7 @@ def scale(targets, vals, ops, vehicle):
     return vals
 
 def permutation_extend(base, extensions):
+    logging.debug("base = %s, extensions = %s" % (repr(base),repr(extensions)))
     if len(extensions) == 0:
         return base
 
@@ -95,6 +97,7 @@ def run_permutation(thread_data):
     print('\tRunning Permutation: %s' % (repr(perm)))
     logging.info("Running Permutation: %s" % repr(perm))
 
+    # gc.collect()
     data = solver.steady_solve(prepped_vehicle, segments) if steady_state else solver.solve(prepped_vehicle, segments)
 
     time = index + (float(data[-1, constants.O_TIME]),)
@@ -169,7 +172,7 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
                     else:
                         opts[target[6:]] = permutations[i][j]
                 else:
-                    setattr(vehicle, target, permutations[i][j])
+                    setattr(v, target, permutations[i][j])
             segments = track_segmentation.file_to_segments(fn, dl, opts=opts)
             v.prep()
             td = (indicies[i],
