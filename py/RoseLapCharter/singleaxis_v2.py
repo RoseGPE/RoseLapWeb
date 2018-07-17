@@ -61,8 +61,9 @@ def make_plot(result, display_dir, overall_title="Chart Overall Title"):
 
   for track in td:
     outputs = track['outputs']
-
+    filename = track['name'].split(".")[0]
     if len(outputs) > 0:
+      logging.info("keep charting...")
       # disp = display_dir + "/" + overall_title + "/"
       disp = display_dir + "/" + filename + "/"
       try:

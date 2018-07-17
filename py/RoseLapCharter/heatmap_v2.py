@@ -83,6 +83,7 @@ def make_plot(result, display_dir, overall_title="Chart Overall Title"):
     filename = track['name'].split(".")[0]
     # logging.debug('outputs = %s' % repr(outputs))
     if len(outputs) > 0:
+      logging.info("keep charting...")
       disp = display_dir + "/" + filename + "/"
       try:
         os.makedirs(disp)
