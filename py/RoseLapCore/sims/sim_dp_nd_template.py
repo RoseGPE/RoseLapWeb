@@ -2,7 +2,7 @@ import numpy as np
 import better_dp_utils as dpu
 import math
 from constants import *
-from Queue import Queue
+from queue import Queue
 
 class sim_dp_nd_template:
 	def __init__(self):
@@ -221,7 +221,7 @@ class sim_dp_nd_template:
 
 
 		self.max_cost = ((self.n * segments[4].length / 5280) / 15) * 60 * 60
-		print "max time:", self.max_cost
+		print("max time:", self.max_cost)
 		self.max_cost *= 2
 
 		init_state = (0, 
@@ -260,7 +260,7 @@ class sim_dp_nd_template:
 
 				processed += 1
 				if processed % 10000 == 0:
-					print processed
+					print(processed)
 
 				spindex = self.sg.convert_to_list(spid)
 
@@ -308,7 +308,7 @@ class sim_dp_nd_template:
 
 		path, output = self.find_optimum(end_states)
 
-		print path
+		print(path)
 
 		return output
 

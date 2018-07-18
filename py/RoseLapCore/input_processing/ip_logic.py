@@ -2,7 +2,7 @@ import fancyyaml
 import track_segmentation
 import vehicle
 import sims
-import StringIO
+import io
 
 def process_input(config_filename):
 
@@ -17,14 +17,14 @@ def process_input(config_filename):
 	return (conf.tests, conf.vehicle, tracks, model, out)
 
 def process_web_config(config_text):
-	config_stream = StringIO.StringIO(config_text)
+	config_stream = io.StringIO(config_text)
 	conf = fancyyaml.load(config_stream, False)
 	config_stream.close()
 
 	return conf
 
 def process_web_input(conf):
-	vehicle_stream = StringIO.StringIO(conf.vehicle)
+	vehicle_stream = io.StringIO(conf.vehicle)
 	conf.vehicle = vehicle.Vehicle(fancyyaml.load(vehicle_stream, False))
 	vehicle_stream.close()
 

@@ -29,13 +29,13 @@ def getHead():
 
 def writeHTML(H, filename):
     with open("C:\wamp\www\RoseLap\graph\\" + filename, "w") as chart:
-    	html_head = '''
-    	'''
+        html_head = '''
+        '''
 
-    	html_foot = '''
-    	'''
+        html_foot = '''
+        '''
 
-    	html = H.htmlcontent
-    	chart.write(html_head)
+        html = H.htmlcontent
+        chart.write(html_head)
         chart.write(html)
         chart.write(html_foot)

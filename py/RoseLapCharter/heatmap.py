@@ -4,7 +4,7 @@ import detail
 
 sys.path.append('C:\wamp\www\RoseLap\py')
 
-from highcharts import Highchart
+# from highcharts import Highchart
 from RoseLapCore import *
 from charting_tools import *
 import plotter

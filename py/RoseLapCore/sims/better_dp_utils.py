@@ -49,7 +49,7 @@ class nd_structure:
 		if self.edges != None:
 			return self.edges
 
-		print "\ttime start"
+		print(("\ttime start"))
 		t0 = time.time()
 
 		def get_edges_recursive(n, p):
@@ -67,15 +67,15 @@ class nd_structure:
 				return result
 
 		iE = get_edges_recursive(self.n - 1, self.p)
-		print "\t", time.time() - t0
+		print( "\t", time.time() - t0)
 		perms = [list(permutations(e)) for e in iE]
-		print "\t", time.time() - t0
+		print( "\t", time.time() - t0)
 		edges = []
 		
 		for perm in perms:
 			edges.extend(perm)
 
-		print "\t", time.time() - t0
+		print( "\t", time.time() - t0)
 
 		p = self.p
 		np = self.np
@@ -89,7 +89,7 @@ class nd_structure:
 		for edge in edges:
 			final.append(coi(edge))
 
-		print "\t", time.time() - t0
+		print( "\t", time.time() - t0)
 
 		self.edges = set(final)
 
