@@ -41,7 +41,7 @@ def make_plot(result, display_dir, overall_title="Chart Overall Title"):
   else:
     xlabel = ', '.join(["%s (%s)" % (translation.names[k],translation.units[k]) for k in result['axiscontents'][0].keys()]);
     xvals = result['axiscontents'][0].values();
-    xvals = [[v[i] for v in xvals] for i in range(len(xvals[0]))]
+    xvals = [[list(v)[i] for v in xvals] for i in range(len(list(xvals)[0]))]
   
   ylabel = ''
   yvals = []
@@ -50,7 +50,7 @@ def make_plot(result, display_dir, overall_title="Chart Overall Title"):
   else:
     ylabel = ', '.join(["%s (%s)" % (translation.names[k],translation.units[k]) for k in result['axiscontents'][1].keys()]);
     yvals = result['axiscontents'][1].values();
-    yvals = [[v[i] for v in yvals] for i in range(len(yvals[0]))]
+    yvals = [[list(v)[i] for v in yvals] for i in range(len(list(yvals)[0]))]
 
 
   html = """

@@ -35,7 +35,7 @@ def make_plot(result, display_dir, overall_title="Chart Overall Title"):
   else:
     xlabel = ', '.join(["%s (%s)" % (translation.names[k],translation.units[k]) for k in result['axiscontents'][0].keys()]);
     xvals = result['axiscontents'][0].values();
-    xvals = [[v[i] for v in xvals] for i in range(len(xvals[0]))]
+    xvals = [[list(v)[i] for v in xvals] for i in range(len(list(xvals)[0]))]
  
   html = """
     <head>

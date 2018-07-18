@@ -1,4 +1,4 @@
-import sys,os,traceback,inspect
+import sys,os,traceback,inspect,sys
 # sys.stdout = open('c:/wamp/www/RoseLap/py/, 'w')
 # print("hi mom")
 sys.path.append(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) + '/../')
@@ -10,13 +10,12 @@ log_dir = config.file_dir + '/py/RoseLapCore/logs/' + unique_id + '.log'
 log_path = config.web_dir + '/py/RoseLapCore/logs/' + unique_id + ".log"
 logging.basicConfig(filename=log_dir, level=logging.DEBUG, format='%(asctime)-15s | %(levelname)-8s: %(message)s')
 
-logging.info("start of log")
-
 try:
+    logging.info(sys.version)
     import input_processing
     import batcher
     import packer
-    import MySQLdb as sql
+    import pymysql as sql
     from RoseLapCharter import dashboarder
 except:
     err = traceback.format_exc()

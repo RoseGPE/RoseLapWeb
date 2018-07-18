@@ -8,6 +8,8 @@ import input_processing.track_segmentation as track_segmentation
 # import gc
 from sims import constants
 import logging
+import psutil
+import os
 
 def batch(tests, vehicle, tracks, model, include_output):
     batch = {}
@@ -96,6 +98,7 @@ def run_permutation(thread_data):
     index, prepped_vehicle, solver, steady_state, include_output, segments, perm = thread_data
     print('\tRunning Permutation: %s' % (repr(perm)))
     logging.info("Running Permutation: %s" % repr(perm))
+    logging.debug(repr(psutil.Process(os.getpid()).memory_info().rss))
 
     # gc.collect()
     data = solver.steady_solve(prepped_vehicle, segments) if steady_state else solver.solve(prepped_vehicle, segments)
@@ -130,13 +133,13 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
     if type(permutations[0]) != list:
         permutations = [[p] for p in permutations]
 
-    print "threading...", n_threads
+    print("threading...", n_threads)
     logging.info("Threading %d threads..." % n_threads)
 
     # pool = ThreadPool(n_threads)
     # pool.map(stretch, [i for i in range(n_threads)])
 
-    print "running..."
+    print("running...")
 
     for track in tracks:
         fn, dl_default, steady_state, name, point_formula, mins = track
@@ -145,6 +148,16 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
         
 
         t0 = time.time()
+
+        unique_segments = False
+        segments = None
+        for target in targets:
+            if target[:6] == 'track.':
+                unique_segments = True
+                break
+        else:
+            segments = track_segmentation.file_to_segments(fn, dl_default)
+
 
         track_data = {}
         track_data["name"] = name
@@ -173,7 +186,8 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
                         opts[target[6:]] = permutations[i][j]
                 else:
                     setattr(v, target, permutations[i][j])
-            segments = track_segmentation.file_to_segments(fn, dl, opts=opts)
+            if unique_segments:
+                segments = track_segmentation.file_to_segments(fn, dl, opts=opts)
             v.prep()
             td = (indicies[i],
                 v,
@@ -189,7 +203,7 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
         # thread_results = pool.map(run_permutation, thread_data)
         thread_results = [run_permutation(d) for d in thread_data]
 
-        print "\ttrack completed in:", time.time() - t0, "seconds"
+        print("\ttrack completed in:", time.time() - t0, "seconds")
 
         times = []
         outputs = []

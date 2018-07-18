@@ -1,4 +1,5 @@
-import matplotlib.pyplot as plt, mpld3
+import matplotlib.pyplot as plt
+import mpld3
 import numpy as np
 from charting_tools import *
 

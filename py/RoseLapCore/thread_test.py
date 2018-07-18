@@ -6,10 +6,10 @@ max_t = 30
 
 def test_wait(n):
 	time.sleep(n)
-	print "thread", n, "done"
+	print("thread", n, "done")
 	return True
 
 pool = ThreadPool(n_threads)
 results = [i for i in range(max_t)]
-print "go"
+print("go")
 results = pool.map(test_wait, results)

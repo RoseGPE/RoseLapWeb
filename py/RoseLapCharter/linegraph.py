@@ -8,7 +8,7 @@ import json
 sys.path.append('C:\wamp\www\RoseLap\py')
 print(sys.path)
 
-from highcharts import Highchart
+# from highcharts import Highchart
 from RoseLapCore import packer
 from charting_tools import *
 # from RoseLapCore import *
