@@ -407,7 +407,7 @@ class sim_twotires:
 
     # step loop set up
     i = 1
-    backup_amount = int(6.0/segments[0].length)
+    backup_amount = 1 #int(6.0/segments[0].length)
     bounds_found = False
     failpt = -1
     precrash_i = -1

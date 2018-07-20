@@ -219,6 +219,8 @@ class Segment(object):
       self.length_secant = length
       self.curvature = curvature
       self.sector = sector
+    if self.curvature > 0.05:
+      self.curvature = 0.05
 
 class RLT(object):
   def __init__(self, k, l, s):
