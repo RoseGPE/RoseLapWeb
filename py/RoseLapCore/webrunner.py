@@ -36,7 +36,6 @@ if __name__ == "__main__":
         # cur.execute("SELECT run_Get_Next_Batch_Run()")
         # ids = cur.fetchall()[0][0]
         # logging.debug("IDs: %s" % repr(ids))
-
         # r, b = ids.strip().split('|')
         # runID = int(r)
         # bcID = int(b)
@@ -73,6 +72,9 @@ if __name__ == "__main__":
 
         logging.info('batching...')
         results = batcher.batch(tests, vehicle, tracks, model, out[1] != 0)
+
+        db = sql.connect("localhost", "rlapp", "gottagofast", "roselap")
+        cur = db.cursor()
 
         logging.info('packing...')
         result_path = packer.pack(results, out[0])
