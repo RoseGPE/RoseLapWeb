@@ -24,10 +24,14 @@ def sectors_dxf(dxf_output, connectivity, open_ended):
       sectors.append(Sector(index, length, 0))
     elif shape[0] == 'arc':
       # xc yc radius start_angle end_angle direction x1 y1 x2 y2
-      arc_angle = shape[4] - shape[5]
-      if shape[6] > 0:
-        arc_angle = -arc_angle
+      arc_angle = shape[5] - shape[4]
+      # if shape[6] > 0:
+        # arc_angle = arc_angle-360
+      # arc_angle = arc_angle % 360
+      if shape[6] < 0:
+        arc_angle+=360
       arc_angle = arc_angle % 360
+      # print('arc angle: %.2f direction = %.1f' % (arc_angle,shape[6]))
       length = shape[3]*math.radians(arc_angle)
       sectors.append(Sector(index, length, 1.0/shape[3]))
   return sectors  

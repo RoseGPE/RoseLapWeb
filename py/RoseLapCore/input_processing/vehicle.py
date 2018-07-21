@@ -36,7 +36,7 @@ class Vehicle(object):
         if crank_rpm < self.engine_rpms[i]:
           torque = self.engine_torque[i] + (crank_rpm - self.engine_rpms[i]) * (self.engine_torque[i-1] - self.engine_torque[i]) / (self.engine_rpms[i-1] - self.engine_rpms[i])
           return (torque * self.engine_reduction * gear_ratio * self.final_drive_reduction / self.rear_tire_radius, crank_rpm)
-
+    return (0,crank_rpm)
   def best_gear(self, v, fr_limit):
     # Find the best gear and return the number for it.
     # Doesn't actually do anything with the friction limitation. It did at one point.
@@ -75,7 +75,7 @@ class Vehicle(object):
     else:
       f_x_max = self.rear_tire_mu_x*(f_norm/n_tires) + self.rear_tire_offset_x
       f_y_max = self.rear_tire_mu_y*(f_norm/n_tires) + self.rear_tire_offset_y
-
+    
     if f_y_max < abs(f_lat/n_tires):
       return (-np.inf, f_x_max*n_tires)
     f_long = math.sqrt(max(1-(abs(f_lat)/n_tires)**2/f_y_max/f_y_max,0))*f_x_max
