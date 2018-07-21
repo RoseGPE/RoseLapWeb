@@ -64,7 +64,7 @@ class sim_ss_onetire:
       F_longitudinal = F_tire_long - vehicle.drag(v, aero_mode)
       a_long = F_longitudinal / vehicle.mass
 
-      print(v,a_long, F_tire_long_available_DRS, F_tire_long_available_FULL, F_tire_lat)
+      # print(v,a_long, F_tire_long_available_DRS, F_tire_long_available_FULL, F_tire_lat)
       v = floor_sqrt(v**2 + 2*a_long*dl)
       t += 1000 if v==0 else dl/v
       x += dl
@@ -113,6 +113,10 @@ class sim_ss_onetire:
       a_long = F_longitudinal / vehicle.mass
       v = floor_sqrt(v**2 - 2*a_long*dl)
 
+      # if v == 0:
+      #   print('issues here')
+      #   exit()
+
       if success:
         status = S_SUSTAINING
         v = v0
@@ -121,7 +125,7 @@ class sim_ss_onetire:
         success = True
         v = v0
 
-      t -= dl/v
+      t -= 1000 if v==0 else dl/v
       x -= dl
 
       channels[i,O_TIME] = t
@@ -175,7 +179,7 @@ class sim_ss_onetire:
       F_longitudinal = F_tire_long - vehicle.drag(v, AERO_DRS)
       a_long = F_longitudinal / vehicle.mass
       v = floor_sqrt(v**2 + 2*a_long*dl)
-      t += dl/v
+      t += 1000 if v==0 else dl/v
       x += dl
 
       channels[i,O_TIME] = t
@@ -213,9 +217,12 @@ class sim_ss_onetire:
       v = floor_sqrt(v**2 - 2*a_long*dl)
 
       if v > channels[i,O_VELOCITY]:
+        for j in reversed(range(n)):
+          if channels[j,O_TIME] < 0:
+            channels[j,O_TIME] += channels[i,O_TIME] - t
         break
 
-      t -= dl/v
+      t -= 1000 if v==0 else dl/v
       x -= dl
 
       channels[i,O_TIME] = t
@@ -232,16 +239,16 @@ class sim_ss_onetire:
       channels[i,O_ENG_RPM]   = np.nan
       channels[i,O_CO2] = dl*F_tire_long*vehicle.co2_factor/vehicle.e_factor
       channels[i,O_AERO_MODE] = AERO_DRS
-
-    # fix up the times...
+    else:
+      for j in range(n):
+        if channels[j,O_TIME] < 0:
+          channels[j,O_TIME] += t0 - t
     
-    for i in reversed(range(n)):
-      if channels[i,O_TIME] < 0:
-        channels[i,O_TIME] += t_peak - t
+    
 
     # find intersection point and splice
 
-    print('Straight from %.2f -> %.2f' % (v0,vf))
+    print('Straight from %.2f -> %.2f (%.4f s)' % (v0,vf,channels[-1,O_TIME]-channels[0,O_TIME]))
 
     return channels, (v0-channels[0,O_VELOCITY] > 1e-1)
     
@@ -323,26 +330,46 @@ class sim_ss_onetire:
     for i, sector in enumerate(sectors):
       if sector.curvature > 0:
         steady_conditions[i] = self.steady_corner(vehicle, sector)
+    print('Steady velocities: %s' % repr([None if a is None else a[O_VELOCITY] for a in steady_conditions]))
 
 
     channel_stack = None
     starts = []
 
     if sectors[0].curvature > 0:
-      pass
+      channels_corner, peaked = self.accel(vehicle,
+        sectors[0],
+        0,
+        0,
+        0,
+        steady_conditions[0][O_VELOCITY],
+        0+sectors[0].length)
+
+      starts.append(0)
+      channel_stack = channels_corner
+
+      if peaked:
+        channels_corner = np.vstack((steady_conditions[0],steady_conditions[0]))
+        channels_corner[-1,[O_DISTANCE,O_TIME]] += channel_stack[-1,[O_DISTANCE,O_TIME]]
+        channels_corner[0,[O_DISTANCE,O_TIME]]   = channel_stack[-1,[O_DISTANCE,O_TIME]]
+      
+        channel_stack = np.vstack((channel_stack,channels_corner))
     else:
       starts.append(0)
-      channel_stack, failed_start = self.straight(vehicle, sectors[0], 0, 0, 0, steady_conditions[1][O_VELOCITY])
+      channel_stack, failed_start = self.straight(vehicle, sectors[0], 0, 0, 0, vehicle.vmax if 1>=len(steady_conditions) else steady_conditions[1][O_VELOCITY])
       # ends.append(channel_stack.shape[0]-1)
 
     
     i = 1
     while i<len(sectors):
-      print('Starts: %s' % repr(starts))
+      # print('Starts: %s' % repr(starts))
+      print(sectors[i])
       if sectors[i].curvature > 0:
         ### CORNER ###
         dv =steady_conditions[i][O_VELOCITY] - channel_stack[-1,O_VELOCITY]
+        print('Corner  (%.4f s)' % steady_conditions[i][O_TIME])
         if dv > 1:
+          print('Accelerate through a corner')
           ### ACCELERATE THROUGH A CORNER ###
           channels_corner, peaked = self.accel(vehicle,
             sectors[i],
@@ -365,7 +392,7 @@ class sim_ss_onetire:
 
         elif dv < -1:
           ### BRAKE THROUGH A CORNER ###
-          print('brake through a corner (sec %d)...' % i)
+          print('Brake through a corner')
           # channels_corner, failed_start = self.brake(vehicle,
           #   sectors[i], #t0, xf, v0, vf
           #   channel_stack[-1,O_TIME],
@@ -393,17 +420,34 @@ class sim_ss_onetire:
           while failed_start:
             ### KEEP WORKING BACKWARDS... ###
             print('working backwards... (sec %d)' % j)
+            k = j
+            vmax = min(steady_conditions[k][O_VELOCITY],channels_corner[0,O_VELOCITY])
+            # while True:
+            #   k-=1
+            #   if k<0:
+            #     break
+            #   if steady_conditions[k] is None:
+            #     break
+            #   if not (steady_conditions[k-1] is None) and steady_conditions[k-1][O_VELOCITY] < steady_conditions[k][O_VELOCITY]:
+            #     break
+            #   vmax = steady_conditions[k][O_VELOCITY]
+
+            
             channels_corner, success = self.brake(vehicle,
               sectors[j],
               channel_stack[starts[j],O_TIME],
               channels_corner[0,O_DISTANCE],
-              steady_conditions[j][O_VELOCITY],
+              vmax,
               channels_corner[0,O_VELOCITY])
-            print(channels_corner)
+            # print(channels_corner)
+            failed_start = not success
+
+            dt = (channels_corner[-1,O_TIME] - channels_corner[0,O_TIME]) - (channel_stack[starts[j+1],O_TIME]-channel_stack[starts[j],O_TIME])
+
             failed_start = not success
             after = channel_stack[starts[j+1]:,:]
-            # dt = after[0,O_TIME] - 
-            # after[:,O_TIME] - dt
+            after[:,O_TIME] += dt
+
             channel_stack = np.vstack((channel_stack[:starts[j],:], channels_corner))
             channel_stack = np.vstack((channel_stack, after))
 
@@ -415,6 +459,7 @@ class sim_ss_onetire:
             
             j-=1
         else:
+          print('Sustain through a corner')
           ### STEADY STATE CORNER ###
           channels_corner = np.vstack((steady_conditions[i],steady_conditions[i]))
           channels_corner[-1,[O_DISTANCE,O_TIME]] += channel_stack[-1,[O_DISTANCE,O_TIME]]
@@ -426,35 +471,54 @@ class sim_ss_onetire:
       
 
       else:
+        print('Straight')
         ### STRAIGHT ###
         channels_straight, failed_start = self.straight(vehicle,
           sectors[i],
           channel_stack[-1,O_DISTANCE],
           channel_stack[-1,O_TIME],
           channel_stack[-1,O_VELOCITY],
-          steady_conditions[i+1][O_VELOCITY])
+          vehicle.vmax if i+1>=len(steady_conditions) else steady_conditions[i+1][O_VELOCITY])
 
         starts.append(channel_stack.shape[0])
         channel_stack = np.vstack((channel_stack,channels_straight))
         # ends.append(channel_stack.shape[0]-1)
 
         j = i-1
+        dt = 0
         # print(starts,ends)
         ### DIDNT SUCCEED IN BRAKING WITH JUST THE STRAIGHT ###
         while failed_start:
           ### KEEP WORKING BACKWARDS... ###
+          k = j
+          vmax = min(steady_conditions[k][O_VELOCITY],channels_straight[0,O_VELOCITY])
+          # while True:
+          #   k-=1
+          #   if k<0:
+          #     break
+          #   if steady_conditions[k] is None:
+          #     break
+          #   if not (steady_conditions[k-1] is None) and steady_conditions[k-1][O_VELOCITY] < steady_conditions[k][O_VELOCITY]:
+          #     break
+          #   vmax = steady_conditions[k][O_VELOCITY]
+
           channels_straight, success = self.brake(vehicle,
             sectors[j],
             channel_stack[starts[j],O_TIME],
             channels_straight[0,O_DISTANCE],
-            steady_conditions[j][O_VELOCITY],
+            vmax,
             channels_straight[0,O_VELOCITY])
+
+          dt = (channels_straight[-1,O_TIME] - channels_straight[0,O_TIME]) - (channel_stack[starts[j+1],O_TIME]-channel_stack[starts[j],O_TIME])
+
           failed_start = not success
           after = channel_stack[starts[j+1]:,:]
+          after[:,O_TIME] += dt
           channel_stack = np.vstack((channel_stack[:starts[j],:], channels_straight))
           channel_stack = np.vstack((channel_stack, after))
 
           dl = (channels_straight.shape[0]-1) - (starts[j+1]-starts[j])
+          
           k = j+1
           while k < len(starts):
             starts[k] += dl
@@ -465,38 +529,6 @@ class sim_ss_onetire:
       i+=1
 
     return channel_stack
-
-
-    # x = 0
-    # t = 0
-    # i = len(sectors)
-    # while i>0:
-    #   i-=1
-    #   sector = sectors[i]
-    #   if sector_results[i] is None:
-    #     v0 = 0 if i==0 else sector_results[i-1][-1,O_VELOCITY]
-    #     vf = np.inf if i==len(sectors)-1 else sector_results[i+1][-1,O_VELOCITY]
-    #     sector_results[i] = self.straight(vehicle, sector, x, t, v0, vf)
-
-    #     if abs(sector_results[i][-1,O_VELOCITY] - sector_results[i-1][-1,O_VELOCITY]) < 0.1:
-    #       # we spent the whole time braking and couldnt do it
-    #       pass
-    #     elif abs(sector_results[i][-1,O_VELOCITY] - sector_results[i+1][-1,O_VELOCITY]) < 0.1:
-    #       # we spent the whole time accelerating and couldnt do it, continue acceleration to the next portion
-    #       a_res = self.accel(vehicle, sector, x0, t0, v0, vf, xmax)
-
-    #     t = sector_results[i][-1,O_TIME]
-    #     x = sector_results[i][-1,O_DISTANCE]
-    #   else:
-    #     tmp = t
-    #     sector_results[i][0,O_DISTANCE] = x
-    #     t += sector_results[i][-1,O_TIME]
-    #     x += sector.length
-    #     sector_results[i][0,O_TIME] = tmp
-    #     sector_results[i][-1,O_TIME] = t
-    #     sector_results[i][-1,O_DISTANCE] = x
-    
-    # return np.vstack(sector_results)
 
   def steady_solve(self, vehicle, segments):
     pass
