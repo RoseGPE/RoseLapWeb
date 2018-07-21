@@ -135,6 +135,8 @@ class Vehicle(object):
     return ([f_long1,f_long2],f_x_max)
 
   def prep(self):
+    self.vmax = self.engine_rpms[-1]/self.gears[-1]/self.engine_reduction/9.5493/self.final_drive_reduction*self.rear_tire_radius
+
     self.mass = self.mass / self.g
     self.moi_yaw = self.moi_yaw / self.g
 

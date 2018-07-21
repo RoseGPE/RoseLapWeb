@@ -1,4 +1,5 @@
 from sim_onetire import *
+from sim_ss_onetire import *
 from sim_twotires import *
 from sim_fourtires import *
 from sim_dp_nd_template import *
@@ -13,6 +14,8 @@ class Simulation:
 			self.model = sim_twotires()
 		elif model_type == "four_tires":
 			self.model = sim_fourtires()
+		elif model_type == "ss_one_tire":
+			self.model = sim_ss_onetire()
 		elif model_type == "dp_nd":
 			self.model = sim_dp_nd_template()
 		else:
@@ -25,6 +28,8 @@ class Simulation:
 			return sim_twotires()
 		elif self.name == "four_tires":
 			return sim_fourtires()
+		elif model_type == "ss_one_tire":
+			self.model = sim_ss_onetire()
 		elif self.name == "dp_nd":
 			return sim_dp_nd_template()
 
