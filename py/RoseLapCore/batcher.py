@@ -145,6 +145,8 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
         fn, dl_default, steady_state, name, point_formula, mins = track
         # print('making segments for %s at %f' % (fn, dl_default))
         # logging.debug('hi there')
+
+        ss_model = (model.name[:3] == 'ss_')
         
 
         t0 = time.time()
@@ -156,7 +158,7 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
                 unique_segments = True
                 break
         else:
-            segments = track_segmentation.file_to_segments(fn, dl_default)
+            segments = track_segmentation.file_to_segments(fn, dl_default, sectors_only=ss_model)
 
 
         track_data = {}
@@ -187,7 +189,7 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
                 else:
                     setattr(v, target, permutations[i][j])
             if unique_segments:
-                segments = track_segmentation.file_to_segments(fn, dl, opts=opts)
+                segments = track_segmentation.file_to_segments(fn, dl, opts=opts, sectors_only=ss_model)
             v.prep()
             td = (indicies[i],
                 v,
