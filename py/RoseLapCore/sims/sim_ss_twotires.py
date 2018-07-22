@@ -452,7 +452,7 @@ class sim_ss_twotires:
 
     return channels
 
-  def solve(self, vehicle, sectors, output_0 = None, dl=0.2):
+  def solve(self, vehicle, sectors, output_0 = None, dl=0.2, closed_loop=False):
     # print('Sectors: %s' % repr(sectors))
     # print('Total Length: %f' % sum([x.length for x in sectors]))
 
@@ -468,23 +468,71 @@ class sim_ss_twotires:
     channel_stack = None
     starts = []
 
-    channels_corner, failed_start = self.drive(vehicle,
-      sectors[0],
-      None,
-      vehicle.vmax if 1>=len(steady_velocities) else steady_velocities[1],
-      steady_velocities[0], 
-      dl, start=True)
+    if closed_loop:
+      channels_start = np.array([
+        0, # t
+        0, # x
+        min(steady_velocities[-1],steady_velocities[0]*0.95),
+        0,
+        0,
+        0,
+        0, 
+        0,
+        0,
+        0, # no real 'gear'
+        0, # no long. acc
+        0, 
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0, # engine could be made but enh
+        0,
+        0])
 
-    starts.append(0)
-    channel_stack = channels_corner
+      vf = vehicle.vmax
+      if i+1<len(steady_velocities):
+        vf = steady_velocities[i+1]
+      elif closed_loop:
+        vf = steady_velocities[-1]
+
+      channels_corner, failed_start = self.drive(vehicle,
+        sectors[0],
+        channels_start,
+        vf,
+        steady_velocities[0], 
+        dl, start=True)
+
+      starts.append(0)
+      channel_stack = channels_corner
+    else:
+      channels_corner, failed_start = self.drive(vehicle,
+        sectors[0],
+        None,
+        vehicle.vmax if 1>=len(steady_velocities) else steady_velocities[1],
+        steady_velocities[0], 
+        dl, start=True)
+
+      starts.append(0)
+      channel_stack = channels_corner
 
     i = 1
     while i<len(sectors):
       # print(sectors[i])
+      vf = vehicle.vmax
+      if i+1>=len(steady_velocities):
+        if closed_loop:
+          vf = steady_velocities[0]
+      else:
+        vf = steady_velocities[i+1]
+
       channels_corner, failed_start = self.drive(vehicle,
         sectors[i],
         channel_stack[-1,:],
-        vehicle.vmax if i+1>=len(steady_velocities) else steady_velocities[i+1],
+        vf,
         steady_velocities[i], dl)
 
       starts.append(channel_stack.shape[0])
@@ -531,5 +579,5 @@ class sim_ss_twotires:
 
     return channel_stack
 
-  def steady_solve(self, vehicle, segments):
-    pass
+  def steady_solve(self, vehicle, segments, dl=0.2):
+    return self.solve(vehicle, segments, dl=dl, closed_loop=True)

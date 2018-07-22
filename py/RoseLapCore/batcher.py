@@ -95,13 +95,13 @@ def permutation_extend(base, extensions):
     return permutation_extend(res, extensions[1 :])
 
 def run_permutation(thread_data):
-    index, prepped_vehicle, solver, steady_state, include_output, segments, perm = thread_data
+    index, prepped_vehicle, solver, steady_state, include_output, segments, dl, perm = thread_data
     print('\tRunning Permutation: %s' % (repr(perm)))
     logging.info("Running Permutation: %s" % repr(perm))
     logging.debug(repr(psutil.Process(os.getpid()).memory_info().rss))
 
     # gc.collect()
-    data = solver.steady_solve(prepped_vehicle, segments) if steady_state else solver.solve(prepped_vehicle, segments)
+    data = solver.steady_solve(prepped_vehicle, segments, dl=dl) if steady_state else solver.solve(prepped_vehicle, segments, dl=dl)
 
     time = index + (float(data[-1, constants.O_TIME]),)
     co2 = float(data[-1, constants.O_CO2])
@@ -197,6 +197,7 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
                 steady_state,
                 include_output,
                 segments,
+                dl,
                 repres)
             # print(fn, dl, opts)
             thread_data.append(td)

@@ -83,10 +83,10 @@ class sim_ss_onetire:
       channels[i,O_GEAR]     = np.nan
       channels[i,O_LONG_ACC] = a_long/vehicle.g
       channels[i,O_LAT_ACC]  = a_lat/vehicle.g
-      channels[i,O_FR_REMAINING] = frem_filter(F_tire_long_available-abs(F_tire_long))
+      channels[i,O_FR_REMAINING] = 0
       channels[i,O_CURVATURE] = sector.curvature
       channels[i,O_ENG_RPM]   = np.nan
-      channels[i,O_CO2] = dl*F_tire_long*vehicle.co2_factor/vehicle.e_factor
+      channels[i,O_CO2] = 0
       channels[i,O_AERO_MODE] = aero_mode
       if success and i > 2:
         channels[i,O_STATUS] = S_SUSTAINING
@@ -117,7 +117,7 @@ class sim_ss_onetire:
     t_shift = -1
     v_shift = -1
     for i in range(n):
-      
+      # print(x,v)
       a_lat = v**2 * derate_curvature(sector.curvature, vehicle.r_add)
       F_tire_lat = vehicle.mass * a_lat
 
@@ -195,12 +195,13 @@ class sim_ss_onetire:
     # perform reverse integration to the beginning or vmax
 
     if vmax-vf > 1e-1:
-      # print('doing braking... v=vf=%f' % vf)
+      # print('doing braking... %f -> %f' % (v,vf))
       t_peak = t
       v = vf
       t = 0
       x = x0+dl*n
       for i in reversed(range(n)):
+        # print(x,v)
         a_lat = v**2 * derate_curvature(sector.curvature, vehicle.r_add)
         F_tire_lat = vehicle.mass * a_lat
 
@@ -247,10 +248,10 @@ class sim_ss_onetire:
         channels[i,O_GEAR]     = gear
         channels[i,O_LONG_ACC] = a_long/vehicle.g
         channels[i,O_LAT_ACC]  = a_lat/vehicle.g
-        channels[i,O_FR_REMAINING] = frem_filter(F_tire_long_available-abs(F_tire_long))
+        channels[i,O_FR_REMAINING] = 0
         channels[i,O_CURVATURE]    = sector.curvature
         channels[i,O_ENG_RPM]      = np.nan
-        channels[i,O_CO2]          = dl*F_tire_long*vehicle.co2_factor/vehicle.e_factor
+        channels[i,O_CO2]          = 0
         channels[i,O_AERO_MODE]    = aero_mode
       else:
         for j in range(n):
@@ -292,7 +293,7 @@ class sim_ss_onetire:
 
       # print('iter %d; k= %.4f, v= %.2f, avail= %.3f, req= %.3f, excess= %.4f' % (i,sector.curvature,v_cur,F_tire_lat_available[0],F_tire_lat,F_tire_lat_excess))
 
-      if F_tire_lat_excess < 1e-1 and F_tire_lat_excess >= 1e-3:
+      if F_tire_lat_excess < 2e-1 and F_tire_lat_excess >= 1e-1:
         break
 
       if F_tire_lat_excess > 1e-3:
@@ -337,7 +338,7 @@ class sim_ss_onetire:
 
     return channels
 
-  def solve(self, vehicle, sectors, output_0 = None, dl=0.2):
+  def solve(self, vehicle, sectors, output_0 = None, dl=0.2, closed_loop=False):
     # print('Sectors: %s' % repr(sectors))
     # print('Total Length: %f' % sum([x.length for x in sectors]))
 
@@ -354,27 +355,54 @@ class sim_ss_onetire:
     channel_stack = None
     starts = []
 
-    channels_corner, failed_start = self.drive(vehicle,
-      sectors[0],
-      0,
-      0,
-      0,
-      vehicle.vmax if 1>=len(steady_velocities) else steady_velocities[1],
-      steady_velocities[0],
-      np.nan, dl, start=True)
+    if closed_loop:
+      vf = vehicle.vmax
+      if i+1<len(steady_velocities):
+        vf = steady_velocities[i+1]
+      elif closed_loop:
+        vf = steady_velocities[-1]
 
-    starts.append(0)
-    channel_stack = channels_corner
+      # self, vehicle, sector, x0, t0, v0, vf, vmax, gear=None, dl=0.1, start=False
+      channels_corner, failed_start = self.drive(vehicle,
+        sectors[0],
+        0,
+        0,
+        min(steady_velocities[-1],steady_velocities[0]*0.95),
+        vf,
+        steady_velocities[0], 
+        np.nan, dl, start=False)
+
+      starts.append(0)
+      channel_stack = channels_corner
+    else:
+      channels_corner, failed_start = self.drive(vehicle,
+        sectors[0],
+        0,
+        0,
+        0,
+        vehicle.vmax if 1>=len(steady_velocities) else steady_velocities[1],
+        steady_velocities[0],
+        np.nan, dl, start=True)
+
+      starts.append(0)
+      channel_stack = channels_corner
 
     i = 1
     while i<len(sectors):
       # print(sectors[i])
+      vf = vehicle.vmax
+      if i+1>=len(steady_velocities):
+        if closed_loop:
+          vf = channel_stack[0,O_VELOCITY]
+      else:
+        vf = steady_velocities[i+1]
+
       channels_corner, failed_start = self.drive(vehicle,
         sectors[i],
         channel_stack[-1,O_DISTANCE],
         channel_stack[-1,O_TIME],
         channel_stack[-1,O_VELOCITY],
-        vehicle.vmax if i+1>=len(steady_velocities) else steady_velocities[i+1],
+        vf,
         steady_velocities[i],
         channel_stack[-1,O_GEAR], dl)
 
@@ -423,5 +451,5 @@ class sim_ss_onetire:
 
     return channel_stack
 
-  def steady_solve(self, vehicle, segments):
-    pass
+  def steady_solve(self, vehicle, segments, dl=0.2):
+    return self.solve(vehicle, segments, dl=dl, closed_loop=True)

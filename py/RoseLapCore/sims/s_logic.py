@@ -43,8 +43,14 @@ class Simulation:
 		elif self.name == "dp_nd":
 			return sim_dp_nd_template()
 
-	def solve(self, vehicle, segments):
-		return self.model.solve(vehicle, segments)
+	def solve(self, vehicle, segments, dl=0.3):
+		if self.name[:3] == 'ss_':
+			return self.model.solve(vehicle, segments, dl=dl)
+		else:
+			return self.model.solve(vehicle, segments)
 
-	def steady_solve(self, vehicle, segments):
-		return self.model.steady_solve(vehicle, segments)
+	def steady_solve(self, vehicle, segments, dl=0.3):
+		if self.name[:3] == 'ss_':
+			return self.model.steady_solve(vehicle, segments, dl=dl)
+		else:
+			return self.model.steady_solve(vehicle, segments)
