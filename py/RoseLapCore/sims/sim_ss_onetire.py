@@ -50,7 +50,7 @@ class sim_ss_onetire:
       F_longitudinal = F_longitudinal_FULL
       aero_mode = AERO_FULL
       N = vehicle.mass*vehicle.g + vehicle.downforce(v, AERO_FULL)
-      if F_longitudinal_FULL > F_longitudinal_BRK:
+      if (not success) and (F_longitudinal_FULL > F_longitudinal_BRK):
         # print('AIRBRAKE!')
         aero_mode = AERO_BRK
         F_tire_long_available = F_tire_long_available_BRK
@@ -65,10 +65,12 @@ class sim_ss_onetire:
 
       if success:
         status = S_SUSTAINING
+        aero_mode = AERO_FULL
         v = v0
       elif v > v0:
         # print('Sucessful brake from %.3f -> %.3f' % (v0,vf))
         success = True
+        aero_mode = AERO_FULL
         v = v0
 
       t -= 1000 if v==0 else dl/v
@@ -91,9 +93,11 @@ class sim_ss_onetire:
       if success and i > 2:
         channels[i,O_STATUS] = S_SUSTAINING
         channels[:i,:] = np.tile(channels[i,:], (i,1))
-        for j in range(0,i):
-          channels[j,O_TIME] -= dl*(i-j)/v
-          channels[j,O_DISTANCE] += dl*(i-j)
+        for j in reversed(range(0,i)):
+          t -= dl/v
+          x -= dl
+          channels[j,O_TIME] = t
+          channels[j,O_DISTANCE] = x
         break
 
     # if not success:

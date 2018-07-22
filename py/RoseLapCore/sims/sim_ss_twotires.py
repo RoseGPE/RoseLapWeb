@@ -56,7 +56,7 @@ class sim_ss_twotires:
     x = xf
     success = False
     for i in reversed(range(n)):
-      aero_mode = AERO_BRK
+      aero_mode = AERO_FULL if success else AERO_BRK
       Nf = ( (vehicle.weight_bias)*vehicle.g*vehicle.mass
           + (vehicle.cp_bias[aero_mode])*vehicle.downforce(v,aero_mode)
           - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
@@ -98,10 +98,12 @@ class sim_ss_twotires:
 
       if success:
         status = S_SUSTAINING
+        aero_mode = AERO_FULL
         v = v0
       elif v > v0:
         # print('Sucessful brake from %.3f -> %.3f' % (v0,vf))
         success = True
+        aero_mode = AERO_FULL
         v = v0
 
       t -= 1000 if v==0 else dl/v
@@ -127,9 +129,11 @@ class sim_ss_twotires:
       if success and i > 2:
         channels[i,O_STATUS] = S_SUSTAINING
         channels[:i,:] = np.tile(channels[i,:], (i,1))
-        for j in range(0,i):
-          channels[j,O_TIME] -= dl*(i-j)/v
-          channels[j,O_DISTANCE] += dl*(i-j)
+        for j in reversed(range(0,i)):
+          t -= dl/v
+          x -= dl
+          channels[j,O_TIME] = t
+          channels[j,O_DISTANCE] = x
         break
 
     for i in range(n):

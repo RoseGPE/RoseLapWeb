@@ -28,7 +28,7 @@ times = np.zeros((len(tracks), len(models)))
 co2s = np.zeros((len(tracks), len(models)))
 
 for i, track in enumerate(tracks):
-	gears = np.arange(1.0,5.0,0.3)
+	gears = np.arange(1.4,5.0,0.3)
 	for j, sn in enumerate(models):
 		bestco2 = None
 		bestt = np.inf

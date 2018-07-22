@@ -53,6 +53,7 @@ class sim_ss_fourtires:
     return (Nf1, Nf2, Nr1, Nr2, Ff_lat, Fr_lat, alpha, a_lat)
 
   def brake(self, vehicle, sector, channels_f, t0, v0, dl=0.1):
+    # print('Brake')
     vf = channels_f[O_VELOCITY]
     tf = channels_f[O_TIME]
     xf = channels_f[O_DISTANCE]
@@ -71,7 +72,7 @@ class sim_ss_fourtires:
     x = xf
     success = False
     for i in reversed(range(n)):
-      aero_mode = AERO_BRK
+      aero_mode = AERO_FULL if success else AERO_BRK
       Nf = ( (vehicle.weight_bias)*vehicle.g*vehicle.mass
           + (vehicle.cp_bias[aero_mode])*vehicle.downforce(v,aero_mode)
           - vehicle.mass*a_long*vehicle.cg_height/vehicle.wheelbase_length
@@ -127,10 +128,12 @@ class sim_ss_fourtires:
 
       if success:
         status = S_SUSTAINING
+        aero_mode = AERO_FULL
         v = v0
       elif v > v0:
         # print('Sucessful brake from %.3f -> %.3f' % (v0,vf))
         success = True
+        aero_mode = AERO_FULL
         v = v0
 
       t -= 1000 if v==0 else dl/v
@@ -161,9 +164,11 @@ class sim_ss_fourtires:
       if success and i > 2:
         channels[i,O_STATUS] = S_SUSTAINING
         channels[:i,:] = np.tile(channels[i,:], (i,1))
-        for j in range(0,i):
-          channels[j,O_TIME] -= dl*(i-j)/v
-          channels[j,O_DISTANCE] += dl*(i-j)
+        for j in reversed(range(0,i)):
+          t -= dl/v
+          x -= dl
+          channels[j,O_TIME] = t
+          channels[j,O_DISTANCE] = x
         break
 
     for i in range(n):
@@ -171,6 +176,7 @@ class sim_ss_fourtires:
     return channels, success
 
   def drive(self, vehicle, sector, channels_0, vf, vmax, dl=0.1, start=False):
+    # print('Drive')
     n = int(sector.length / dl)
     channels = np.zeros((n, O_MATRIX_COLS))
 
@@ -313,6 +319,7 @@ class sim_ss_fourtires:
         break
     if vmax-vf > 1e-1:
       # print('doing braking... v=vf=%f' % vf)
+      # print('Slowing')
       t_peak = t
       v = vf
       t = 0
@@ -591,6 +598,7 @@ class sim_ss_fourtires:
       channel_stack = np.vstack((channel_stack,channels_corner))
 
       j = i-1
+      # failed_start = False
       ### DIDNT SUCCEED IN BRAKING ###
       while failed_start:
         ### KEEP WORKING BACKWARDS... ###
@@ -618,6 +626,7 @@ class sim_ss_fourtires:
         channel_stack = np.vstack((channel_stack, after))
 
         di = (channels_corner.shape[0]) - (starts[j+1]-starts[j])
+        # print('Delta i = %d' % di)
         k = j+1
         while k < len(starts):
           starts[k] += di
