@@ -21,6 +21,11 @@ def floor_sqrt(x):
     return math.sqrt(x)
   return 0
 
+def frem_filter(x):
+  if np.isnan(x) or np.isinf(x):
+    return 0
+  return x
+
 class sim_ss_twotires:
   def __init__(self):
     pass
@@ -120,6 +125,7 @@ class sim_ss_twotires:
       channels[i,O_AERO_MODE]    = aero_mode
 
       if success and i > 2:
+        channels[i,O_STATUS] = S_SUSTAINING
         channels[:i,:] = np.tile(channels[i,:], (i,1))
         for j in range(0,i):
           channels[j,O_TIME] -= dl*(i-j)/v
@@ -177,6 +183,7 @@ class sim_ss_twotires:
         t_shift = t+vehicle.shift_time
         v_shift = v*1.01
       F_tire_engine_limit, eng_rpm = vehicle.eng_force(v, int(gear))
+      status = S_TOPPED_OUT
 
       remaining_long_grip = [vehicle.f_long_remain(2, Nr, Fr_lat, False)[0],vehicle.f_long_remain(2, Nf, Ff_lat, True)[0]]
       if remaining_long_grip[0] < F_tire_engine_limit and remaining_long_grip[1] < 0:
@@ -192,10 +199,12 @@ class sim_ss_twotires:
         remaining_long_grip = [vehicle.f_long_remain(2, Nr, Fr_lat, False)[0],vehicle.f_long_remain(2, Nf, Ff_lat, True)[0]]
 
       ## Kinda sketchy. We enforce grip limit with the steady state limit now ##
+      fglim = False
       if remaining_long_grip[0] < 0:
         remaining_long_grip[0] = 0
       if remaining_long_grip[1] < 0:
         remaining_long_grip[1] = 0
+        fglim = True
 
       if t < t_shift:
         ### CURRENTLY SHIFTING, NO POWER! ### 
@@ -207,11 +216,12 @@ class sim_ss_twotires:
 
         F_tire_long = F_tire_engine_limit
         status = S_ENG_LIM_ACC
-
+        if fglim:
+          status = S_TIRE_LIM_ACC
         if F_tire_long > remaining_long_grip[0]:
           status = S_TIRE_LIM_ACC
           F_tire_long = remaining_long_grip[0]
-        if eng_rpm > vehicle.engine_rpms[-1]:
+        if eng_rpm > vehicle.engine_rpms[-1] and gear >= len(vehicle.gears)-1:
           status = S_TOPPED_OUT
     
       F_longitudinal = F_tire_long - vehicle.drag(v, aero_mode)
@@ -236,13 +246,14 @@ class sim_ss_twotires:
       channels[i,O_GEAR]     = np.nan if status == S_SHIFTING else gear
       channels[i,O_LONG_ACC] = a_long/vehicle.g
       channels[i,O_LAT_ACC]  = a_lat/vehicle.g
-      channels[i,O_FF_REMAINING] = remaining_long_grip[1]
-      channels[i,O_FR_REMAINING] = remaining_long_grip[0]
+      channels[i,O_FF_REMAINING] = frem_filter(remaining_long_grip[1])
+      channels[i,O_FR_REMAINING] = frem_filter(remaining_long_grip[0])
       channels[i,O_CURVATURE] = sector.curvature
       channels[i,O_ENG_RPM]   = np.nan if status == S_SHIFTING else eng_rpm
       channels[i,O_CO2] = dl*F_tire_long*vehicle.co2_factor/vehicle.e_factor
       channels[i,O_AERO_MODE] = aero_mode
       if topped and i<n-2:
+        channels[i,O_STATUS] = S_SUSTAINING
         channels[i:,:] = np.tile(channels[i,:], (n-i,1))
         for j in range(i+1,n):
           channels[j,O_TIME] += dl*(j-i)/v
@@ -515,6 +526,8 @@ class sim_ss_twotires:
         j-=1
 
       i+=1
+
+    channel_stack[:,O_CO2] = np.cumsum(channel_stack[:,O_CO2])
 
     return channel_stack
 

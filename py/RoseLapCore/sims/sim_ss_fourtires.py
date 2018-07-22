@@ -21,6 +21,11 @@ def floor_sqrt(x):
     return math.sqrt(x)
   return 0
 
+def frem_filter(x):
+  if np.isnan(x) or np.isinf(x):
+    return 0
+  return x
+
 class sim_ss_fourtires:
   def __init__(self):
     pass
@@ -117,8 +122,8 @@ class sim_ss_fourtires:
       a_long = F_longitudinal / vehicle.mass
       v = floor_sqrt(v**2 - 2*a_long*dl)
 
-      if v <= 0:
-        print('hello, this is v=0 in brake')
+      # if v <= 0:
+      #   print('hello, this is v=0 in brake')
 
       if success:
         status = S_SUSTAINING
@@ -154,6 +159,7 @@ class sim_ss_fourtires:
       channels[i,O_AERO_MODE]    = aero_mode
 
       if success and i > 2:
+        channels[i,O_STATUS] = S_SUSTAINING
         channels[:i,:] = np.tile(channels[i,:], (i,1))
         for j in range(0,i):
           channels[j,O_TIME] -= dl*(i-j)/v
@@ -219,7 +225,8 @@ class sim_ss_fourtires:
         v_shift = v*1.01
       F_tire_engine_limit, eng_rpm = vehicle.eng_force(v, int(gear))
 
-      if min(remaining_long_grip) < 0:
+      if min(remaining_long_grip[:2]) < 0 or min(remaining_long_grip[2:]) < F_tire_engine_limit:
+        # print('resorting to full aero', remaining_long_grip)
         aero_mode = AERO_FULL
         Nf = ( (vehicle.weight_bias)*vehicle.g*vehicle.mass
             + (vehicle.cp_bias[aero_mode])*vehicle.downforce(v,aero_mode)
@@ -239,9 +246,12 @@ class sim_ss_fourtires:
         remaining_long_grip = Ff_remaining+Fr_remaining
 
       ## Kinda sketchy. We enforce grip limit with the steady state limit now ##
+      frontlim = False
       for j in range(4):
         if remaining_long_grip[j] < 0:
           remaining_long_grip[j] = 0
+          if j>=2:
+            frontlim = True
 
       if t < t_shift:
         ### CURRENTLY SHIFTING, NO POWER! ### 
@@ -253,11 +263,12 @@ class sim_ss_fourtires:
 
         F_tire_long = F_tire_engine_limit
         status = S_ENG_LIM_ACC
-
+        if frontlim:
+          status = S_TIRE_LIM_ACC
         if F_tire_long > sum(remaining_long_grip[2:]):
           status = S_TIRE_LIM_ACC
           F_tire_long = sum(remaining_long_grip[2:])
-        if eng_rpm > vehicle.engine_rpms[-1]:
+        if eng_rpm > vehicle.engine_rpms[-1] and gear >= len(vehicle.gears)-1:
           status = S_TOPPED_OUT
     
       F_longitudinal = F_tire_long - vehicle.drag(v, aero_mode)
@@ -285,15 +296,16 @@ class sim_ss_fourtires:
       channels[i,O_LONG_ACC] = a_long/vehicle.g
       channels[i,O_LAT_ACC]  = a_lat/vehicle.g
       channels[i,O_YAW_ACC]  = alpha
-      channels[i,O_FF_REMAINING] = remaining_long_grip[0]
-      channels[i,O_FF2_REMAINING] = remaining_long_grip[1]
-      channels[i,O_FR_REMAINING] = remaining_long_grip[2]
-      channels[i,O_FR2_REMAINING] = remaining_long_grip[3]
+      channels[i,O_FF_REMAINING] = frem_filter(remaining_long_grip[0])
+      channels[i,O_FF2_REMAINING] = frem_filter(remaining_long_grip[1])
+      channels[i,O_FR_REMAINING] = frem_filter(remaining_long_grip[2])
+      channels[i,O_FR2_REMAINING] = frem_filter(remaining_long_grip[3])
       channels[i,O_CURVATURE] = sector.curvature
       channels[i,O_ENG_RPM]   = np.nan if status == S_SHIFTING else eng_rpm
       channels[i,O_CO2] = dl*F_tire_long*vehicle.co2_factor/vehicle.e_factor
       channels[i,O_AERO_MODE] = aero_mode
       if topped and i<n-2:
+        channels[i,O_STATUS] = S_SUSTAINING
         channels[i:,:] = np.tile(channels[i,:], (n-i,1))
         for j in range(i+1,n):
           channels[j,O_TIME] += dl*(j-i)/v
@@ -372,8 +384,8 @@ class sim_ss_fourtires:
         t -= 1000 if v==0 else dl/v
         x -= dl
 
-        if v <= 0:
-          print('hello, this is v=0 in drive.brake')
+        # if v <= 0:
+        #   print('hello, this is v=0 in drive.brake')
 
         # print(t,x,v,a_long,a_lat,F_tire_engine_limit,F_tire_long_available, F_tire_lat, N)
 
@@ -502,7 +514,7 @@ class sim_ss_fourtires:
       if sector.curvature > 0:
         steady_conditions[i] = self.steady_corner(vehicle, sector)
         steady_velocities[i] = steady_conditions[i][O_VELOCITY]
-    print('Steady velocities: %s' % repr(steady_velocities))
+    # print('Steady velocities: %s' % repr(steady_velocities))
 
     channel_stack = None
     starts = []
@@ -519,7 +531,7 @@ class sim_ss_fourtires:
 
     i = 1
     while i<len(sectors):
-      print(sectors[i])
+      # print(sectors[i])
       channels_corner, failed_start = self.drive(vehicle,
         sectors[i],
         channel_stack[-1,:],
@@ -534,7 +546,7 @@ class sim_ss_fourtires:
       ### DIDNT SUCCEED IN BRAKING ###
       while failed_start:
         ### KEEP WORKING BACKWARDS... ###
-        print('working backwards... (sec %d)' % j)
+        # print('working backwards... (sec %d)' % j)
         k = j
         vstart = channels_corner[0,O_VELOCITY]
         if steady_velocities[k] < vstart:
@@ -566,6 +578,8 @@ class sim_ss_fourtires:
         j-=1
 
       i+=1
+
+    channel_stack[:,O_CO2] = np.cumsum(channel_stack[:,O_CO2])
 
     return channel_stack
 

@@ -14,7 +14,7 @@ option_names = ['dl', 'd_nom', 'd_scale', 'D', 'maxcurv', 'smoothing', 'savgol_a
 
 def sectors_dxf(dxf_output, connectivity, open_ended):
   sectors = []
-  print(connectivity)
+  # print(connectivity)
   for index in connectivity:
     shape = dxf_output[index]
     if shape[0] == 'line':
