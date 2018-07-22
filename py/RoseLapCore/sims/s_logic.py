@@ -42,6 +42,8 @@ class Simulation:
 			self.model = sim_ss_fourtires()
 		elif self.name == "dp_nd":
 			return sim_dp_nd_template()
+		else:
+			raise ValueError("Please provide a valid simulation model.")
 
 	def solve(self, vehicle, segments, dl=0.3):
 		if self.name[:3] == 'ss_':
