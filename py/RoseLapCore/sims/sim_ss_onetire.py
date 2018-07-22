@@ -204,7 +204,7 @@ class sim_ss_onetire:
       v = vf
       t = 0
       x = x0+dl*n
-      for i in reversed(range(n)):
+      for i in reversed(range(n-1)):
         # print(x,v)
         a_lat = v**2 * derate_curvature(sector.curvature, vehicle.r_add)
         F_tire_lat = vehicle.mass * a_lat
@@ -233,6 +233,10 @@ class sim_ss_onetire:
         # print(t,x,v,a_long/vehicle.g,a_lat/vehicle.g,F_tire_engine_limit,F_tire_long_available, F_tire_lat, N)
 
         if v > channels[i,O_VELOCITY]:
+          channels[-1,:] = channels[-2,:]
+          channels[-1,O_TIME]     = -1e-10
+          channels[-1,O_DISTANCE] = x0 + dl*n
+          channels[-1,O_VELOCITY] = vf
           for j in reversed(range(n)):
             if channels[j,O_TIME] < 0:
               channels[j,O_TIME] += channels[i,O_TIME] - t
@@ -258,6 +262,10 @@ class sim_ss_onetire:
         channels[i,O_CO2]          = 0
         channels[i,O_AERO_MODE]    = aero_mode
       else:
+        channels[-1,:] = channels[-2,:]
+        channels[-1,O_TIME]     = -1e-10
+        channels[-1,O_DISTANCE] = x0 + dl*n
+        channels[-1,O_VELOCITY] = vf
         for j in range(n):
           if channels[j,O_TIME] < 0:
             channels[j,O_TIME] += t0 - t

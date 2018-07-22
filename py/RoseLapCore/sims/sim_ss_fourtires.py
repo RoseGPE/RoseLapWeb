@@ -320,13 +320,12 @@ class sim_ss_fourtires:
     if vmax-vf > 1e-1:
       # print('doing braking... v=vf=%f' % vf)
       # print('Slowing')
-      t_peak = t
       v = vf
       t = 0
       x = x0+dl*n
       a_long = 0
      
-      for i in reversed(range(n)):
+      for i in reversed(range(n-1)):
         aero_mode = AERO_BRK
         Nf = ( (vehicle.weight_bias)*vehicle.g*vehicle.mass
             + (vehicle.cp_bias[aero_mode])*vehicle.downforce(v,aero_mode)
@@ -383,6 +382,11 @@ class sim_ss_fourtires:
         # print(t,x,v,a_long/vehicle.g,a_lat/vehicle.g,F_tire_engine_limit,F_tire_long_available, F_tire_lat, N)
 
         if v > channels[i,O_VELOCITY]:
+          channels[-1,:] = channels[-2,:]
+          channels[-1,O_TIME]     = -1e-10
+          channels[-1,O_DISTANCE] = x0 + dl*n
+          channels[-1,O_VELOCITY] = vf
+
           for j in reversed(range(n)):
             if channels[j,O_TIME] < 0:
               channels[j,O_TIME] += channels[i,O_TIME] - t
@@ -419,12 +423,15 @@ class sim_ss_fourtires:
         channels[i,O_AERO_MODE]    = aero_mode
 
       else:
+        channels[-1,:] = channels[-2,:]
+        channels[-1,O_TIME]     = -1e-10
+        channels[-1,O_DISTANCE] = x0 + dl*n
+        channels[-1,O_VELOCITY] = vf
         for j in range(n):
           if channels[j,O_TIME] < 0:
             channels[j,O_TIME] += t0 - t
     
-    if abs(channels[-1,O_VELOCITY] - min(vf,vmax)) < 1:
-      channels[-1,O_VELOCITY] = min(vf,vmax)
+      
 
     return channels, (v0-channels[0,O_VELOCITY] >= 1e-1) and (v0 != 0)
     
@@ -598,11 +605,11 @@ class sim_ss_fourtires:
       channel_stack = np.vstack((channel_stack,channels_corner))
 
       j = i-1
-      # failed_start = False
+      failed_start = False
       ### DIDNT SUCCEED IN BRAKING ###
       while failed_start:
         ### KEEP WORKING BACKWARDS... ###
-        # print('working backwards... (sec %d)' % j)
+        # print('working backwards... (sec %d, x=%.1f)' % (j,channel_stack[-1,O_DISTANCE]))
         k = j
         vstart = channels_corner[0,O_VELOCITY]
         if steady_velocities[k] < vstart:

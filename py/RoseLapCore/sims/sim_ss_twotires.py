@@ -285,7 +285,7 @@ class sim_ss_twotires:
       x = x0+dl*n
       a_long = 0
      
-      for i in reversed(range(n)):
+      for i in reversed(range(n-1)):
         aero_mode = AERO_BRK
         Nf = ( (vehicle.weight_bias)*vehicle.g*vehicle.mass
             + (vehicle.cp_bias[aero_mode])*vehicle.downforce(v,aero_mode)
@@ -329,6 +329,10 @@ class sim_ss_twotires:
         # print(t,x,v,a_long/vehicle.g,a_lat/vehicle.g,F_tire_engine_limit,F_tire_long_available, F_tire_lat, N)
 
         if v > channels[i,O_VELOCITY]:
+          channels[-1,:] = channels[-2,:]
+          channels[-1,O_TIME]     = -1e-10
+          channels[-1,O_DISTANCE] = x0 + dl*n
+          channels[-1,O_VELOCITY] = vf
           for j in reversed(range(n)):
             if channels[j,O_TIME] < 0:
               channels[j,O_TIME] += channels[i,O_TIME] - t
@@ -357,6 +361,10 @@ class sim_ss_twotires:
         channels[i,O_AERO_MODE]    = aero_mode
 
       else:
+        channels[-1,:] = channels[-2,:]
+        channels[-1,O_TIME]     = -1e-10
+        channels[-1,O_DISTANCE] = x0 + dl*n
+        channels[-1,O_VELOCITY] = vf
         for j in range(n):
           if channels[j,O_TIME] < 0:
             channels[j,O_TIME] += t0 - t
