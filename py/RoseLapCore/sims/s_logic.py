@@ -34,11 +34,11 @@ class Simulation:
 			return sim_twotires()
 		elif self.name == "four_tires":
 			return sim_fourtires()
-		elif model_type == "ss_one_tire":
+		elif self.name == "ss_one_tire":
 			self.model = sim_ss_onetire()
-		elif model_type == "ss_two_tires":
+		elif self.name == "ss_two_tires":
 			self.model = sim_ss_twotires()
-		elif model_type == "ss_four_tires":
+		elif self.name == "ss_four_tires":
 			self.model = sim_ss_fourtires()
 		elif self.name == "dp_nd":
 			return sim_dp_nd_template()
