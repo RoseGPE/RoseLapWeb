@@ -36,53 +36,68 @@ class sim_ss_onetire:
       a_lat = v**2 * derate_curvature(sector.curvature, vehicle.r_add)
       F_tire_lat = vehicle.mass * a_lat
 
-      N = vehicle.mass*vehicle.g + vehicle.downforce(v, AERO_FULL)
-      F_tire_long_available = vehicle.f_long_remain(4, N, F_tire_lat)
+      F_tire_long_available_FULL = vehicle.f_long_remain(4, vehicle.mass*vehicle.g + vehicle.downforce(v, AERO_FULL), F_tire_lat)[0]
+      F_tire_long_available_BRK = vehicle.f_long_remain(4, vehicle.mass*vehicle.g + vehicle.downforce(v, AERO_BRK), F_tire_lat)[0]
+      F_longitudinal_FULL = - F_tire_long_available_FULL - vehicle.drag(v, AERO_FULL)
+      F_longitudinal_BRK = - F_tire_long_available_FULL - vehicle.drag(v, AERO_BRK)
 
-      F_tire_long = -F_tire_long_available[0]
+      F_tire_long_available = F_tire_long_available_FULL
+      F_longitudinal = F_longitudinal_FULL
+      aero_mode = AERO_FULL
+      N = vehicle.mass*vehicle.g + vehicle.downforce(v, AERO_FULL)
+      if F_longitudinal_FULL > F_longitudinal_BRK:
+        # print('AIRBRAKE!')
+        aero_mode = AERO_BRK
+        F_tire_long_available = F_tire_long_available_BRK
+        F_longitudinal = F_longitudinal_BRK
+        N = vehicle.mass*vehicle.g + vehicle.downforce(v, AERO_BRK)
+
       status = S_BRAKING
     
-      F_longitudinal = F_tire_long - vehicle.drag(v, AERO_FULL)
+      
       a_long = F_longitudinal / vehicle.mass
       v = floor_sqrt(v**2 - 2*a_long*dl)
-
-      # if v == 0:
-      #   print('issues here')
-      #   exit()
 
       if success:
         status = S_SUSTAINING
         v = v0
       elif v > v0:
-        print('Sucessful brake from %.3f -> %.3f' % (v0,vf))
+        # print('Sucessful brake from %.3f -> %.3f' % (v0,vf))
         success = True
         v = v0
 
       t -= 1000 if v==0 else dl/v
       x -= dl
 
-      channels[i,O_TIME] = t
+      channels[i,O_TIME]     = t
       channels[i,O_DISTANCE] = x
       channels[i,O_VELOCITY] = v
-      channels[i,O_NR] = N
+      channels[i,O_NR]       = N
       channels[i,O_SECTORS]  = sector.i
       channels[i,O_STATUS]   = status
       channels[i,O_GEAR]     = np.nan
       channels[i,O_LONG_ACC] = a_long/vehicle.g
       channels[i,O_LAT_ACC]  = a_lat/vehicle.g
-      channels[i,O_FR_REMAINING] = F_tire_long_available[0] 
+      channels[i,O_FR_REMAINING] = F_tire_long_available-abs(F_tire_long)
       channels[i,O_CURVATURE] = sector.curvature
       channels[i,O_ENG_RPM]   = np.nan
       channels[i,O_CO2] = dl*F_tire_long*vehicle.co2_factor/vehicle.e_factor
-      channels[i,O_AERO_MODE] = AERO_FULL
-    if not success:
-      print('Unsuccessful brake from %.3f -> %.3f (only hit %.3f)' % (v0,vf,channels[0,O_VELOCITY]))
+      channels[i,O_AERO_MODE] = aero_mode
+      if success and i > 2:
+        channels[:i,:] = np.tile(channels[i,:], (i,1))
+        for j in range(0,i):
+          channels[j,O_TIME] -= dl*(i-j)/v
+          channels[j,O_DISTANCE] += dl*(i-j)
+        break
+
+    # if not success:
+    #   print('Unsuccessful brake from %.3f -> %.3f (only hit %.3f)' % (v0,vf,channels[0,O_VELOCITY]))
 
     for i in range(n):
       channels[i,O_TIME] += t0 - t
     return channels, success
 
-  def drive(self, vehicle, sector, x0, t0, v0, vf, vmax, dl=0.1, start=False):
+  def drive(self, vehicle, sector, x0, t0, v0, vf, vmax, gear=None, dl=0.1, start=False):
     n = int(sector.length / dl)
     channels = np.zeros((n, O_MATRIX_COLS))
 
@@ -90,33 +105,59 @@ class sim_ss_onetire:
     v = v0
     t = t0
     x = x0
-    gear = 0
+    if np.isnan(gear):
+      gear = vehicle.best_gear(v, np.inf)
+    topped = False
+    t_shift = -1
+    v_shift = -1
     for i in range(n):
-      N = vehicle.mass*vehicle.g + vehicle.downforce(v, AERO_FULL)
+      
       a_lat = v**2 * derate_curvature(sector.curvature, vehicle.r_add)
       F_tire_lat = vehicle.mass * a_lat
-      F_tire_long_available = vehicle.f_long_remain(4, N, F_tire_lat)
-      gear = vehicle.best_gear(v, np.inf)
+
+      best_gear = vehicle.best_gear(v, np.inf)
+      if best_gear != gear and v > v_shift:
+        gear += (best_gear-gear)/abs(best_gear-gear)
+        t_shift = t+vehicle.shift_time
+        v_shift = v*1.01
       F_tire_engine_limit, eng_rpm = vehicle.eng_force(v, int(gear))
+      
       status = S_TOPPED_OUT
 
-      F_tire_long = F_tire_engine_limit
-      status = S_ENG_LIM_ACC
+      aero_mode = AERO_DRS
+      N = vehicle.mass*vehicle.g + vehicle.downforce(v, aero_mode)
+      F_tire_long_available = vehicle.f_long_remain(4, N, F_tire_lat)[0]
+      if F_tire_long_available < F_tire_engine_limit:
+        aero_mode = AERO_FULL
+        N = vehicle.mass*vehicle.g + vehicle.downforce(v, aero_mode)
+        F_tire_long_available = vehicle.f_long_remain(4, N, F_tire_lat)[0]
 
-      if F_tire_long > F_tire_long_available[0]:
-        status = S_TIRE_LIM_ACC
-        F_tire_long = F_tire_long_available[0]
-      if eng_rpm > vehicle.engine_rpms[-1]:
-        status = S_TOPPED_OUT
+      if t < t_shift:
+        ### CURRENTLY SHIFTING, NO POWER! ### 
+        status = S_SHIFTING
+        F_tire_long = 0
+      else:
+        if t_shift > 0:
+          t_shift = -1
+
+        F_tire_long = F_tire_engine_limit
+        status = S_ENG_LIM_ACC
+
+        if F_tire_long > F_tire_long_available:
+          status = S_TIRE_LIM_ACC
+          F_tire_long = F_tire_long_available
+        if eng_rpm > vehicle.engine_rpms[-1]:
+          status = S_TOPPED_OUT
     
-      F_longitudinal = F_tire_long - vehicle.drag(v, AERO_FULL)
+      F_longitudinal = F_tire_long - vehicle.drag(v, aero_mode)
       a_long = F_longitudinal / vehicle.mass
       vi = v
       v = floor_sqrt(v**2 + 2*a_long*dl)
       if v > vmax:
         v = vmax
         a_long = (v**2-vi**2)/2/dl
-        F_tire_long = vehicle.mass*a_long + vehicle.drag(v, AERO_FULL)
+        F_tire_long = vehicle.mass*a_long + vehicle.drag(v, aero_mode)
+        topped = True
       t += 1000 if v==0 else dl/v
       x += dl
 
@@ -128,37 +169,56 @@ class sim_ss_onetire:
       channels[i,O_NR] = N
       channels[i,O_SECTORS]  = sector.i
       channels[i,O_STATUS]   = status
-      channels[i,O_GEAR]     = gear
+      channels[i,O_GEAR]     = np.nan if status == S_SHIFTING else gear
       channels[i,O_LONG_ACC] = a_long/vehicle.g
       channels[i,O_LAT_ACC]  = a_lat/vehicle.g
-      channels[i,O_FR_REMAINING] = F_tire_long_available[0] 
+      channels[i,O_FR_REMAINING] = F_tire_long_available-abs(F_tire_long)
       channels[i,O_CURVATURE] = sector.curvature
-      channels[i,O_ENG_RPM]   = eng_rpm
+      channels[i,O_ENG_RPM]   = np.nan if status == S_SHIFTING else eng_rpm
       channels[i,O_CO2] = dl*F_tire_long*vehicle.co2_factor/vehicle.e_factor
-      channels[i,O_AERO_MODE] = AERO_FULL
+      channels[i,O_AERO_MODE] = aero_mode
+      if topped and i<n-2:
+        channels[i:,:] = np.tile(channels[i,:], (n-i,1))
+        for j in range(i+1,n):
+          channels[j,O_TIME] += dl*(j-i)/v
+          channels[j,O_DISTANCE] += dl*(j-i)
+        break
+
 
     # perform reverse integration to the beginning or vmax
 
     if vmax-vf > 1e-1:
-      print('doing braking... v=vf=%f' % vf)
+      # print('doing braking... v=vf=%f' % vf)
       t_peak = t
       v = vf
       t = 0
       x = x0+dl*n
       for i in reversed(range(n)):
-        N = vehicle.mass*vehicle.g + vehicle.downforce(v, AERO_FULL)
         a_lat = v**2 * derate_curvature(sector.curvature, vehicle.r_add)
         F_tire_lat = vehicle.mass * a_lat
-        F_tire_long_available = vehicle.f_long_remain(4, N, F_tire_lat)
 
-        F_tire_long = -F_tire_long_available[0]
+        F_tire_long_available_FULL = vehicle.f_long_remain(4, vehicle.mass*vehicle.g + vehicle.downforce(v, AERO_FULL), F_tire_lat)[0]
+        F_tire_long_available_BRK = vehicle.f_long_remain(4, vehicle.mass*vehicle.g + vehicle.downforce(v, AERO_BRK), F_tire_lat)[0]
+        F_longitudinal_FULL = - F_tire_long_available_FULL - vehicle.drag(v, AERO_FULL)
+        F_longitudinal_BRK = - F_tire_long_available_FULL - vehicle.drag(v, AERO_BRK)
+
+        F_tire_long_available = F_tire_long_available_FULL
+        F_longitudinal = F_longitudinal_FULL
+        aero_mode = AERO_FULL
+        N = vehicle.mass*vehicle.g + vehicle.downforce(v, AERO_FULL)
+        if F_longitudinal_FULL > F_longitudinal_BRK:
+          # print('AIRBRAKE!')
+          aero_mode = AERO_BRK
+          F_tire_long_available = F_tire_long_available_BRK
+          F_longitudinal = F_longitudinal_BRK
+          N = vehicle.mass*vehicle.g + vehicle.downforce(v, AERO_BRK)
+
         status = S_BRAKING
       
-        F_longitudinal = F_tire_long - vehicle.drag(v, AERO_FULL)
         a_long = F_longitudinal / vehicle.mass
         v = floor_sqrt(v**2 - 2*a_long*dl)
 
-        print(t,x,v,a_long/vehicle.g,a_lat/vehicle.g,F_tire_engine_limit,F_tire_long_available, F_tire_lat, N)
+        # print(t,x,v,a_long/vehicle.g,a_lat/vehicle.g,F_tire_engine_limit,F_tire_long_available, F_tire_lat, N)
 
         if v > channels[i,O_VELOCITY]:
           for j in reversed(range(n)):
@@ -169,7 +229,7 @@ class sim_ss_onetire:
         t -= 1000 if v==0 else dl/v
         x -= dl
 
-        print(t,x,v,a_long,a_lat,F_tire_engine_limit,F_tire_long_available, F_tire_lat, N)
+        # print(t,x,v,a_long,a_lat,F_tire_engine_limit,F_tire_long_available, F_tire_lat, N)
 
         channels[i,O_TIME]     = t
         channels[i,O_DISTANCE] = x
@@ -180,11 +240,11 @@ class sim_ss_onetire:
         channels[i,O_GEAR]     = gear
         channels[i,O_LONG_ACC] = a_long/vehicle.g
         channels[i,O_LAT_ACC]  = a_lat/vehicle.g
-        channels[i,O_FR_REMAINING] = F_tire_long_available[0] 
+        channels[i,O_FR_REMAINING] = F_tire_long_available-abs(F_tire_long)
         channels[i,O_CURVATURE]    = sector.curvature
         channels[i,O_ENG_RPM]      = np.nan
         channels[i,O_CO2]          = dl*F_tire_long*vehicle.co2_factor/vehicle.e_factor
-        channels[i,O_AERO_MODE]    = AERO_FULL
+        channels[i,O_AERO_MODE]    = aero_mode
       else:
         for j in range(n):
           if channels[j,O_TIME] < 0:
@@ -195,7 +255,7 @@ class sim_ss_onetire:
 
     # find intersection point and splice
 
-    print('Straight from %.2f -> %.2f (%.2f real, %.2f limit) (%.4f s)' % (v0,vf,channels[-1,O_VELOCITY],vmax,channels[-1,O_TIME]-channels[0,O_TIME]))
+    # print('Straight from %.2f -> %.2f (%.2f real, %.2f limit) (%.4f s)' % (v0,vf,channels[-1,O_VELOCITY],vmax,channels[-1,O_TIME]-channels[0,O_TIME]))
 
     return channels, (v0-channels[0,O_VELOCITY] >= 1e-1) and (v0 != 0)
     
@@ -257,22 +317,22 @@ class sim_ss_onetire:
       0,
       0,
       0,
-      F_tire_lat_available[0],
+      F_tire_lat_available[0]-F_tire_lat,
       0,
       sector.curvature,
       np.nan, # engine could be made but enh
       sector.length*F_tire_long*vehicle.co2_factor/vehicle.e_factor,
       AERO_FULL]
 
-    print(sector,channels)
+    # print(sector,channels)
 
     channels = np.array(channels)
 
     return channels
 
   def solve(self, vehicle, sectors, output_0 = None, dl=0.2):
-    print('Sectors: %s' % repr(sectors))
-    print('Total Length: %f' % sum([x.length for x in sectors]))
+    # print('Sectors: %s' % repr(sectors))
+    # print('Total Length: %f' % sum([x.length for x in sectors]))
 
     # solve all the corners
     steady_conditions = [None for i in sectors]
@@ -281,7 +341,7 @@ class sim_ss_onetire:
       if sector.curvature > 0:
         steady_conditions[i] = self.steady_corner(vehicle, sector)
         steady_velocities[i] = steady_conditions[i][O_VELOCITY]
-    print('Steady velocities: %s' % repr(steady_velocities))
+    # print('Steady velocities: %s' % repr(steady_velocities))
 
 
     channel_stack = None
@@ -294,14 +354,14 @@ class sim_ss_onetire:
       0,
       vehicle.vmax if 1>=len(steady_velocities) else steady_velocities[1],
       steady_velocities[0],
-      dl, start=True)
+      np.nan, dl, start=True)
 
     starts.append(0)
     channel_stack = channels_corner
 
     i = 1
     while i<len(sectors):
-      print(sectors[i])
+      # print(sectors[i])
       channels_corner, failed_start = self.drive(vehicle,
         sectors[i],
         channel_stack[-1,O_DISTANCE],
@@ -309,7 +369,7 @@ class sim_ss_onetire:
         channel_stack[-1,O_VELOCITY],
         vehicle.vmax if i+1>=len(steady_velocities) else steady_velocities[i+1],
         steady_velocities[i],
-        dl)
+        channel_stack[-1,O_GEAR], dl)
 
       starts.append(channel_stack.shape[0])
       channel_stack = np.vstack((channel_stack,channels_corner))
@@ -318,7 +378,7 @@ class sim_ss_onetire:
       ### DIDNT SUCCEED IN BRAKING ###
       while failed_start:
         ### KEEP WORKING BACKWARDS... ###
-        print('working backwards... (sec %d)' % j)
+        # print('working backwards... (sec %d)' % j)
         k = j
         vstart = channels_corner[0,O_VELOCITY]
         if steady_velocities[k] < vstart:
