@@ -35,15 +35,15 @@ class Simulation:
 		elif self.name == "four_tires":
 			return sim_fourtires()
 		elif self.name == "ss_one_tire":
-			self.model = sim_ss_onetire()
+			return sim_ss_onetire()
 		elif self.name == "ss_two_tires":
-			self.model = sim_ss_twotires()
+			return sim_ss_twotires()
 		elif self.name == "ss_four_tires":
-			self.model = sim_ss_fourtires()
+			return sim_ss_fourtires()
 		elif self.name == "dp_nd":
 			return sim_dp_nd_template()
-		else:
-			raise ValueError("Please provide a valid simulation model.")
+		# else:
+		# 	raise ValueError("Please provide a valid simulation model.")
 
 	def solve(self, vehicle, segments, dl=0.3):
 		if self.name[:3] == 'ss_':
