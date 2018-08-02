@@ -198,7 +198,7 @@ class sim_ss_onetire:
 
     # perform reverse integration to the beginning or vmax
 
-    if vmax-vf > 1e-1:
+    if vmax-vf > 1e-1 and v>vf:
       # print('doing braking... %f -> %f' % (v,vf))
       t_peak = t
       v = vf

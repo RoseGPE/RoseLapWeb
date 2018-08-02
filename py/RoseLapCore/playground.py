@@ -37,12 +37,14 @@ import input_processing.ip_logic as ip_logic
 # import input_processing.track_segmentation as trackseg
 # import plottools
 
-for sn in ["ss_one_tire"]: # "ss_one_tire","ss_two_tires",
+for sn in ["ss_four_tires","ss_one_tire","ss_two_tires"]:
 	sim = sims.Simulation(sn);
 
-	vehicle  = ipvehicle.Vehicle(yaml.load(open('params/vehicles/SUPERCAR.yaml','r'),True))
+	vehicle  = ipvehicle.Vehicle(yaml.load(open('params/vehicles/VEHICLE_START_HERE.yaml','r'),True))
+	vehicle.cg_height = 0.7
+	vehicle.weight_bias = 0.6
 	vehicle.prep()
-	segments = trackseg.file_to_segments('params/tracks/mi_2018_endurance.dxf',0.2, sectors_only=True) #AutoX_3_31_2018_ant.LOG
+	segments = trackseg.file_to_segments('params/tracks/mi_2018_autox.dxf',0.4, sectors_only=True) #AutoX_3_31_2018_ant.LOG
 	# exit()
 	# print(vehicle.f_long_remain_pair([200,250], 500))
 	# exit()

@@ -35,11 +35,11 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
     plt.xlabel('Distance travelled')
 
   ax[0].plot(xaxis,v,lw=5,label='Velocity')
-  ax[0].set_ylim((0,max(v)*1.05))
+  ax[0].set_ylim((0,120.0))
   
 
   ax[1].plot(xaxis,curv,lw=5,label='Curvature',marker='.',linestyle='none')
-  ax[1].set_ylim(0,max(curv)*1.05)
+  ax[1].set_ylim(0,0.15)
 
   ax[2].plot(xaxis,output[:, sim.O_LONG_ACC], lw=4,label='Longitudinal g\'s')
   ax[2].plot(xaxis,output[:, sim.O_LAT_ACC],lw=4,label='Lateral g\'s')
@@ -55,7 +55,7 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
   ax[4].plot(xaxis,output[:, sim.O_NR], lw=4,label='Rear normal force')
   ax[4].plot(xaxis,output[:, sim.O_FF_REMAINING], lw=4,label='Remaining front long. force')
   ax[4].plot(xaxis,output[:, sim.O_FR_REMAINING], lw=4,label='Remaining rear long. force')
-  ax[4].set_ylim(-force_lim,force_lim)
+  ax[4].set_ylim(-1000,1000)
 
   lim = max(curv)
   alpha =  1

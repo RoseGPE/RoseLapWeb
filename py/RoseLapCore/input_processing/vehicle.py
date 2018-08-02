@@ -50,6 +50,8 @@ class Vehicle(object):
     return besti
 
   def f_lat_remain(self, n_tires, f_norm, f_long, front=None):
+    if f_norm <= 0.0:
+      return (0.0, 0.0)
     if front is None:
       f_x_max = self.comb_tire_mu_x*(f_norm/n_tires) + self.comb_tire_offset_x
       f_y_max = self.comb_tire_mu_y*(f_norm/n_tires) + self.comb_tire_offset_y
@@ -66,6 +68,8 @@ class Vehicle(object):
     return (f_lat*n_tires, f_y_max*n_tires)
 
   def f_long_remain(self, n_tires, f_norm, f_lat, front=None):
+    if f_norm <= 0.0:
+      return (0.0, 0.0)
     if front is None:
       f_x_max = self.comb_tire_mu_x*(f_norm/n_tires) + self.comb_tire_offset_x
       f_y_max = self.comb_tire_mu_y*(f_norm/n_tires) + self.comb_tire_offset_y
@@ -93,6 +97,11 @@ class Vehicle(object):
       f_x_max = [self.rear_tire_mu_x*N + self.rear_tire_offset_x for N in f_norm]
       f_y_max = [self.rear_tire_mu_y*N + self.rear_tire_offset_y for N in f_norm]
 
+    for i in range(len(f_x_max)):
+      if f_norm[i] <= 1.0 or f_x_max[i] <=1.0 or f_y_max[i] <=1.0:
+        f_x_max[i] = 1.0
+        f_y_max[i] = 1.0
+
     if sum(f_y_max) < f_lat:
       return ([-np.inf,-np.inf],f_x_max)
 
@@ -102,7 +111,7 @@ class Vehicle(object):
       # 0th is bigger grip
       b = 0
       s = 1
-    if f_y_max[b]*math.sqrt(max(1-f_x_max[s]**2/f_x_max[b]**2,0)) > f_lat:
+    if f_y_max[b] > 0.0 and f_y_max[b]*math.sqrt(max(1-f_x_max[s]**2/f_x_max[b]**2,0)) > f_lat:
       f_long = [0,0]
       f_long[b] = f_x_max[b]*math.sqrt(max(1-f_lat**2/f_x_max[b]**2,0))
       f_long[s] = f_x_max[s]
