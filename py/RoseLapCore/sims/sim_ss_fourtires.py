@@ -136,7 +136,7 @@ class sim_ss_fourtires:
         if remaining_long_grip[j] < 0:
           remaining_long_grip[j] = 0
 
-      F_tire_long = -sum(remaining_long_grip)
+      F_tire_long = -min(remaining_long_grip[:2])*2 -min(remaining_long_grip[2:])*2
 
       F_longitudinal = F_tire_long - vehicle.drag(v, aero_mode)
 
@@ -253,7 +253,7 @@ class sim_ss_fourtires:
         v_shift = v*1.01
       F_tire_engine_limit, eng_rpm = vehicle.eng_force(v, int(gear))
 
-      if min(remaining_long_grip[:2]) < 0 or min(remaining_long_grip[2:]) < F_tire_engine_limit:
+      if min(remaining_long_grip[:2]) < 0 or sum(remaining_long_grip[2:]) < F_tire_engine_limit:
         # print('resorting to full aero', remaining_long_grip)
         aero_mode = AERO_FULL
         Nf = ( (vehicle.weight_bias)*vehicle.g*vehicle.mass
@@ -392,7 +392,7 @@ class sim_ss_fourtires:
           if remaining_long_grip[j] < 0:
             remaining_long_grip[j] = 0
 
-        F_tire_long = -sum(remaining_long_grip)
+        F_tire_long = -min(remaining_long_grip[:2])*2 -min(remaining_long_grip[2:])*2
 
         F_longitudinal = F_tire_long - vehicle.drag(v, aero_mode)
 
@@ -492,13 +492,26 @@ class sim_ss_fourtires:
       remaining_long_grip = Ff_remaining+Fr_remaining
 
       F_req_long = vehicle.drag(v_cur, AERO_FULL)
-      remaining_long_grip[2] -= F_req_long/2
-      remaining_long_grip[3] -= F_req_long/2
+      b = 3
+      s = 2
+      if remaining_long_grip[s] > remaining_long_grip[b]:
+        b = 2
+        s = 3
 
-      if min(remaining_long_grip) < 1e-1 and min(remaining_long_grip) >= 1e-3:
+      if remaining_long_grip[b] < F_req_long:
+        remaining_long_grip[s] -= F_req_long - remaining_long_grip[b]
+        remaining_long_grip[b] = 0.0
+      else:
+        remaining_long_grip[b] -= F_req_long
+
+      # print(v_cur, [Nf1,Nf2,Nr1,Nr2], remaining_long_grip)
+
+      rlg = min(remaining_long_grip) #min(sum(remaining_long_grip[:2]),sum(remaining_long_grip[2:]))
+
+      if rlg < 1e-1 and rlg >= 1e-3:
         break
 
-      if min(remaining_long_grip) > 1e-3:
+      if rlg > 1e-3:
         v_working = v_cur
         v_lower   = v_cur
       else:
@@ -508,7 +521,10 @@ class sim_ss_fourtires:
       i+=1
       if i > 100:
         v_cur = v_working
+        # print('early')
         break
+
+    # print(v_cur)
     
     channels = [
       1000 if v_cur == 0 else sector.length/v_cur, # t

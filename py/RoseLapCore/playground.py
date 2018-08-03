@@ -37,19 +37,21 @@ import input_processing.ip_logic as ip_logic
 # import input_processing.track_segmentation as trackseg
 # import plottools
 
-for sn in ["ss_four_tires","ss_one_tire","ss_two_tires"]:
+sn = 'ss_four_tires'
+wb = 0.5
+for cgh in [0.2,0.8,1.4]:
 	sim = sims.Simulation(sn);
 
 	vehicle  = ipvehicle.Vehicle(yaml.load(open('params/vehicles/VEHICLE_START_HERE.yaml','r'),True))
-	vehicle.cg_height = 0.7
-	vehicle.weight_bias = 0.6
+	vehicle.weight_bias = wb
+	vehicle.cg_height = cgh
 	vehicle.prep()
 	segments = trackseg.file_to_segments('params/tracks/mi_2018_autox.dxf',0.4, sectors_only=True) #AutoX_3_31_2018_ant.LOG
 	# exit()
 	# print(vehicle.f_long_remain_pair([200,250], 500))
 	# exit()
 
-	output = sim.solve(vehicle, segments, dl=0.4)
+	output = sim.steady_solve(vehicle, segments, dl=0.4)
 	# print(output)
 	# for i in [0,2,4]:
 	plottools.plot_velocity_and_events(output,'x',sn)
