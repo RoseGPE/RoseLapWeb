@@ -19,25 +19,36 @@ class Vehicle(object):
     return 1 - self.brake_bias
 
   def eng_force(self, vel, gear):
-    # Compute the angular speed of the crankshaft. 9.5493 is a conversion factor from rad/s to RPM.
-    gear_ratio = self.gears[gear]
-    eng_output_rpm = vel / self.rear_tire_radius * 9.5493 * self.final_drive_reduction
-    crank_rpm = eng_output_rpm * self.engine_reduction * gear_ratio
-
-    if crank_rpm <= self.engine_rpms[0]:
-      # If under RPM range, use the lowest torque value
-      return (self.engine_torque[0] * self.engine_reduction * gear_ratio * self.final_drive_reduction / self.front_tire_radius, crank_rpm)
-    elif crank_rpm > self.engine_rpms[-1]:
-      # If over RPM range, no power because you're hitting the rev limiter
-      return (0,crank_rpm)
+    if self.transmission_type.lower() == 'cvt':
+      eng_torque = max(self.engine_torque)
+      crank_rpm  = self.engine_rpms[self.engine_torque.index(eng_torque)]
+      cvt_ratio = np.inf
+      if vel > 0:
+        cvt_ratio = crank_rpm/(vel / self.rear_tire_radius * 9.5493)
+      return (cvt_ratio*eng_torque*self.transmission_efficiency, crank_rpm)
     else:
-      # Otherwise, linearly interpolate
-      for i in range(1, len(self.engine_rpms)):
-        if crank_rpm < self.engine_rpms[i]:
-          torque = self.engine_torque[i] + (crank_rpm - self.engine_rpms[i]) * (self.engine_torque[i-1] - self.engine_torque[i]) / (self.engine_rpms[i-1] - self.engine_rpms[i])
-          return (torque * self.engine_reduction * gear_ratio * self.final_drive_reduction / self.rear_tire_radius, crank_rpm)
-    return (0,crank_rpm)
+      # Compute the angular speed of the crankshaft. 9.5493 is a conversion factor from rad/s to RPM.
+      gear_ratio = self.gears[gear]
+      eng_output_rpm = vel / self.rear_tire_radius * 9.5493 * self.final_drive_reduction
+      crank_rpm = eng_output_rpm * self.engine_reduction * gear_ratio
+
+      if crank_rpm <= self.engine_rpms[0]:
+        # If under RPM range, use the lowest torque value
+        return (self.engine_torque[0] * self.engine_reduction * gear_ratio * self.final_drive_reduction / self.front_tire_radius *self.transmission_efficiency, crank_rpm)
+      elif crank_rpm > self.engine_rpms[-1]:
+        # If over RPM range, no power because you're hitting the rev limiter
+        return (0,crank_rpm)
+      else:
+        # Otherwise, linearly interpolate
+        for i in range(1, len(self.engine_rpms)):
+          if crank_rpm < self.engine_rpms[i]:
+            torque = self.engine_torque[i] + (crank_rpm - self.engine_rpms[i]) * (self.engine_torque[i-1] - self.engine_torque[i]) / (self.engine_rpms[i-1] - self.engine_rpms[i])
+            return (torque * self.engine_reduction * gear_ratio * self.final_drive_reduction / self.rear_tire_radius *self.transmission_efficiency, crank_rpm)
+      return (0,crank_rpm)
+
   def best_gear(self, v, fr_limit):
+    if self.transmission_type.lower() == 'cvt':
+      return 0
     # Find the best gear and return the number for it.
     # Doesn't actually do anything with the friction limitation. It did at one point.
     opts = [self.eng_force(v, int(gear))[0] for gear in range(len(self.gears))]

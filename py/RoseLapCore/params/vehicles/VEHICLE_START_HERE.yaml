@@ -93,6 +93,8 @@ e_factor: 3.5e6 #ft*lbf/L - The amount of useful mechanical energy produced per 
 ### Transmission ###
 # Note: overall transmission ratio is calculated as engine_reduction*gear[gear_no]*final_drive_reduction
 engine_reduction: 2.81 # ratio - A reduction applied to all gears
+transmission_type: sequential # sequential or cvt
+transmission_efficiency: 1.0
 gears:    # ratio - a list of reductions available to the driver (any number of gears can be specified)
   - 2.416
   - 1.92
