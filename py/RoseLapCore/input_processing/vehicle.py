@@ -20,8 +20,9 @@ class Vehicle(object):
 
   def eng_force(self, vel, gear):
     if self.transmission_type.lower() == 'cvt':
-      eng_torque = max(self.engine_torque)
-      crank_rpm  = self.engine_rpms[self.engine_torque.index(eng_torque)]
+      eng_power = [self.engine_torque[i]*self.engine_rpms[i] for i in range(len(self.engine_torque))]
+      eng_torque = self.engine_torque[eng_power.index(max(eng_power))]
+      crank_rpm  = self.engine_rpms  [eng_power.index(max(eng_power))]
       cvt_ratio = np.inf
       if vel > 0:
         cvt_ratio = crank_rpm/(vel / self.rear_tire_radius * 9.5493)
