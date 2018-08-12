@@ -1,5 +1,5 @@
 ### Starter Vehicle File ###
-# An example vehicle to help you get started in creating a vehicle
+# An example vehicle to help you get started in creating a vehicle; basically RGP007
 # units are lbf, ft, s
 # updated 7/2/2018
 
@@ -26,53 +26,54 @@ cp_bias:   [0.4, 0.4, 0.4]          # fraction - the amount of the downforce tha
 
 ## Front Tires ##
 # Longitudinal Parameters
-front_tire_mu_x: 2.8196   # lbf/lbf
-front_tire_offset_x: 4.73 # lbf
+front_tire_mu_x: 2.90   # lbf/lbf
+front_tire_offset_x: 33.99 # lbf
 # Lateral Parameters
 front_tire_mu_y: 2.0050   # lbf/lbf
-front_tire_offset_y: 8.61 # lbf
+front_tire_offset_y: 45.0 # lbf
 # Tire radius
 front_tire_radius: 0.75   # ft
 
 ## Rear Tires ##
 # Longitudinal Forces
 rear_tire_mu_x: 2.8196
-rear_tire_offset_x: 4.73
+rear_tire_offset_x: 33.99
 # Lateral Forces
 rear_tire_mu_y: 2.0050
-rear_tire_offset_y: 8.61
+rear_tire_offset_y: 45.0
 # Tire radius
 rear_tire_radius: 0.75
 
 ## Lumped Tire ##
 # Longitudinal Forces
 comb_tire_mu_x: 2.8196
-comb_tire_offset_x: 4.73
+comb_tire_offset_x: 33.99
 # Lateral Forces
 comb_tire_mu_y: 2.0050
-comb_tire_offset_y: 8.61
+comb_tire_offset_y: 45.0
 # Tire radius - make this the rear tire radius (used for gear ratio calcs)
 comb_tire_radius: 0.75
 
 ### Suspension / Chassis ###
 
 ## Roll stiffnesses ##
-k_roll_front: 100.0 # ft-lbf / deg - the roll stiffness of the front suspension
-k_roll_rear:  200.0 # ft-lbf / deg - the roll stiffness of the rear suspension
-k_chassis:    800.0 # ft-lbf / deg - the roll stiffness of the chassis
+lltd: perfect # can be 'perfect' or a value
+k_roll_front: 183.0 # ft-lbf / deg - the roll stiffness of the front suspension
+k_roll_rear:  317.0 # ft-lbf / deg - the roll stiffness of the rear suspension
+k_chassis:    2000.0 # ft-lbf / deg - the roll stiffness of the chassis
 
 
 ## Mass Parameters ##
 # Note: as long as we use imperial units, lbm is used, but internally, the value is converted to slugs.
-mass: 550      # lbm - The overall mass of the vehicle including driver
-moi_yaw: 1250  # lbm*ft^2 - The overall moment of inertia including driver about the vertical axis passing through the CG.
-cg_height: 0.6 # ft - The height of the center of gravity from the ground at static height
+mass: 570      # lbm - The overall mass of the vehicle including driver and turbo
+moi_yaw: 1620  # lbm*ft^2 - The overall moment of inertia including driver about the vertical axis passing through the CG.
+cg_height: 0.9 # ft - The height of the center of gravity from the ground at static height
 
 ## Size Parameters ##
 wheelbase_length: 5 # ft - The length of the wheelbase
 weight_bias: 0.45   # fraction - the amount of weight that is on the front tires
 track_front: 4.5    # ft - the track width of the front tires
-track_rear:  4.5    # ft - the track width of the rear tires
+track_rear:  4.4    # ft - the track width of the rear tires
 r_add: 0 # ft - additional radius that can be employed to make a turn. This allows us to see the impact of increasing/decreasing track width on tightness of turns.
 
 ### Brakes ###
@@ -82,22 +83,8 @@ brake_bias: 0.67         # fraction - the amount of braking force to have on the
 
 ### Engine ###
 # An engine curve given by two lists.
-engine_rpms: # RPM
-  - 3500
-  - 4500
-  - 5500
-  - 6500
-  - 7500
-  - 8500
-  - 9500
-engine_torque: # ft-lbf
-  - 24.3
-  - 26.2
-  - 27.4
-  - 26.5
-  - 25.5
-  - 23.8
-  - 23.9
+engine_rpms: [4000.0, 4500.0, 5000.0, 5500.0, 6000.0, 6500.0, 7000.0, 7500.0, 8000.0, 8500.0, 9000.0, 9500.0]
+engine_torque: [24.0, 25.0, 27.0, 33.0, 36.0, 35.0, 37.0, 39.0, 37.0, 36.0, 33.0, 32.0]
 
 # Correlated efficiency factors for 100 Octane gasoline
 co2_factor: 2.31 #kg/L - The amount of CO2 produced per liter of fuel consumed
@@ -106,13 +93,15 @@ e_factor: 3.5e6 #ft*lbf/L - The amount of useful mechanical energy produced per 
 ### Transmission ###
 # Note: overall transmission ratio is calculated as engine_reduction*gear[gear_no]*final_drive_reduction
 engine_reduction: 2.81 # ratio - A reduction applied to all gears
+transmission_type: sequential # sequential or cvt
+transmission_efficiency: 1.0
 gears:    # ratio - a list of reductions available to the driver (any number of gears can be specified)
   - 2.416
   - 1.92
   - 1.562
   - 1.277
   - 1.05
-final_drive_reduction: 2.7692 # ratio - the final drive reduction
+final_drive_reduction: 2.70 # ratio - the final drive reduction
 
 shift_time: 0.2 # s - the time taken to complete a shift
 

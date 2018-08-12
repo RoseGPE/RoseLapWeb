@@ -33,11 +33,11 @@ def plot_velocity_and_events(output, axis='time', title='Velocity and Events', s
     plt.xlabel('Distance travelled')
 
   ax[0].plot(xaxis,v,lw=5,label='Velocity')
-  ax[0].set_ylim((0,max(v)*1.05))
+  ax[0].set_ylim(0,120.0)
   
 
   ax[1].plot(xaxis,curv,lw=5,label='Curvature')
-  ax[1].set_ylim(0,max(curv)*1.05)
+  ax[1].set_ylim(0,0.15)
 
   ax[2].plot(xaxis,output[:, O_GEAR]+1,lw=4,label='Gear')
   ax[2].set_ylim(0, 10)

@@ -12,6 +12,30 @@ import matplotlib.pyplot as plt
 epsilon = 1e-4
 option_names = ['dl', 'd_nom', 'd_scale', 'D', 'maxcurv', 'smoothing', 'savgol_amt', 'savgol_dof']
 
+def sectors_dxf(dxf_output, connectivity, open_ended):
+  sectors = []
+  # print(connectivity)
+  for index in connectivity:
+    shape = dxf_output[index]
+    if shape[0] == 'line':
+      dx=shape[3]-shape[1]
+      dy=shape[4]-shape[2]
+      length = math.hypot(dx, dy)
+      sectors.append(Sector(index, length, 0))
+    elif shape[0] == 'arc':
+      # xc yc radius start_angle end_angle direction x1 y1 x2 y2
+      arc_angle = shape[5] - shape[4]
+      # if shape[6] > 0:
+        # arc_angle = arc_angle-360
+      # arc_angle = arc_angle % 360
+      if shape[6] < 0:
+        arc_angle+=360
+      arc_angle = arc_angle % 360
+      # print('arc angle: %.2f direction = %.1f' % (arc_angle,shape[6]))
+      length = shape[3]*math.radians(arc_angle)
+      sectors.append(Sector(index, length, 1.0/shape[3]))
+  return sectors  
+
 def load_dxf(path_to_file):
   #print(path_to_file)
   with open(path_to_file,'r') as p:
@@ -181,6 +205,14 @@ def points_in_each_seg_slow(path, dx, plot, opts={}):
     plt.plot(lsp,knew, lw=2)
 
   return (np.stack((a.real,-a.imag,knew,s.real),axis=1),sectors)
+
+class Sector:
+    def __init__(self, i, length, curvature):
+        self.i, self.length, self.curvature = i, length, curvature
+
+    def __repr__(self):
+        return "Sector(%d, %.1f, %.3f)" % (self.i,self.length,self.curvature)
+
 
 class Segment(object):
   def __init__(self,x1=None,y1=None,x2=None,y2=None,x3=None,y3=None,sector=0,endpoint=False,length=None,curvature=None):
@@ -378,8 +410,11 @@ def plot_segments(segments):
 
   plt.show()
 
-def file_to_segments(filename, dl, plot=False, opts={}):
-  if filename[-4:].lower() == '.dxf':
+def file_to_segments(filename, dl, plot=False, opts={}, sectors_only=False):
+  if sectors_only:
+    dxf_geometry,connectivity,open_ended = load_dxf(filename)
+    return sectors_dxf(dxf_geometry,connectivity,open_ended)
+  elif filename[-4:].lower() == '.dxf':
     dxf_geometry,connectivity,open_ended = load_dxf(filename)
     points,intermediates = pointify_dxf(dxf_geometry,connectivity,dl)
     return seg_points(points,intermediates,open_ended)
@@ -413,7 +448,10 @@ def rlt_to_segments(filename, opts={}):
 
 if __name__ == '__main__':
   import sys
-  segs = file_to_segments(sys.argv[1], float(sys.argv[2]), True)
+  # segs = file_to_segments(sys.argv[1], float(sys.argv[2]), True, sectors_only=True)
+  segs = file_to_segments('../params/tracks/testtrack.dxf', 0.2, True, sectors_only=True)
+  print(segs)
+  exit()
   
   #[print(x.x, x.y, x.curvature, x.sector) for x in segs]
   # try:

@@ -72,14 +72,35 @@ class sim_fourtires:
     kcf = vehicle.k_chassis/(vehicle.weight_bias)
     kcr = vehicle.k_chassis/(1-vehicle.weight_bias)
 
+    Nf1 = N[0]/2
+    Nf2 = N[0]/2
+    Nr1 = N[1]/2
+    Nr2 = N[1]/2
     Mint = a_lat*vehicle.mass*vehicle.cg_height
-    Mf = Mint*kcf*kf*(kcr+kr)/(kcf*kcr*kf+kcf*kcr*kr+kcf*kf*kr+kcr*kf*kr)
-    Mr = Mint*kcr*kr*(kcf+kf)/(kcf*kcr*kf+kcf*kcr*kr+kcf*kf*kr+kcr*kf*kr)
+    if vehicle.lltd == 'compute':
+      Mf = Mint*kcf*kf*(kcr+kr)/(kcf*kcr*kf+kcf*kcr*kr+kcf*kf*kr+kcr*kf*kr)
+      Mr = Mint*kcr*kr*(kcf+kf)/(kcf*kcr*kf+kcf*kcr*kr+kcf*kf*kr+kcr*kf*kr)
 
-    Nf1 = N[0]/2 - Mf/vehicle.track_front
-    Nf2 = N[0]/2 + Mf/vehicle.track_front
-    Nr1 = N[1]/2 - Mr/vehicle.track_rear
-    Nr2 = N[1]/2 + Mr/vehicle.track_rear
+      Nf1 = N[0]/2 - Mf/vehicle.track_front
+      Nf2 = N[0]/2 + Mf/vehicle.track_front
+      Nr1 = N[1]/2 - Mr/vehicle.track_rear
+      Nr2 = N[1]/2 + Mr/vehicle.track_rear
+    elif vehicle.lltd == 'perfect':
+      Mf = Mint*(vehicle.weight_bias-0.05) # 0.05 is 'magic'
+      Mr = Mint*(1.0-vehicle.weight_bias+0.05)
+
+      Nf1 = N[0]/2 - Mf/vehicle.track_front
+      Nf2 = N[0]/2 + Mf/vehicle.track_front
+      Nr1 = N[1]/2 - Mr/vehicle.track_rear
+      Nr2 = N[1]/2 + Mr/vehicle.track_rear
+    else:
+      Mf = Mint*vehicle.lltd
+      Mr = Mint*(1.0-vehicle.lltd)
+
+      Nf1 = N[0]/2 - Mf/vehicle.track_front
+      Nf2 = N[0]/2 + Mf/vehicle.track_front
+      Nr1 = N[1]/2 - Mr/vehicle.track_rear
+      Nr2 = N[1]/2 + Mr/vehicle.track_rear
 
     Ff_lat = (vehicle.weight_bias)*a_lat*vehicle.mass - alpha*vehicle.moi_yaw/vehicle.wheelbase_length
     Fr_lat = (1-vehicle.weight_bias)*a_lat*vehicle.mass + alpha*vehicle.moi_yaw/vehicle.wheelbase_length

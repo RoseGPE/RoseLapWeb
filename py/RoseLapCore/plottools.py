@@ -35,11 +35,11 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
     plt.xlabel('Distance travelled')
 
   ax[0].plot(xaxis,v,lw=5,label='Velocity')
-  ax[0].set_ylim((0,max(v)*1.05))
+  ax[0].set_ylim((0,120.0))
   
 
   ax[1].plot(xaxis,curv,lw=5,label='Curvature',marker='.',linestyle='none')
-  ax[1].set_ylim(0,max(curv)*1.05)
+  ax[1].set_ylim(0,0.15)
 
   ax[2].plot(xaxis,output[:, sim.O_LONG_ACC], lw=4,label='Longitudinal g\'s')
   ax[2].plot(xaxis,output[:, sim.O_LAT_ACC],lw=4,label='Lateral g\'s')
@@ -55,7 +55,7 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
   ax[4].plot(xaxis,output[:, sim.O_NR], lw=4,label='Rear normal force')
   ax[4].plot(xaxis,output[:, sim.O_FF_REMAINING], lw=4,label='Remaining front long. force')
   ax[4].plot(xaxis,output[:, sim.O_FR_REMAINING], lw=4,label='Remaining rear long. force')
-  ax[4].set_ylim(-force_lim,force_lim)
+  ax[4].set_ylim(-1000,1000)
 
   lim = max(curv)
   alpha =  1
@@ -68,9 +68,9 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
   ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_SHIFTING,     facecolor='#454545', alpha=alpha) #gray
   ax[1].fill_between(xaxis, 0, lim, where= status==sim.S_TOPPED_OUT,   facecolor='#7637a2', alpha=alpha) #purple
 
-  # ax[0].fill_between(xaxis, 0, 100, where= aero_status==sim.AERO_FULL,  facecolor='#1d95d2', alpha=alpha) #blue
-  # ax[0].fill_between(xaxis, 0, 100, where= aero_status==sim.AERO_DRS,   facecolor='#50d21d', alpha=alpha) #green
-  # ax[0].fill_between(xaxis, 0, 100, where= aero_status==sim.AERO_BRK,   facecolor='#e22030', alpha=alpha) #red
+  ax[0].fill_between(xaxis, 0, 100, where= aero_status==sim.AERO_FULL,  facecolor='#1d95d2', alpha=alpha) #blue
+  ax[0].fill_between(xaxis, 0, 100, where= aero_status==sim.AERO_DRS,   facecolor='#50d21d', alpha=alpha) #green
+  ax[0].fill_between(xaxis, 0, 100, where= aero_status==sim.AERO_BRK,   facecolor='#e22030', alpha=alpha) #red
 
   sector = sectors[0]
   for idx,sec in enumerate(sectors):
@@ -84,13 +84,13 @@ def plot_velocity_and_events(output, axis='x', title='Velocity and Events'):
   #for sector in sectors:
   #  ax.fill_between(t, -100, 100, where=output[:,3]==sector, facecolor=colorgen(len(sectors), sector), alpha=0.3)
 
-  print("get ready for a wild nite")
+  # print("get ready for a wild nite")
   for a in ax:
     a.grid(True)
     a.legend()
 
   plt.draw()
-  print("chill")
+  # print("chill")
 
 def plot_map(segments, output, title='Map'):
   fig, ax = plt.subplots(figsize=(10,10))

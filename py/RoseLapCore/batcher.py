@@ -95,13 +95,13 @@ def permutation_extend(base, extensions):
     return permutation_extend(res, extensions[1 :])
 
 def run_permutation(thread_data):
-    index, prepped_vehicle, solver, steady_state, include_output, segments, perm = thread_data
+    index, prepped_vehicle, solver, steady_state, include_output, segments, dl, perm = thread_data
     print('\tRunning Permutation: %s' % (repr(perm)))
     logging.info("Running Permutation: %s" % repr(perm))
     logging.debug(repr(psutil.Process(os.getpid()).memory_info().rss))
 
     # gc.collect()
-    data = solver.steady_solve(prepped_vehicle, segments) if steady_state else solver.solve(prepped_vehicle, segments)
+    data = solver.steady_solve(prepped_vehicle, segments, dl=dl) if steady_state else solver.solve(prepped_vehicle, segments, dl=dl)
 
     time = index + (float(data[-1, constants.O_TIME]),)
     co2 = float(data[-1, constants.O_CO2])
@@ -145,6 +145,8 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
         fn, dl_default, steady_state, name, point_formula, mins = track
         # print('making segments for %s at %f' % (fn, dl_default))
         # logging.debug('hi there')
+
+        ss_model = (model.name[:3] == 'ss_')
         
 
         t0 = time.time()
@@ -156,7 +158,7 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
                 unique_segments = True
                 break
         else:
-            segments = track_segmentation.file_to_segments(fn, dl_default)
+            segments = track_segmentation.file_to_segments(fn, dl_default, sectors_only=ss_model)
 
 
         track_data = {}
@@ -187,7 +189,7 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
                 else:
                     setattr(v, target, permutations[i][j])
             if unique_segments:
-                segments = track_segmentation.file_to_segments(fn, dl, opts=opts)
+                segments = track_segmentation.file_to_segments(fn, dl, opts=opts, sectors_only=ss_model)
             v.prep()
             td = (indicies[i],
                 v,
@@ -195,6 +197,7 @@ def batch_run(targets, permutations, contents, vehicle, tracks, model, include_o
                 steady_state,
                 include_output,
                 segments,
+                dl,
                 repres)
             # print(fn, dl, opts)
             thread_data.append(td)
