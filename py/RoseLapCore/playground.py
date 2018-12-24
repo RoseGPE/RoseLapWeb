@@ -13,6 +13,8 @@ import input_processing.ip_logic as ip_logic
 
 # times = []
 
+#!/env/python3
+
 # for st in ["one_tire","two_tires","four_tires"]: #["one_tire","two_tires","four_tires"]:
 # 	segments = trackseg.file_to_segments('params/tracks/acceleration.dxf',0.2) #AutoX_3_31_2018_ant.LOG
 
@@ -25,12 +27,12 @@ import input_processing.ip_logic as ip_logic
 
 # 	output = sim.solve(vehicle, segments)
 # 	plottools.plot_velocity_and_events(output,'t',st)
-# 	times[-1].append(output[-1,sims.O_TIME])
+# 	times[-1].append(output[-1,sims.O_TIME])	
 # 	print(st)
 # print("Total Times", times)
 
 # plottools.plt.show();
-
+	
 # import sims
 # import input_processing.vehicle as ipvehicle
 # import input_processing.fancyyaml as yaml
@@ -46,7 +48,7 @@ for cgh in [0.2,0.8,1.4]:
 	vehicle.weight_bias = wb
 	vehicle.cg_height = cgh
 	vehicle.prep()
-	segments = trackseg.file_to_segments('params/tracks/mi_2018_autox.dxf',0.4, sectors_only=True) #AutoX_3_31_2018_ant.LOG
+	segments = trackseg.file_to_segments('params/tracks/mi_2018_autox.DXF',0.4, sectors_only=True) #AutoX_3_31_2018_ant.LOG
 	# exit()
 	# print(vehicle.f_long_remain_pair([200,250], 500))
 	# exit()
