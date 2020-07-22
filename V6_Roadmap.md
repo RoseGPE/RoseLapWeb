@@ -30,13 +30,19 @@ Overall
 - Don't be afraid to blow things up and refactor
 
 # Component Definition
-- Vehicles are sets of base parameters (complex objects in YAML format)
-- Tracks are sets of distance-curvature data (in some format)
-- Studies are based on vehicles and tracks (complex objects in YAML format)
--- Study database entries have three states: drafting, submitted, running, and finished
--- Once a study is submitted, the link to the track and vehicle is broken; the track and vehicle data is imported/stored into the database entry
-- Studies can be 'rebased'; the previous study serves as a draft upon which further improvements can be written
--- In this rebasing, the previous tracks and vehicles can be imported, or left behind in favor of the new dynamically linked ones
-- Runs are individual maneuvers around a track 
--- Run database entries contain a MD5 hash of the vehicle (as configured) and track
---- Collisions are a feature to reduce computational load, not a bug?
+*Vehicles* are sets of base parameters (complex objects in YAML format)
+*Tracks* are sets of distance-curvature data (in some format)
+*Studies* are based on vehicles and tracks (complex objects in YAML format)
+- Study database entries have three states: drafting, submitted, running, and finished
+- Once a study is submitted, the link to the track and vehicle is broken; the track and vehicle data is imported/stored into the database entry
+- Studies can be 'rebased'; the previous study serves as a draft upon which further improvements can be written. In this rebasing, the previous tracks and vehicles can be imported, or left behind in favor of the new dynamically linked ones
+*Runs* are individual maneuvers around a track 
+- Run database entries contain a MD5 hash of the vehicle (as configured) and track
+- Collisions are a feature to reduce computational load, not a bug?
+*Users* are individual members which have access to particular runs
+*Groups* are teams which users can belong to (maybe)
+
+# Enterprising
+Can this be monetized? It certainly owuld be interesting to run
+- SAAS like (the millenial way)
+- Distributed & owned software (the chad way)
