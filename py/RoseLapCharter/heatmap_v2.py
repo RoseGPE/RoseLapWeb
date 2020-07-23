@@ -16,24 +16,27 @@ def make_plot(result, display_dir, overall_title="Chart Overall Title"):
   td = result['track_data']
   for trk in td:
     compute_pts = []
+    co2_ary = []
     for i in range(len(trk['times'])):      
       pts = pointsim.compute_points(trk['scoring'], trk['min_time'], trk['min_co2'], trk['times'][i][2], trk['co2s'][i])
       # print(trk['scoring'],trk['times'][i][2],pts)
       if not (points_total is None):
         points_total[i][2] = points_total[i][2] + pts
-        
     # logging.debug(repr(trk['times']))
       compute_pts.append([trk['times'][i][0], trk['times'][i][1], pts])
+      co2_ary.append([trk['times'][i][0], trk['times'][i][1], trk['co2s'][i]])
     if points_total is None:
       points_total = copy.deepcopy(compute_pts)
     data.append(compute_pts)
     data_names.append(trk['name'] + ' Points')
     data.append(trk['times'])
     data_names.append(trk['name'] + ' Times')
+    data.append(co2_ary)
+    data_names.append(trk['name'] + ' FakeEnergy')
   data.append(points_total)
   data_names.append("Total Points")
   
-
+#I rhink this is why it isn't plotting right, there are no coordinates in the fakeenergy
   xlabel = ''
   xvals = []
   if 'label' in result['axiscontents'][0].keys():

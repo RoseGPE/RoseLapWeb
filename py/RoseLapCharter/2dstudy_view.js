@@ -18,7 +18,7 @@ option = {
     title: {text: chart_title,show:true},
     tooltip: {formatter:function(params, ticket, callback){
         // console.log(params);
-        return params.value[2] + (selected_data%2 ? ' s' : ' pts') + '</br>'
+        return params.value[2] + (selected_data%3 == 1 ? ' s' : (selected_data%3 == 2 ? ' pts' : '"J"')) + '</br>'
              + yData[parseInt(params.value[1])] + '</br>'
              + xData[parseInt(params.value[0])];
     }},
