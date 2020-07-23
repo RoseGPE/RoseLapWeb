@@ -13,6 +13,11 @@ Backend
 - 1D sweeps are just 2D sweeps?
 - Do we want a real database? Is a filesystem not sufficient? I don't see a compelling reason to use a DB over a FS here...
 -- Other than listing properties of the folder... but then again, a DB + FS hybrid (a la owncloud) could be the right path
+- Import trackwalker data
+-- Stored trackwalker settings?
+
+One run at a time would be nice
+User limitations (batch size / runtime limits)
 
 Frontend
 - Pure data; no precompiled plots
@@ -21,12 +26,22 @@ Frontend
 -- Better yet, two detail views side-by-side beneath heatmap
 - Bonus: User-friendly study definition
 
+Alternative wacky idea
+- Desktop application
+
 Model Changes
 - Rolling resistance
 - Proper integration of electric motor options
+- Track size multipliers (literally make tracks bigger/smaller)
+- @Nachi/Novotny: Yaw inertia
+- @Nachi/Novotny: PAC96 is a 4-term tyre model
+-- @Nachi/Novotny: OpenTire (https://github.com/OpenTire/OpenTirePython)
+- @Thad: Make sure the SS solver works for continuous curvature tracks & is documented well
 
 Overall
 - Be better; document what's going on for future use
+- @Thad SS solver documentation
+- @Thad solver spec (in text format)
 - Don't be afraid to blow things up and refactor
 
 # Component Definition
