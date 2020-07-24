@@ -4,6 +4,8 @@ import math
 from run import *
 import logging
 
+### THIS CODE IS OLD STYLE; NEEDS PORTED TO NEW DATAFLOWS
+
 """
 Point mass model
 It's a unicycle! Fast, right?
@@ -11,6 +13,8 @@ Even faster with steady state assumptions
 """
 
 class Run_Onetire_SS(Run):
+  "Run using the One Tire, SS Model"
+
   def __init__(self, vehicle, track, settings):
     Run.__init__(self, vehicle, track, settings)
 

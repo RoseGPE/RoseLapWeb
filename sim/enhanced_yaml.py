@@ -29,6 +29,7 @@ def syntax_expand(o, parse_vehicle):
 				rd = o[key]
 			elif key == 'vehicle':
 				if parse_vehicle:
+					# TODO: NOT THIS
 					with open('./params/vehicles/' + o[key]) as v:
 						o[key] = Vehicle(load(v, False))
 				else:
@@ -42,6 +43,7 @@ def syntax_expand(o, parse_vehicle):
 		return ObjectDict(**o)
 	return o
 
+# Load a YAML file and apply enhancements
 def load(stream, parse_vehicle):
   out = ruamel.yaml.safe_load(stream)
   s = syntax_expand(out, parse_vehicle)
