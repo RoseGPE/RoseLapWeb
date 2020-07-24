@@ -267,7 +267,7 @@ class Run_Onetire_SS(Run):
 
     return channels, (v0-channels[0,O_VELOCITY] >= 1e-1) and (v0 != 0)
     
-  def steady_corner(self):
+  def steady_corner(self, curvature):
     # solve a fuckton of physics
     v_lower = 0
     v_upper = vehicle.vmax
@@ -340,9 +340,9 @@ class Run_Onetire_SS(Run):
 
   def solve(self):
     # solve all the corners
-    steady_conditions = [None for i in sectors]
-    steady_velocities = [vehicle.vmax for i in sectors]
-    for i, sector in enumerate(sectors):
+    steady_conditions = [None         for i in self.track.dc[:,1]]
+    steady_velocities = [vehicle.vmax for i in self.track.dc[:,1]]
+    for i, sector in enumerate(self.track.dc[:,1]):
       if sector.curvature > 0:
         steady_conditions[i] = self.steady_corner(vehicle, sector)
         steady_velocities[i] = steady_conditions[i][O_VELOCITY]

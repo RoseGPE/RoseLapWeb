@@ -18,6 +18,9 @@ class Run:
 	def solve_to_file(self):
 		"Dump the run to a csv file"
 
+	def __repr__(self):
+		return "Run (%s, %s, %s, %s)" % (repr(self.vehicle), repr(self.track), repr(self.settings), "solved" if self.channels else "unsolved")
+
 ### HELPER FUNCTIONS ###
 
 def derate_curvature(curv, raddl):
@@ -64,7 +67,7 @@ AERO_DRS = 1
 AERO_BRK = 2
 
 
-""" DEPRECATED 
+" DEPRECATED "
 # Output Index Constant Definitions (Columns)
 # Proposal: this is bullshit.
 O_TIME = 0
@@ -105,4 +108,3 @@ G_DECISION = 4 # int
 G_COST = 5 # float
 G_VELOCITY = 6 # float
 G_GEAR_DATA = 7 # tuple(int, int, float)
-"""
