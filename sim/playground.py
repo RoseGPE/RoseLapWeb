@@ -5,7 +5,7 @@ from timeit import default_timer as timer
 
 trk = Track('dxf', open('sample_track.dxf').read())
 veh = Vehicle('yaml', open('sample_vehicle.yaml').read())
-settings = {'dx': 0.1}
+settings = {'dt': 0.01}
 run = Run_Onetire(veh, [trk], settings)
 
 #print(trk)

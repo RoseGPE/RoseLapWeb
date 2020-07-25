@@ -24,22 +24,31 @@ class Run:
   def __repr__(self):
     return "Run (%s, %s, %s, %s)" % (repr(self.vehicle), repr(self.tracks), repr(self.settings), "solved" if self.channels else "unsolved")
 
-class Channels(np.ndarray):
-  def __new__(cls, xpts, names):
-    #print("Channels.__new__")
-    self = np.zeros(shape=(len(xpts), len(names))).view(cls)
+class Channels():
+  def __init__(cls, xpts, names):
     self.map = {}
     self.names = names
     for i, name in enumerate(names):
-      self.map[name] = i
-    return self
+      self.map[name] = []
 
-  # def __init__(cls, names, xpts):
-  #  print("Channels.__init__")
-    #super(np.ndarray, self).__init__(shape=(len(shape[0]), len(shape[1])))
-    #self.map = {}
-    #for i, name in enumerate(names):
-    #  self.map[name] = i
+  def append(self, key, value):
+    self.map[key].append(value)
+
+  def prepend(self, key, value):
+    self.map[key].insert(0, value)
+
+  def knit(self, new_chnls, correction=None):
+    """
+    Take the given channels, and knit them onto the end of this set of channels.
+    If correction is specified, the named channel will be knitted together, using this object's channel as the baseline.
+    """
+    i_splice = len(self.map[correction]) if correction else 0
+    for key in self.names:
+      self.map[key].extend(new_chnls.map[key])
+    if correction:
+      baseline = self.map[correction][i_splice-1]
+      for i in range(i_splice, len(self.map[correction])):
+        self.map[correction][i] += baseline
 
   def __getitem__(self, key):
     #print("__getitem__(%s)", repr(key))
