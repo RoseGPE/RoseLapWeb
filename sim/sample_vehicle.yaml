@@ -1,0 +1,100 @@
+### Supercar Vehicle File ###
+# Top of the line, makes immense power, downforce, and weighs nothing.
+# units are lbf, ft, s
+# updated 7/2/2018
+
+### Getting started ###
+# A vehicle definition file contains the baseline parameters of a vehicle.
+# This file is written in YAML ('YAML Aint Markup Language').
+# If you are confused by the syntax, https://learn.getgrav.org/advanced/yaml is an easy reference.
+
+### Aerodynamics ###
+# The first in the list is the number in the 'full' or default configuration,
+# second is 'DRS' condition,
+# third is 'airbrake' configuration.
+# To 'omit' a configuration, simply make the values the same as the 'full' configuration.
+
+downforce_15ms: [400] # N - the downforce produced at 15 m/s
+drag_15ms:      [400] # N - the drag produced at 15 m/s
+
+### Tires ###
+# See the RoseLap documentation for explanation of these values.
+# The front and rear tires are used for the two- and four- tire models.
+# The lumped tire is used for the onetire (aka pointmass) model.
+
+## Front Tires ##
+# Longitudinal Parameters
+front_tire_mu_x: 2.8196   # lbf/lbf
+front_tire_offset_x: 20 # N
+# Lateral Parameters
+front_tire_mu_y: 2.0050   # lbf/lbf
+front_tire_offset_y: 38 # N
+# Tire radius
+front_tire_radius: 0.228   # m
+
+## Rear Tires ##
+# Longitudinal Forces
+rear_tire_mu_x: 2.8196
+rear_tire_offset_x: 20
+# Lateral Forces
+rear_tire_mu_y: 2.0050
+rear_tire_offset_y: 20
+# Tire radius
+rear_tire_radius: 0.228
+
+## Lumped Tire ##
+# Longitudinal Forces
+comb_tire_mu_x: 2.8196
+comb_tire_offset_x: 20
+# Lateral Forces
+comb_tire_mu_y: 2.0050
+comb_tire_offset_y: 38
+# Tire radius - make this the rear tire radius (used for gear ratio calcs)
+comb_tire_radius: 0.228
+
+### Suspension / Chassis ###
+
+## Roll stiffnesses ##
+#lltd: perfect
+#k_roll_front: 116.0 # ft-lbf / deg - the roll stiffness of the front suspension
+#k_roll_rear:  111.0 # ft-lbf / deg - the roll stiffness of the rear suspension
+#k_chassis:    800.0 # ft-lbf / deg - the roll stiffness of the chassis
+
+
+## Mass Parameters ##
+# Note: as long as we use imperial units, lbm is used, but internally, the value is converted to slugs.
+mass: 200      # kg - The overall mass of the vehicle including driver
+moi_yaw: 46  # kg*m^2 - The overall moment of inertia including driver about the vertical axis passing through the CG.
+cg_height: 0.12 # m - The height of the center of gravity from the ground at static height
+
+## Size Parameters ##
+wheelbase_length: 1.575 # m - The length of the wheelbase
+weight_bias: 0.45   # fraction - the amount of weight that is on the front tires
+track_front: 1.40    # m - the track width of the front tires
+track_rear:  1.37    # m - the track width of the rear tires
+r_add: 0 # m - additional radius that can be employed to make a turn. This allows us to see the impact of increasing/decreasing track width on tightness of turns.
+
+### Brakes ###
+
+perfect_brake_bias: true # boolean - if true, brake bias is set 'perfectly' so all available grip is used. If false, brake_bias is used.
+brake_bias: 0.67         # fraction - the amount of braking force to have on the front tires compared to total braking force
+
+### Engine ###
+# An engine curve given by two lists.
+engine_rpms: [6459, 6643, 6829, 7006, 7300, 7557, 8030, 8363, 8714, 8928, 9399]
+engine_torque: [53.60, 57.09, 54.90, 53.41, 54.1, 58.50, 59.60, 57.60, 54.21, 50.60, 45.30, 42.40, 28.80]
+
+# Correlated efficiency factors for 100 Octane gasoline
+#co2_factor: 2.31 #kg/L - The amount of CO2 produced per liter of fuel consumed
+#e_factor: 3.5e6 #ft*lbf/L - The amount of useful mechanical energy produced per liter of fuel consumed
+
+### Transmission ###
+# Note: overall transmission ratio is calculated as engine_reduction*gear[gear_no]*final_drive_reduction
+engine_reduction: 2.81 # ratio - A reduction applied to all gears
+transmission_type: sequential # sequential or cvt
+transmission_efficiency: 1.0
+gears: [2.75, 2, 1.667, 1.444, 1.304, 1.208]
+final_drive_reduction: 2.7692 # ratio - the final drive reduction
+
+shift_time: 0.02 # s - the time taken to complete a shift
+

@@ -1,15 +1,15 @@
 class Run:
-	def __init__(self, vehicle, track, settings):
+	def __init__(self, vehicle, tracks, settings):
 		"""
 			vehicle: an object with vehicle parameters
 			track: a numpy array with position/curvature points. Interpolate between them
 			settings: an object with simulation settings
 		"""
 		self.vehicle  = vehicle
-		self.track    = track
+		self.tracks   = tracks
 		self.settings = settings
-		self.channels = {}
-		self.results  = {}
+		self.channels = []
+		self.results  = []
 
 	def solve(self):
 		"Solve the run with the given vehicle, track, and solver settings. Raw sim channels go to self.channels; results get stored in self.results"
@@ -19,7 +19,7 @@ class Run:
 		"Dump the run to a csv file"
 
 	def __repr__(self):
-		return "Run (%s, %s, %s, %s)" % (repr(self.vehicle), repr(self.track), repr(self.settings), "solved" if self.channels else "unsolved")
+		return "Run (%s, %s, %s, %s)" % (repr(self.vehicle), repr(self.tracks), repr(self.settings), "solved" if self.channels else "unsolved")
 
 ### HELPER FUNCTIONS ###
 
