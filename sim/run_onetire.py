@@ -85,8 +85,8 @@ class Run_Onetire(Run):
     "Solve a specific track"
 
     chnl_names = ["x","t","v","k","a_long","a_lat","gear","motor_rpm"]
-    mesh = np.arange(0, track.dc[-1, 0], self.settings['dt'])
-    chnl = Channels(mesh, chnl_names)
+    dt   = self.settings['dt']
+    chnl = Channels(chnl_names)
 
     v = 0
     x = 0
@@ -95,20 +95,18 @@ class Run_Onetire(Run):
     shiftgear = 0
     t_shift = 0
     k = track.dc[0,1]
-    a, rpm = self.accelerate(v, k, gear)
+    a, rpm = self.accelerate(v, k, gear); a = a[0]
 
-    chnl[0, 'x'] = x
-    chnl[0, 't'] = t
-    chnl[0, 'v'] = v
-    chnl[0, 'k'] = k
-    chnl[0, 'a_long'] = a
-    chnl[0, 'a_lat']  = 0
-    chnl[0, 'gear']   = gear+1
-    chnl[0, 'motor_rpm'] = rpm
+    chnl.append('x', x)
+    chnl.append('t', t)
+    chnl.append('v', v)
+    chnl.append('k', k)
+    chnl.append('a_long', a)
+    chnl.append('a_lat',  0)
+    chnl.append('gear',   gear+1)
+    chnl.append('motor_rpm', rpm)
 
-    i_x = 1
-
-    while x < track_dc[-1,0]
+    while x < track.dc[-1,0]:
       k = interp(x, track.dc[:,0], track.dc[:,1])
       
       newgear = self.vehicle.best_gear(v, np.inf)
@@ -124,10 +122,10 @@ class Run_Onetire(Run):
         print("currently shifting; no gear")
         gear = np.nan
 
-
-      a, rpm = self.accelerate(v, k, gear)
-      v = math.sqrt(v**2.0 + 2.0*a*dx)
+      a, rpm = self.accelerate(v, k, gear); a = a[0]
+      v = math.sqrt(v**2.0 + 2.0*a*dt)
       t = t + dt
+      x = x + v*t
 
       chnl.append('x', x)
       chnl.append('t', t)
@@ -137,6 +135,5 @@ class Run_Onetire(Run):
       chnl.append('a_lat',  v**2.0*k)
       chnl.append('gear',   gear+1)
       chnl.append('motor_rpm', rpm)
-      i_x += 1
 
     return chnl

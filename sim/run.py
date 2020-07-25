@@ -1,4 +1,5 @@
 import numpy as np
+import csv as csv
 
 class Run:
   "A run is a vehicle, as configured, going through several tracks"
@@ -25,7 +26,7 @@ class Run:
     return "Run (%s, %s, %s, %s)" % (repr(self.vehicle), repr(self.tracks), repr(self.settings), "solved" if self.channels else "unsolved")
 
 class Channels():
-  def __init__(cls, xpts, names):
+  def __init__(self, names):
     self.map = {}
     self.names = names
     for i, name in enumerate(names):
@@ -72,7 +73,11 @@ class Channels():
       return super().__setitem__((key[0], self.map[key[1]]), value)
 
   def save_as_csv(self, file):
-    np.savetxt(file, np.asarray(self), delimiter=",", header=','.join(self.names))
+    writer = csv.DictWriter(file, delimiter=',', fieldnames=self.names)
+    writer.writeheader()
+    for i in range(len(self.map[self.names[0]])):
+      writer.writerow({name:self.map[name][i] for name in self.names})
+
 
 ### HELPER FUNCTIONS ###
 
