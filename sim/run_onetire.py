@@ -1,12 +1,16 @@
 import numpy as np
 import math
 from scipy.interpolate import interp2d
+from scipy.interpolate import interp1d
 from numpy import interp
 
 from run import *
 import logging
 
 import matplotlib.pyplot as plt
+
+EPSILON = 1e-4
+CHAN_NAMES = ["x","t","v","k","a_long","a_lat","gear","motor_rpm"]
 
 class Run_Onetire(Run):
   "Run using the One Tire, Dual-Layer Model"
@@ -29,8 +33,8 @@ class Run_Onetire(Run):
     #s.map_states = [{"gear":np.inf}]
     #s.map_states = [{}]
 
-    s.map_a_fwd  = np.full([N_PTS_V, N_PTS_K], 0) # for i in range(len(s.map_states))]
-    s.map_a_rev  = np.full([N_PTS_V, N_PTS_K], 0) # for i in range(len(s.map_states))]
+    s.map_a_fwd  = np.full([N_PTS_V, N_PTS_K], -EPSILON) # for i in range(len(s.map_states))]
+    s.map_a_rev  = np.full([N_PTS_V, N_PTS_K], EPSILON) # for i in range(len(s.map_states))]
     for i_v in range(0,N_PTS_V):
       for i_k in range(0,N_PTS_K):
         #for i_state in range(0,len(s.map_states)):
@@ -47,11 +51,11 @@ class Run_Onetire(Run):
         # Accel
         F_tire_long = F_tire_long_available #min(F_tire_long_available, F_tire_engine_limit)
         a_long = (F_tire_long - s.vehicle.drag(v, 0)) / s.vehicle.mass
-        s.map_a_fwd[i_v, i_k] = a_long if np.isfinite(a_long) else 0
+        s.map_a_fwd[i_v, i_k] = a_long if np.isfinite(a_long) else -EPSILON
 
         # Brake
         a_long = (- F_tire_long_available - s.vehicle.drag(v, 0)) / s.vehicle.mass
-        s.map_a_rev[i_v, i_k] = a_long if np.isfinite(a_long) else 0
+        s.map_a_rev[i_v, i_k] = a_long if np.isfinite(a_long) else EPSILON
 
         if np.isnan(s.map_a_fwd[i_v, i_k]) and np.isnan(s.map_a_rev[i_v, i_k]):
           break # dont bother computing extra points
@@ -62,18 +66,46 @@ class Run_Onetire(Run):
     axes[1].contourf(s.map_k, s.map_v, +s.map_a_fwd, cmap="cividis")
     plt.show()
 
+  def save_map_as_csv(self):
+    np.savetxt('map_fwd.csv', self.map_a_fwd, delimiter=',')
+
   def decelerate(self, v, k):
     "Compute maximum deceleration"
-    a_tire = interp2d(self.map_k, self.map_v, self.map_a_rev, kind='cubic')(k, v)
+    a_tire = interp2d(self.map_k, self.map_v, self.map_a_rev, kind='linear')(k, v)[0]
     return a_tire
 
   def accelerate(self, v, k, gear):
     "Compute maximum acceleration"
-    a_tire = interp2d(self.map_k, self.map_v, self.map_a_fwd, kind='cubic')(k, v)
+    a_tire = interp2d(self.map_k, self.map_v, self.map_a_fwd, kind='linear')(k, v)[0]
     a_engine, rpm = self.vehicle.eng_force(v, gear)
-    #print(self.map_v, self.map_k, self.map_a_fwd, v, k)
-    #print(a_tire, a_engine)
     return min(a_tire, a_engine), rpm
+
+  def find_local_minima(self, track, start_from):
+    "From the start_from x position, move forwards on the track until the steady-state velocity stops decreasing"
+
+    i = 0
+    # find our place in the track
+    while track.dc[i,0] < start_from:
+      i += 1
+    i -= 1
+    # now fast forward to the problem point
+    # this is where dv(a=0,k=k(x))/dx = 0
+
+    v_last = np.inf
+    v      = np.inf
+    while i < track.dc.shape[0]:
+      av = interp1d(self.map_k, self.map_a_fwd, 'linear', axis=1)(track.dc[i,1])
+      v = np.inf
+      for j, ap in enumerate(av):
+        if ap < 0:
+          v = self.map_v[j]
+          break
+
+      if np.isfinite(v) and v >= v_last:
+        return track.dc[i, 0], v
+      v_last = v
+      i += 1
+
 
   def solve(self):
     "Solve all tracks"
@@ -84,9 +116,8 @@ class Run_Onetire(Run):
   def solve_track(self, track):
     "Solve a specific track"
 
-    chnl_names = ["x","t","v","k","a_long","a_lat","gear","motor_rpm"]
     dt   = self.settings['dt']
-    chnl = Channels(chnl_names)
+    chnl = Channels(CHAN_NAMES)
 
     v = 0
     x = 0
@@ -95,7 +126,7 @@ class Run_Onetire(Run):
     shiftgear = 0
     t_shift = 0
     k = track.dc[0,1]
-    a, rpm = self.accelerate(v, k, gear); a = a[0]
+    a, rpm = self.accelerate(v, k, gear)
 
     chnl.append('x', x)
     chnl.append('t', t)
@@ -109,23 +140,62 @@ class Run_Onetire(Run):
     while x < track.dc[-1,0]:
       k = interp(x, track.dc[:,0], track.dc[:,1])
       
+      # Gearshift delay logic
       newgear = self.vehicle.best_gear(v, np.inf)
       if t >= t_shift and np.isfinite(gear) and newgear != gear:
-        print("better gear out there")
         t_shift = t + self.vehicle.shift_time
         shiftgear = newgear
         gear = np.nan
       elif t >= t_shift:
-        print("shifting to new gear")
         gear = shiftgear
       else:
-        print("currently shifting; no gear")
         gear = np.nan
 
-      a, rpm = self.accelerate(v, k, gear); a = a[0]
-      v = math.sqrt(v**2.0 + 2.0*a*dt)
+      # Accelerate
+      a, rpm = self.accelerate(v, k, gear)
+
+      # If we fail to accelerate, initiate backup algorithm
+      if a < -EPSILON:
+        # Find where to backup from
+        x, v = self.find_local_minima(track, x)
+        chnl_rev = Channels(CHAN_NAMES)
+
+        t = 0
+
+        xfwd = np.asarray(chnl.map['x'])
+        vfwd = np.asarray(chnl.map['v'])
+
+        # Reverse integrate until we hit the initial solution
+        while x > 0 and (x > xfwd[-1] or interp(x, xfwd, vfwd) > v):
+          k = interp(x, track.dc[:,0], track.dc[:,1])
+          a = self.decelerate(v, k)
+
+          # Reverse integration
+          v = v - a*dt
+          t = t - dt
+          x = x - v*dt
+
+          chnl_rev.prepend('x', x)
+          chnl_rev.prepend('t', t)
+          chnl_rev.prepend('v', v)
+          chnl_rev.prepend('k', k)
+          chnl_rev.prepend('a_long', a)
+          chnl_rev.prepend('a_lat',  v**2.0*k)
+          chnl_rev.prepend('gear',   np.nan)
+          chnl_rev.prepend('motor_rpm', np.nan)
+
+        # Knit the reverse integration into the forward integration
+        chnl.knit(chnl_rev, 'x', 't')
+        v = chnl['v', -1]
+        x = chnl['x', -1] + dt*v
+        t = chnl['t', -1] + dt
+        gear = self.vehicle.best_gear(v, np.inf)
+        continue
+
+      # Forward integration
+      v = v + a*dt
       t = t + dt
-      x = x + v*t
+      x = x + v*dt
 
       chnl.append('x', x)
       chnl.append('t', t)

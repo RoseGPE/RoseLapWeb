@@ -38,39 +38,32 @@ class Channels():
   def prepend(self, key, value):
     self.map[key].insert(0, value)
 
-  def knit(self, new_chnls, correction=None):
+  def knit(self, new_chnls, knit_by, correction=None):
     """
     Take the given channels, and knit them onto the end of this set of channels.
     If correction is specified, the named channel will be knitted together, using this object's channel as the baseline.
     """
-    i_splice = len(self.map[correction]) if correction else 0
+    i = 0
+    while i < len(self.map[knit_by]):
+      if self.map[knit_by][i] > new_chnls.map[knit_by][0]:
+        break
+      i += 1
+
+
     for key in self.names:
-      self.map[key].extend(new_chnls.map[key])
+      self.map[key] = self.map[key][:i] + new_chnls.map[key]
+
     if correction:
-      baseline = self.map[correction][i_splice-1]
-      for i in range(i_splice, len(self.map[correction])):
-        self.map[correction][i] += baseline
+      offset = self.map[correction][i-1] - self.map[correction][i]
+      while i < len(self.map[correction]):
+        self.map[correction][i] += offset
+        i += 1
 
   def __getitem__(self, key):
-    #print("__getitem__(%s)", repr(key))
-    #print(len(key))
-    if len(key) == 1:
-      return super().__getitem__((key[0]))
-    elif type(key[1]) != str:
-      # TODO: this isn't sophisticated; it just assumes all slices are OK to passthru; only works on full slices
-      return super().__getitem__((key[0], key[1]))
-    else:
-      return super().__getitem__((key[0], self.map[key[1]]))
+    return self.map[key[0]][key[1]]
 
   def __setitem__(self, key, value):
-    #print("__setitem__(%s)", repr(key))
-    if len(key) == 1:
-      return super().__setitem__((key[0]), value)
-    elif type(key[1]) != str:
-      # TODO: this isn't sophisticated; it just assumes all slices are OK to passthru; only works on full slices
-      return super().__setitem__((key[0], key[1]), value)
-    else:
-      return super().__setitem__((key[0], self.map[key[1]]), value)
+    self.map[key[0]][key[1]] = value
 
   def save_as_csv(self, file):
     writer = csv.DictWriter(file, delimiter=',', fieldnames=self.names)
