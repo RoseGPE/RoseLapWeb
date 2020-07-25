@@ -5,15 +5,14 @@ from timeit import default_timer as timer
 
 trk = Track('dxf', open('sample_track.dxf').read())
 veh = Vehicle('yaml', open('sample_vehicle.yaml').read())
-run = Run_Onetire(veh, [trk], {})
+settings = {'dx': 0.1}
+run = Run_Onetire(veh, [trk], settings)
 
 #print(trk)
 #print(trk.dc)
 #print(veh)
 #print(veh.data)
 #print(run)
-
-run.solve()
 
 #print(run.channels)
 #print(run.results)
@@ -22,4 +21,13 @@ start = timer()
 run.build_maps()
 end   = timer()
 print("maps built in %.10f s" % (end - start))
-run.plot_maps()
+
+start = timer()
+run.solve()
+end   = timer()
+print("run solved in %.10f s" % (end - start))
+
+for i, chnl in enumerate(run.channels):
+	chnl.save_as_csv("run_%d.csv" % i)
+
+#run.plot_maps()

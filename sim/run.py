@@ -1,25 +1,69 @@
+import numpy as np
+
 class Run:
-	def __init__(self, vehicle, tracks, settings):
-		"""
-			vehicle: an object with vehicle parameters
-			track: a numpy array with position/curvature points. Interpolate between them
-			settings: an object with simulation settings
-		"""
-		self.vehicle  = vehicle
-		self.tracks   = tracks
-		self.settings = settings
-		self.channels = []
-		self.results  = []
+  "A run is a vehicle, as configured, going through several tracks"
+  def __init__(self, vehicle, tracks, settings):
+    """
+      vehicle: an object with vehicle parameters
+      track: a numpy array with position/curvature points. Interpolate between them
+      settings: an object with simulation (e.g. mesh) settings
+    """
+    self.vehicle  = vehicle
+    self.tracks   = tracks
+    self.settings = settings
+    self.channels = []
+    self.results  = []
 
-	def solve(self):
-		"Solve the run with the given vehicle, track, and solver settings. Raw sim channels go to self.channels; results get stored in self.results"
-		pass
+  def solve(self):
+    "Solve the run with the given vehicle, track, and solver settings. Raw sim channels go to self.channels; results get stored in self.results"
+    pass
 
-	def solve_to_file(self):
-		"Dump the run to a csv file"
+  def solve_to_file(self):
+    "Dump the run to a csv file"
 
-	def __repr__(self):
-		return "Run (%s, %s, %s, %s)" % (repr(self.vehicle), repr(self.tracks), repr(self.settings), "solved" if self.channels else "unsolved")
+  def __repr__(self):
+    return "Run (%s, %s, %s, %s)" % (repr(self.vehicle), repr(self.tracks), repr(self.settings), "solved" if self.channels else "unsolved")
+
+class Channels(np.ndarray):
+  def __new__(cls, xpts, names):
+    #print("Channels.__new__")
+    self = np.zeros(shape=(len(xpts), len(names))).view(cls)
+    self.map = {}
+    self.names = names
+    for i, name in enumerate(names):
+      self.map[name] = i
+    return self
+
+  # def __init__(cls, names, xpts):
+  #  print("Channels.__init__")
+    #super(np.ndarray, self).__init__(shape=(len(shape[0]), len(shape[1])))
+    #self.map = {}
+    #for i, name in enumerate(names):
+    #  self.map[name] = i
+
+  def __getitem__(self, key):
+    #print("__getitem__(%s)", repr(key))
+    #print(len(key))
+    if len(key) == 1:
+      return super().__getitem__((key[0]))
+    elif type(key[1]) != str:
+      # TODO: this isn't sophisticated; it just assumes all slices are OK to passthru; only works on full slices
+      return super().__getitem__((key[0], key[1]))
+    else:
+      return super().__getitem__((key[0], self.map[key[1]]))
+
+  def __setitem__(self, key, value):
+    #print("__setitem__(%s)", repr(key))
+    if len(key) == 1:
+      return super().__setitem__((key[0]), value)
+    elif type(key[1]) != str:
+      # TODO: this isn't sophisticated; it just assumes all slices are OK to passthru; only works on full slices
+      return super().__setitem__((key[0], key[1]), value)
+    else:
+      return super().__setitem__((key[0], self.map[key[1]]), value)
+
+  def save_as_csv(self, file):
+    np.savetxt(file, np.asarray(self), delimiter=",", header=','.join(self.names))
 
 ### HELPER FUNCTIONS ###
 

@@ -72,10 +72,10 @@ class Vehicle:
     return besti
 
   def downforce(self, v, aero_mode):
-    return self.downforce_15ms[aero_mode] / (15 ** 2) * v**2
+    return self.downforce_15ms[aero_mode] / (15.0 ** 2.0) * v**2.0
 
   def drag(self, v, aero_mode):
-    return self.drag_15ms[aero_mode] / (15 ** 2) * v**2
+    return self.drag_15ms[aero_mode] / (15.0 ** 2.0) * v**2.0
 
   def front_brake_bias(self):
     return self.brake_bias
