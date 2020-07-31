@@ -1,6 +1,6 @@
 $def with (vehicles, tracks, studies)
 
-<link rel="stylesheet" type="text/css" href="/static/bootstrap.css" />
+<link rel="stylesheet" type="text/css" href="/static/bootstrap.min.css" />
 <link rel="stylesheet" type="text/css" href="/static/custom.css" />
 
 <script type="text/javascript" src="/static/jquery.min.js" ></script>
@@ -86,6 +86,29 @@ $def with (vehicles, tracks, studies)
 	}
 </script>
 
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+	<ul class="navbar-nav">
+    <li class="navbar-brand">
+    	<a class=" nav-link disabled">
+    		RoseLap
+    	</a>
+    </li>
+  </ul>
+  <ul class="navbar-nav ml-auto mr-1">
+    <li class="nav-item">
+    	<a class=" nav-link disabled">
+    		User: $ctx.username
+    	</a>
+    </li>
+    <li class="nav-item">
+    	<button href="/logout" class="nav-link btn btn-danger">
+    		Logout
+    	</button>
+    </li>
+  </ul>
+</nav>
+<br/>
+
 <!-- Modal -->
 <div class="modal fade bd-example-modal-lg" id="vehicleEditModal" tabindex="-1" role="dialog" aria-labelledby="vehicleEditModal" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
@@ -108,97 +131,86 @@ $def with (vehicles, tracks, studies)
   </div>
 </div>
 
-<nav class="navbar sticky-top navbar-toggleable-md navbar-secondary bg-faded">
-	<button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-		<span class="navbar-toggler-icon"></span>
-	</button>
-
-	<a class="navbar-brand" href="/">RoseLap Web</a>
-	<ul class="nav navbar-nav navbar-right">
-    <li><span class="glyphicon glyphicon-user"></span> Username here </li>
-    <li><a href="/logout"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
-  </ul>
-</nav>
-<br/>
-
 <div class="container">
 
 	<div class="row">
 		<div class="col-sm-6">
-			<button id="remove" class="btn btn-secondary">Vehicles</button>
-			<button id="remove" class="btn btn-success" onclick="new_vehicle()">Create New</button>
+			<!--<button id="remove" class="btn btn-light disabled">Vehicles</button>-->
 
 			<table class="table table-striped">
 				<thead>
 					<tr>
-						<th scope="col">Name</th>
+						<th scope="col">Vehicle</th>
 						<th scope="col">Version</th>
 						<th scope="col">Last Edit</th>
 						<th scope="col">Errors</th>
-						<th scope="col">Actions</th>
+						<th scope="col"></th>
 					</tr>
 				</thead>
 				$for vehicle in vehicles:
 					<tr>
-						<th>${vehicle.name}</th>
-						<th>${vehicle.version}</th>
-						<th>${vehicle.edit_date}</th>
-						<th>
+						<td>${vehicle.name}</td>
+						<td>${vehicle.version}</td>
+						<td>${vehicle.edit_date}</td>
+						<td>
 							$if vehicle.log:
-								<button class="btn-xs btn-warning">Error Log</button>
+								<button class="btn-sm btn-warning">Error Log</button>
 							$else:
 								OK
-						</th>
-						<th>
-							<button class="btn btn-primary btn-xs" onclick="edit_vehicle('${vehicle.name}', '${vehicle.version}')">Edit</button>
-						</th>
+						</td>
+						<td>
+							<button class="btn btn-primary btn-sm" onclick="edit_vehicle('${vehicle.name}', '${vehicle.version}')">Edit</button>
+						</td>
 					</tr>
+				<tr>
+					<td colspan="5">
+						<button id="remove" class="btn btn-secondary btn-block btn-sm" onclick="new_vehicle()">+ Create Vehicle</button>
+					</td>
+				</tr>
 			</table>
 
 		</div>
 		<div class="col-sm-6">
-
-			<button id="remove" class="btn btn-secondary">Tracks</button>
-			<button id="remove" class="btn btn-success" onclick="new_study()">Create New</button>
-
 			<table class="table table-striped">
 				<thead>
 					<tr>
-						<th scope="col">Name</th>
+						<th scope="col">Track</th>
 						<th scope="col">Version</th>
 						<th scope="col">Last Edit</th>
-						<th scope="col">Import</th>
+						<th scope="col"></th>
 					</tr>
 				</thead>
 				$for track in tracks:
 					<tr>
-						<th>${track.name}</th>
-						<th>${track.version}</th>
-						<th>${track.edit_date}</th>
-						<th>
+						<td>${track.name}</td>
+						<td>${track.version}</td>
+						<td>${track.edit_date}</td>
+						<td>
 							$if track.log:
-								<button class="btn-xs btn-warning">Error Log</button>
+								<button class="btn-sm btn-warning">Error Log</button>
 							$else:
 								OK
-						</th>
+						</td>
 						<!--<th>
 							<button class="btn-primary" onclick="edit_track(${track.name}, ${track.version})">Edit</button>
 						</th>-->
 					</tr>
+				<tr>
+					<td colspan="5">
+						<button id="remove" class="btn btn-secondary btn-block btn-sm" onclick="new_track()">+ Create Track</button>
+					</td>
+				</tr>
 			</table>
 		</div>
 	</div>
 
-	<button id="remove" class="btn btn-secondary">Studies</button>
-	<button id="remove" class="btn btn-success" onclick="new_study()">Create New</button>
-
 	<table class="table table-striped">
 		<thead>
 			<tr>
-				<th scope="col">Name</th>
+				<th scope="col">Study</th>
 				<th scope="col">Version</th>
 				<th scope="col">State</th>
-				<th scope="col">Actions</th>
+				<th scope="col"></th>
 			</tr>
 		</thead>
 		$for study in studies:
@@ -209,7 +221,7 @@ $def with (vehicles, tracks, studies)
 					<th>
 						Drafting (Edited ${study.edit_date})
 					</th><th>
-						<button class="btn btn-xs btn-primary">Edit & Submit</button>
+						<button class="btn btn-sm btn-primary">Edit & Submit</button>
 				$elif study.status == 1:
 					<th>
 						Submitted (${study.submission_date})
@@ -218,26 +230,31 @@ $def with (vehicles, tracks, studies)
 					<th>
 						Running (${study.runs_complete}/${study.runs_total})
 					</th><th>
-						<button class="btn btn-xs btn-info">Log</button>
+						<button class="btn btn-sm btn-info">Log</button>
 				$elif study.status == 3:
 					<th>
 						Failed (${study.completion_date})
 					</th><th>
-						<button class="btn btn-xs btn-warning">Log</button>
+						<button class="btn btn-sm btn-warning">Log</button>
 				$elif study.status == 4:
 					<th>
 						Finished (${study.completion_date})
 					</th><th>
-						<button class="btn btn-xs btn-info">Log</button>
-						<button class="btn btn-xs btn-success">Results</button>
+						<button class="btn btn-sm btn-info">Log</button>
+						<button class="btn btn-sm btn-success">Results</button>
 				$else:
 					<th>
 						Invalid Status
 					</th><th>
 						
-				<button class="btn btn-xs btn-primary" onclick="edit_study(${study.name}, ${study.version})">Edit</button>
-				<button class="btn btn-danger btn-xs" onclick="delete_vehicle(${vehicle.name}, ${vehicle.version})">Delete</button>
+				<button class="btn btn-sm btn-primary" onclick="edit_study(${study.name}, ${study.version})">Edit</button>
+				<button class="btn btn-danger btn-sm" onclick="delete_vehicle(${vehicle.name}, ${vehicle.version})">Delete</button>
 				</th>
 			</tr>
+		<tr>
+			<td colspan="5">
+				<button id="remove" class="btn btn-secondary btn-block btn-sm" onclick="new_study()">+ Create Study</button>
+			</td>
+		</tr>
 	</table>
 </div>

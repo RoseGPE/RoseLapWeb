@@ -4,10 +4,11 @@ import web
 from database import *
 import json
 import datetime
+import time
 
-render = web.template.render('webtemplates/')
+render = web.template.render('webtemplates/', globals={'ctx': web.ctx})
 
-web.config.debug = False
+web.config.debug = True
 
 urls = (
   '/overview/', 'overview',
@@ -20,6 +21,9 @@ urls = (
   '/logout', 'logout',
   '/(.*)', 'index'
 )
+
+##### DATABASE SETUP #####
+
 db_session = scoped_session(sessionmaker(bind=engine))
 
 def load_sqla(handler):
@@ -42,62 +46,73 @@ def load_sqla(handler):
 app = web.application(urls, locals())
 app.add_processor(load_sqla)
 
-store = web.session.DiskStore('sessions')
-web_session = web.session.Session(app, store, initializer={'logged_in': 0, 'username': ''})
-web.config._session = web_session
+############################ AUTHENTICATION PROCESSING #############################3
 
-#def web_session_hook():
-#  web.template.Template.globals['logged_in'] = web_session.get('logged_in')
-#  web.template.Template.globals['username'] = web_session.get('username')
-#app.add_processor(web.loadhook(web_session_hook))
+def auth_app_processor(handle):
+  global web
+  web.ctx.request_time = time.time()
+  web.ctx.use_layout = True
+  try:
+    web.ctx.mobile = False
+    web.ctx.mobile = detect_mobile_browser(web.ctx.env['HTTP_USER_AGENT'])
+  except: web.ctx.mobile = False
+  cookie = web.cookies(username = None, password = None)
+  web.ctx.username = cookie.username
 
-def logged():
-  if web_session.get('logged_in')==1:
-    return True
-  else:
-    return False
+  if not web.ctx.path in ['/login']:
+    user = web.ctx.orm.query(User).filter(User.name == cookie.username).first()
+    if user:
+      if not user.check_password(cookie.password):
+        web.ctx.username = None
+        raise web.seeother('/login')
+        return
+    else:
+      web.ctx.username = None
+      raise web.seeother('/login')
+      return
+    web.ctx.username = cookie.username
+     
+  return handle()
+
+app.add_processor(auth_app_processor)
+
+class login:
+  def GET(self):
+    if web.ctx.username and web.ctx.username!='None':
+      raise web.seeother('/overview')
+    else:
+      return render.login()
+
+  def POST(self):
+    i = web.input()
+    user = web.ctx.orm.query(User).filter(User.name == i.username).first()
+    if user:
+      if user.check_password(i.password):
+        web.setcookie('username', i.username, expires=3600*24*365)
+        web.setcookie('password', i.password, expires=3600*24*365)
+        raise web.seeother('/overview')
+      else:
+        web.setcookie('username', None)
+        web.setcookie('password', None)
+        raise web.seeother('/login?issue=password')
+        return
+    else:
+      web.setcookie('username', None)
+      web.setcookie('password', None)
+      raise web.seeother('/login?issue=name')
+      return
+    
+class logout:
+  def GET(self):
+    web.setcookie('username', None, expires=-1)
+    web.setcookie('password', None, expires=-1)
+    raise web.seeother('/login')
+
+##################### WEB STUFF ##########################
 
 class index:
   def GET(self):
     return "boring index page"
-
-class login:
-  def GET(self):
-    if logged():
-      return 'Already logged in.'
-    else:
-      return render.login()
-  def POST(self):
-    name, password = web.input().name, web.input().password
-    #ident = db.select('example_users', where='name=$name', vars=locals())[0]
-    ident = web.ctx.orm.query(User).filter(User.name == name).first()
-    try:
-      if not ident:
-        web_session.logged_in = 0
-        web_session.username = ''
-        raise web.seeother('/login?issue=name')
-      elif ident.check_password(password):
-        web_session.logged_in = 1
-        web_session.username = User.name
-        return "Success"
-        raise web.seeother('/overview')
-      else:
-        web_session.logged_in = 0
-        web_session.username = ''
-        raise web.seeother('/login?issue=password')
-    except web.webapi.SeeOther:
-      raise
-    except Exception as e:
-      print(type(e), e)
-      web_session.logged_in = 0
-      web_session.username = ''
-      return "Server-side login error"
-
-class logout:
-  def GET(self):
-    web_session.logged_in = 0
-    #web_session.kill()
-    raise web.seeother('/login?issue=signout')
 
 class overview:
   def GET(self):
@@ -113,6 +128,10 @@ class overview:
     except Exception as e:
       print("ERROR: ", e)
       return json.dumps({'error': 'Server-side error.'})
+
+
+
+##################### REST API ###########################
 
 class vehicle:
   def GET(self):
