@@ -5,10 +5,9 @@ from database import *
 import json
 import datetime
 
-from sqlalchemy.exc import OperationalError
-from sqlalchemy.orm import scoped_session, sessionmaker
-
 render = web.template.render('webtemplates/')
+
+web.config.debug = False
 
 urls = (
   '/overview/', 'overview',
@@ -17,39 +16,95 @@ urls = (
   '/study', 'study',
   '/vehicle', 'vehicle',
 
-  '/(.*)', 'login'
+  '/login', 'login',
+  '/logout', 'logout',
+  '/(.*)', 'index'
 )
-
-Session = scoped_session(sessionmaker(bind=engine))
+db_session = scoped_session(sessionmaker(bind=engine))
 
 def load_sqla(handler):
-    web.ctx.orm = Session()
+  web.ctx.orm = db_session()
 
-    try:
-        return handler()
-    except OperationalError:
-        web.ctx.orm.rollback()
-        Session.remove()
-        raise
-    except:
-        web.ctx.orm.commit()
-        Session.remove()
-        raise
-    finally:
-        web.ctx.orm.commit()
-        Session.remove()
+  try:
+    return handler()
+  except OperationalError:
+    web.ctx.orm.rollback()
+    db_session.remove()
+    raise
+  except:
+    web.ctx.orm.commit()
+    db_session.remove()
+    raise
+  finally:
+    web.ctx.orm.commit()
+    db_session.remove()
 
 app = web.application(urls, locals())
 app.add_processor(load_sqla)
 
+store = web.session.DiskStore('sessions')
+web_session = web.session.Session(app, store, initializer={'logged_in': 0, 'username': ''})
+web.config._session = web_session
+
+#def web_session_hook():
+#  web.template.Template.globals['logged_in'] = web_session.get('logged_in')
+#  web.template.Template.globals['username'] = web_session.get('username')
+#app.add_processor(web.loadhook(web_session_hook))
+
+def logged():
+  if web_session.get('logged_in')==1:
+    return True
+  else:
+    return False
+
+class index:
+  def GET(self):
+    return "boring index page"
+
 class login:
-    def GET(self, args):
-        return 'Please log in.'
+  def GET(self):
+    if logged():
+      return 'Already logged in.'
+    else:
+      return render.login()
+  def POST(self):
+    name, password = web.input().name, web.input().password
+    #ident = db.select('example_users', where='name=$name', vars=locals())[0]
+    ident = web.ctx.orm.query(User).filter(User.name == name).first()
+    try:
+      if not ident:
+        web_session.logged_in = 0
+        web_session.username = ''
+        raise web.seeother('/login?issue=name')
+      elif ident.check_password(password):
+        web_session.logged_in = 1
+        web_session.username = User.name
+        return "Success"
+        raise web.seeother('/overview')
+      else:
+        web_session.logged_in = 0
+        web_session.username = ''
+        raise web.seeother('/login?issue=password')
+    except web.webapi.SeeOther:
+      raise
+    except Exception as e:
+      print(type(e), e)
+      web_session.logged_in = 0
+      web_session.username = ''
+      return "Server-side login error"
+
+class logout:
+  def GET(self):
+    web_session.logged_in = 0
+    #web_session.kill()
+    raise web.seeother('/login?issue=signout')
 
 class overview:
   def GET(self):
     web.header('Content-type', 'text/html')
     try:
+      #if not logged():
+      #  return "You shouldn't be here."
       vehicles = web.ctx.orm.query(Vehicle).all()
       tracks   = web.ctx.orm.query(Track).all()
       studies  = web.ctx.orm.query(Study).all()

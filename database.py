@@ -7,7 +7,12 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm.session import sessionmaker
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import scoped_session, sessionmaker
 import json
+import os
+import hashlib
+import base64
 
 Base = declarative_base()
 
@@ -15,7 +20,16 @@ class User(Base):
   __tablename__ = 'user'
   id       = Column(Integer, primary_key=True)
   name     = Column(String, nullable=False, unique=True)
-  password = Column(String, nullable=True, unique=False)
+  password = Column(String, nullable=True,  unique=False)
+  salt     = Column(String, nullable=False, unique=False)
+
+  def __init__(self, name, password):
+    self.name = name
+    self.salt = base64.b16encode(os.urandom(16))
+    self.password = hashlib.sha1(bytes(password, 'utf-8')+self.salt).hexdigest()
+
+  def check_password(self, password):
+    return hashlib.sha1(bytes(password, 'utf-8')+self.salt).hexdigest() == self.password
 
   def as_dict(self):
     return {c.name: getattr(self, c.name) for c in self.__table__.columns}
