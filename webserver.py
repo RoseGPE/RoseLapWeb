@@ -8,7 +8,7 @@ import time
 
 render = web.template.render('webtemplates/', globals={'ctx': web.ctx})
 
-web.config.debug = True
+web.config.debug = False
 
 urls = (
   '/overview/', 'overview',
@@ -28,7 +28,6 @@ db_session = scoped_session(sessionmaker(bind=engine))
 
 def load_sqla(handler):
   web.ctx.orm = db_session()
-
   try:
     return handler()
   except OperationalError:
@@ -111,25 +110,44 @@ class logout:
 ##################### WEB STUFF ##########################
 
 class index:
-  def GET(self):
+  def GET(self, args):
     return "boring index page"
 
 class overview:
   def GET(self):
     web.header('Content-type', 'text/html')
     try:
-      #if not logged():
-      #  return "You shouldn't be here."
-      vehicles = web.ctx.orm.query(Vehicle).all()
+      # TODO: auth selectors
+      vehicles = web.ctx.orm.query(Vehicle).order_by(Vehicle.version.desc()).all()
+      vehicle_map = {}
+      for vehicle in vehicles:
+        if vehicle.name in vehicle_map:
+          vehicle_map[vehicle.name].append(vehicle)
+        else:
+          vehicle_map[vehicle.name] = [vehicle]
       tracks   = web.ctx.orm.query(Track).all()
       studies  = web.ctx.orm.query(Study).all()
+      # TODO: format timestamps
 
-      return render.overview(vehicles, tracks, studies)
+      return render.overview(vehicle_map, tracks, studies)
     except Exception as e:
-      print("ERROR: ", e)
+      raise
       return json.dumps({'error': 'Server-side error.'})
 
+class user_management:
+  # TODO: user management
+  def GET(self):
+    pass
 
+class view_study:
+  # TODO: study view
+  def GET(self):
+    pass
+
+class view_run:
+  # TODO: run view
+  def GET(self):
+    pass
 
 ##################### REST API ###########################
 
@@ -155,31 +173,64 @@ class vehicle:
 
   def POST(self):
     web.header('Content-type', 'application/json')
-    # edit vehicle if name & version exists
-    # create new if name & version correspond to something used
-    # validate processing
-    # return vehicle object
+    # edit vehicle if name and version correspond to something of status 0
+    # otherwise, create a new vehicle if
+    # - name does not exist (and provided version is 1)
+    # - name exists, and provided version is 1 + version of the last vehicle with status = 1 (e.g. never have more than one version with status 0)
+    # error otherwise
+    # TODO: validate vehicle input
+
     try:
       data = web.input()
       vehicle = {}
-      if 'id' in data:
-        id   = int(data.id)
-        vehicle = web.ctx.orm.query(Vehicle).filter(Vehicle.id==id).first()
-      elif 'name' in data and 'version' in data:
+      if 'name' in data and 'version' in data:
         name = str(data.name)
         version = int(data.version)
+        filedata = str(data.filedata)
         vehicle = web.ctx.orm.query(Vehicle).filter(Vehicle.name==name).filter(Vehicle.version==version).first()
-      else:
-        return json.dumps({'error': 'id or name/version not specified.'})
+        if vehicle:
+          print("Found your ride")
+          if vehicle.status != 0:
+            print("But it's archived.")
+            return json.dumps({'error': 'Cannot edit archived vehicles.'})
 
-      print(data, vehicle.as_dict())
-      if vehicle:
-        vehicle.filedata = data.filedata
-        vehicle.edit_date = datetime.datetime.now().isoformat()
-      else:
-        pass
+          vehicle.filedata = filedata
+          vehicle.edit_date = datetime.datetime.now().isoformat()
+          return json.dumps(vehicle.as_dict())
 
-      return json.dumps(vehicle.as_dict())
+        else:
+          vehicles = web.ctx.orm.query(Vehicle).filter(Vehicle.name==name).all()
+          if vehicles:
+            vehicle = web.ctx.orm.query(Vehicle).filter(Vehicle.name==name).filter(Vehicle.status==1).order_by(Vehicle.version.desc()).first()
+            if version != vehicle.version + 1:
+              return json.dumps({'error': 'Nonsequential vehicle version (should be V%d, recieved V%d)' % (vehicle.version + 1, version)})
+
+            vehicle = Vehicle()
+            vehicle.name = name
+            vehicle.version = version
+            vehicle.filedata = filedata
+            vehicle.edit_date = datetime.datetime.now().isoformat()
+            vehicle.status = 0
+            web.ctx.orm.add(vehicle)
+            web.ctx.orm.commit()
+            return json.dumps(vehicle.as_dict())
+          else:
+            if int(version) != 1:
+              return json.dumps({'error': 'Vehicle versions must start at 1.'})
+
+            vehicle = Vehicle()
+            vehicle.name = name
+            vehicle.version = version
+            vehicle.filedata = filedata
+            vehicle.edit_date = datetime.datetime.now().isoformat()
+            vehicle.status = 0
+            web.ctx.orm.add(vehicle)
+            web.ctx.orm.commit()
+            return json.dumps(vehicle.as_dict())
+
+      else:
+        return json.dumps({'error': 'Name/version not specified.'})
+      
     except Exception as e:
       print(e)
       return json.dumps({'error': 'Server-side error.'})
