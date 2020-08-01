@@ -296,9 +296,11 @@ class track:
       data = web.input()
       track = {}
       if 'name' in data and 'version' in data:
-        name = str(data.name)
-        version = int(data.version)
+        name     = str(data.name)
+        version  = int(data.version)
         filedata = str(data.filedata)
+        filetype = str(data.filetype)
+        unit     = str(data.unit)
         track = web.ctx.orm.query(Track).filter(Track.name==name).filter(Track.version==version).first()
         if track:
           if track.status != 0:
@@ -307,6 +309,8 @@ class track:
 
           track.filedata = filedata
           track.edit_date = datetime.datetime.now().isoformat()
+          track.filetype = filetype
+          track.unit = unit
           return json.dumps(track.as_dict())
 
         else:
@@ -320,6 +324,8 @@ class track:
             track.name = name
             track.version = version
             track.filedata = filedata
+            track.filetype = filetype
+            track.unit = unit
             track.edit_date = datetime.datetime.now().isoformat()
             track.status = 0
             web.ctx.orm.add(track)
@@ -333,6 +339,8 @@ class track:
             track.name = name
             track.version = version
             track.filedata = filedata
+            track.filetype = filetype
+            track.unit = unit
             track.edit_date = datetime.datetime.now().isoformat()
             track.status = 0
             web.ctx.orm.add(track)

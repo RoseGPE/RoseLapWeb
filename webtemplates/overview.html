@@ -178,6 +178,8 @@ $def with (vehicles, tracks, studies)
     $$("#trackEditName").prop('disabled', false);
     $$("#trackEditVersion").prop('disabled', true);
 
+    $$("#trackEditFileUpload").val('');
+
     $$("#trackEditModal").modal('show');
     
     $$("#trackEditName").val("New Track");
@@ -203,7 +205,9 @@ $def with (vehicles, tracks, studies)
         {
           "name": $$("#trackEditName").val(),
           "version": $$("#trackEditVersion").val(),
-          "filedata": $$("#trackEditText").val()
+          "filedata": $$("#trackEditText").val(),
+          "unit": $$("#trackEditUnit").val(),
+          "filetype": $$("#trackEditFileType").val()
         }
     ).then(function(data) {
       if (data.error) {
@@ -231,10 +235,14 @@ $def with (vehicles, tracks, studies)
       $$("#trackEditName").prop('disabled', true);
       $$("#trackEditVersion").prop('disabled', true);
 
+      $$("#trackEditFileUpload").val('');
+
       $$("#trackEditModal").modal('show');
 
       $$("#trackEditName").val(data.name);
       $$("#trackEditText").val(data.filedata);
+      $$("#trackEditUnit").val(data.unit);
+      $$("#trackEditFileType").val(data.filetype);
 
       $$("#trackEditVersion").html('');
       let i = 0;
@@ -259,10 +267,14 @@ $def with (vehicles, tracks, studies)
       $$("#trackEditName").prop('disabled', true);
       $$("#trackEditVersion").prop('disabled', true);
 
+      $$("#trackEditFileUpload").val('');
+
       $$("#trackEditModal").modal('show');
 
       $$("#trackEditName").val(data.name);
       $$("#trackEditText").val(data.filedata);
+      $$("#trackEditUnit").val(data.unit);
+      $$("#trackEditFileType").val(data.filetype);
 
       $$("#trackEditVersion").html('');
       $$("#trackEditVersion").append(new Option(`V$${old_version} -> V$${new_version}`, new_version))
@@ -432,6 +444,21 @@ $def with (vehicles, tracks, studies)
       $$("#errorLogModal").modal('show');
     });
   }
+
+  function track_file_upload() {
+    console.log("Uploaded file");
+
+    let file = $$("#trackEditFileUpload").prop('files')[0];
+    let fr = new FileReader();
+    fr.onload = function(e) {
+      extension = file.name.substring(file.name.lastIndexOf('.')+1);
+      text = fr.result;
+
+      $$("#trackEditText").val(text);
+      $$("#trackEditFileType").val(extension);
+    }
+    fr.readAsText(file);
+  }
 </script>
 
 <script>
@@ -507,6 +534,27 @@ $def with (vehicles, tracks, studies)
           </div>
       </div>
       <div class="modal-body">
+        <div class="form-row">
+          <div class="col-8">
+            <input type="file" style="form-control-file" id="trackEditFileUpload" class="input-group-text" onchange="track_file_upload()">
+          </div>
+          <div class="col-2">
+            <select id="trackEditFileType" class="input-group-text">
+              <option value="dxf">DXF</option>
+              <option value="csv">CSV (dist, curv)</option>
+            </select>
+          </div>
+          <div class="col-2">
+            <select id="trackEditUnit" class="input-group-text">
+              <option value="km">Kilometers</option>
+              <option value="m" selected>Meters</option>
+              <option value="mm">Millimeters</option>
+              <option value="mi">Miles</option>
+              <option value="ft">Feet</option>
+              <option value="in">Inches</option>
+            </select>
+          </div>
+        </div>
         <textarea id="trackEditText" class="textedit">Placeholder Text</textarea>
       </div>
       <div class="modal-footer">
@@ -640,6 +688,7 @@ $def with (vehicles, tracks, studies)
     return '<span class="label label-default">锁定</span>'
   }
 </script>
+
   <div class="row">
     <div class="col-sm-6">
       <!--<button id="remove" class="btn btn-light disabled">Vehicles</button>-->

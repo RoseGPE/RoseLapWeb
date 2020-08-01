@@ -39,12 +39,12 @@ class Study(Base):
   id              = Column(Integer, primary_key=True)
   # 0->1->2->3/4 Drafting, Submitted, Running, Failed, Success
   status          = Column(Integer, nullable=False, unique=False)
-  version         = Column(Integer, nullable=True,  unique=False)
+  name            = Column(String,  nullable=False, unique=False)
+  version         = Column(Integer, nullable=False, unique=False)
   runs_total      = Column(Integer, nullable=True,  unique=False)
   runs_complete   = Column(Integer, nullable=True,  unique=False)
-  name            = Column(String,  nullable=True,  unique=False)
-  filedata        = Column(String,  nullable=True,  unique=False)
-  edit_date       = Column(String,  nullable=True,  unique=False)
+  filedata        = Column(String,  nullable=False, unique=False)
+  edit_date       = Column(String,  nullable=False, unique=False)
   submission_date = Column(String,  nullable=True,  unique=False)
   completion_date = Column(String,  nullable=True,  unique=False)
   log             = Column(String,  nullable=True,  unique=False)
@@ -55,11 +55,11 @@ class Study(Base):
 class Vehicle(Base):
   __tablename__ = 'vehicle'
   id              = Column(Integer, primary_key=True)
-  version         = Column(Integer, nullable=True, unique=False)
-  name            = Column(String,  nullable=True, unique=False)
-  filedata        = Column(String,  nullable=True, unique=False)
-  edit_date       = Column(String,  nullable=True, unique=False)
-  log             = Column(String,  nullable=True, unique=False)
+  version         = Column(Integer, nullable=False, unique=False)
+  name            = Column(String,  nullable=False, unique=False)
+  filedata        = Column(String,  nullable=False, unique=False)
+  edit_date       = Column(String,  nullable=False, unique=False)
+  log             = Column(String,  nullable=True,  unique=False)
   status          = Column(Integer, nullable=False, unique=False)
 
   def as_dict(self):
@@ -68,13 +68,13 @@ class Vehicle(Base):
 class Track(Base):
   __tablename__ = 'track'
   id              = Column(Integer, primary_key=True)
-  distance        = Column(Integer, nullable=True, unique=False)
-  version         = Column(Integer, nullable=True, unique=False)
-  name            = Column(String,  nullable=True, unique=False)
-  filetype        = Column(String,  nullable=True, unique=False)
-  filedata        = Column(String,  nullable=True, unique=False)
-  edit_date       = Column(String,  nullable=True, unique=False)
-  log             = Column(String,  nullable=True, unique=False)
+  version         = Column(Integer, nullable=False, unique=False)
+  name            = Column(String,  nullable=False, unique=False)
+  filetype        = Column(String,  nullable=False, unique=False)
+  filedata        = Column(String,  nullable=False, unique=False)
+  unit            = Column(String,  nullable=False, unique=False)
+  edit_date       = Column(String,  nullable=False, unique=False)
+  log             = Column(String,  nullable=True,  unique=False)
   status          = Column(Integer, nullable=False, unique=False)
 
   def as_dict(self):
