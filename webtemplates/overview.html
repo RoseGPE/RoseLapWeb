@@ -1,4 +1,4 @@
-$def with (vehicles, tracks, studies)
+$def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
 
 <link rel="stylesheet" type="text/css" href="/static/bootstrap.min.css" />
 <link rel="stylesheet" type="text/css" href="/static/custom.css" />
@@ -10,6 +10,10 @@ $def with (vehicles, tracks, studies)
 <script type="text/javascript" src="/static/bootstrap-table.min.js" ></script>
 <script type="text/javascript" src="/static/bootstrap-table-treegrid.min.js" ></script>
 <script type="text/javascript" src="/static/jquery-treegrid.min.js" ></script>
+
+
+<link rel="stylesheet" type="text/css" href="/static/tagsinput.css" />
+<script type="text/javascript" src="/static/tagsinput.js" ></script>
 
 <script>
   function new_vehicle() {
@@ -37,11 +41,6 @@ $def with (vehicles, tracks, studies)
   }
   
   function save_vehicle() {
-    console.log({
-          "name": $$("#vehicleEditName").val(),
-          "version": $$("#vehicleEditVersion").val(),
-          "filedata": $$("#vehicleEditText").val()
-        });
     $$.post(
         "/vehicle",
         {
@@ -195,11 +194,6 @@ $def with (vehicles, tracks, studies)
   }
   
   function save_track() {
-    console.log({
-          "name": $$("#trackEditName").val(),
-          "version": $$("#trackEditVersion").val(),
-          "filedata": $$("#trackEditText").val()
-        });
     $$.post(
         "/track",
         {
@@ -308,52 +302,51 @@ $def with (vehicles, tracks, studies)
   }
 
   function new_study() {
-    $$("#studyEditModal").modal('show')
-
-    $$("#studyEditName").prop('disabled', false);
+    $$("#studyEditName").prop('disabled', true);
     $$("#studyEditVersion").prop('disabled', true);
-
     $$("#studyEditModal").modal('show');
-    
     $$("#studyEditName").val("New Study");
-    $$("#studyEditText").val("--- Insert your study data here ---");
-
     $$("#studyEditVersion").html('');
-    $$("#studyEditVersion").append(new Option(`V1`, 1));
-    $$("#studyEditVersion").val(1);
+    $$("#studyEditVersion").append(new Option(`V1`, 1))
+    $$("#studyEditVersion").val(1)
+
+    // unpack data
+
+    //fdata = JSON.parse(data.filedata)
+
+    $$("#studyEdit_vehicle").html('');
+    $$("#studyEdit_vehicle").data("valid").forEach(function(vehicle){
+      $$("#studyEdit_vehicle").append(new Option(vehicle, vehicle));
+    })
+    //$$("#studyEdit_vehicle").val(fdata.vehicle);
+
+    /*$$("#studyEdit_tracks").tagsinput('items', fdata.tracks);
+    $$("#studyEdit_vehicle").val(fdata.vehicle);
+    $$("#studyEdit_model").val(fdata.model);
+    $$("#studyEdit_sweeps").val(fdata.sweeps);
+    $$("#studyEdit_meshsize").val(fdata.meshsize);*/
   }
 
   function discard_study_edit() {
     $$("#studyEditModal").modal('hide')
   }
   
-  function save_study() {
-    $$.post(
-        "/study",
-        {
-          "name": $$("#studyEditName").val(),
-          "version": $$("#studyEditVersion").val(),
-          "filedata": $$("#studyEditText").val()
-        }
-    ).then(function(data) {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
+  function save_study(submit) {
+    fdata = {}
 
-      //  $$("#studyEditModal").modal('hide')
-      location.reload();
-    });
-  }
-  
-  function submit_study() {
+    fdata.tracks   = $$("#studyEdit_tracks").tagsinput('items');
+    fdata.vehicle  = $$("#studyEdit_vehicle").val();
+    fdata.model    = $$("#studyEdit_model").val();
+    fdata.sweeps   = $$("#studyEdit_sweeps").val();
+    fdata.meshsize = $$("#studyEdit_meshsize").val();
+
     $$.post(
         "/study",
         {
           "name": $$("#studyEditName").val(),
           "version": $$("#studyEditVersion").val(),
-          "filedata": $$("#studyEditText").val(),
-          "submit": 1 // this sets the submission
+          "filedata": JSON.stringify(fdata),
+          "submit": submit
         }
     ).then(function(data) {
       if (data.error) {
@@ -380,17 +373,30 @@ $def with (vehicles, tracks, studies)
 
       $$("#studyEditName").prop('disabled', true);
       $$("#studyEditVersion").prop('disabled', true);
-
       $$("#studyEditModal").modal('show');
-
       $$("#studyEditName").val(data.name);
-      $$("#studyEditText").val(data.filedata);
-
       $$("#studyEditVersion").html('');
-      let i = 0;
-      for (i=1; i<=data.version; i++)
-        $$("#studyEditVersion").append(new Option(`V$${i}`, i));
-      $$("#studyEditVersion").val(data.version);
+      $$("#studyEditVersion").append(new Option(`V$${version}`, version))
+      $$("#studyEditVersion").val(version)
+
+      // unpack data
+
+      fdata = JSON.parse(data.filedata);
+
+      $$("#studyEdit_vehicle").html('');
+      $$("#studyEdit_vehicle").data("valid").forEach(function(vehicle){
+        $$("#studyEdit_vehicle").append(new Option(vehicle, vehicle));
+      })
+
+      $$("#studyEdit_tracks").data("tagsinput").removeAll();
+      fdata.tracks.forEach(function(track){
+        $$("#studyEdit_tracks").data("tagsinput").add(track);
+      });
+
+      $$("#studyEdit_vehicle").val(fdata.vehicle);
+      $$("#studyEdit_model").val(fdata.model);
+      $$("#studyEdit_sweeps").val(fdata.sweeps);
+      $$("#studyEdit_meshsize").val(fdata.meshsize);
     });
   }
 
@@ -408,15 +414,32 @@ $def with (vehicles, tracks, studies)
 
       $$("#studyEditName").prop('disabled', true);
       $$("#studyEditVersion").prop('disabled', true);
-
       $$("#studyEditModal").modal('show');
-
       $$("#studyEditName").val(data.name);
-      $$("#studyEditText").val(data.filedata);
-
       $$("#studyEditVersion").html('');
       $$("#studyEditVersion").append(new Option(`V$${old_version} -> V$${new_version}`, new_version))
       $$("#studyEditVersion").val(new_version)
+
+      // unpack data
+
+      fdata = JSON.parse(data.filedata);
+
+      $$("#studyEdit_vehicle").html('');
+      $$("#studyEdit_vehicle").data("valid").forEach(function(vehicle){
+        $$("#studyEdit_vehicle").append(new Option(vehicle, vehicle));
+      })
+
+      $$("#studyEdit_tracks").data("tagsinput").removeAll();
+      fdata.tracks.forEach(function(track){
+        $$("#studyEdit_tracks").data("tagsinput").add(track);
+      });
+      
+      $$("#studyEdit_vehicle").val(fdata.vehicle);
+      $$("#studyEdit_model").val(fdata.model);
+      $$("#studyEdit_sweeps").val(fdata.sweeps);
+      $$("#studyEdit_meshsize").val(fdata.meshsize);
+
+      
     });
   }
 
@@ -446,8 +469,6 @@ $def with (vehicles, tracks, studies)
   }
 
   function track_file_upload() {
-    console.log("Uploaded file");
-
     let file = $$("#trackEditFileUpload").prop('files')[0];
     let fr = new FileReader();
     fr.onload = function(e) {
@@ -466,7 +487,6 @@ $def with (vehicles, tracks, studies)
                 $$('.tree').treegrid({
                   'initialState': 'collapsed'
                 });
-                console.log($$('.tree'));
             });
 </script>
 
@@ -581,13 +601,50 @@ $def with (vehicles, tracks, studies)
           </div>
       </div>
       <div class="modal-body">
-        <textarea id="studyEditText" class="textedit">Placeholder Text</textarea>
+        <div class="form-group row">
+          <label for="studyEdit_vehicle" class="col-sm-1 col-form-label text-right" >Vehicle</label>
+          <div class="col-sm-2">
+            <select class="input-group-text" id="studyEdit_vehicle" data-valid="${valid_vehicles}"></select>
+          </div>
+
+          <label for="studyEdit_model" class="col-sm-1 col-form-label text-right">Model</label>
+          <div class="col-sm-2">
+            <select class="input-group-text" id="studyEdit_model">
+              <option value="onetire">VKA, One Tire</option>
+            </select>
+          </div>
+
+          <label for="studyEdit_model" class="col-sm-2 col-form-label text-right">Mesh Size</label>
+          <div class="col-sm-3">
+            <div class="input-group">
+              <input type="text" class="form-control" id="studyEdit_meshsize" placeholder="Mesh Size">
+              <div class="input-group-append">
+                <div class="input-group-text">m</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="studyEdit_tracks" class="col-sm-1 col-form-label text-right">Tracks</label>
+          <div class="col-sm-11">
+            <select multiple data-role="tagsinput" id="studyEdit_tracks" data-valid="${valid_tracks}">
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="studyEdit_sweeps" class="col-sm-1 col-form-label text-right">Sweeps</label>
+          <div class="col-sm-11">
+            <textarea id="studyEdit_sweeps" class="textedit" ></textarea>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <!--<div class="alert alert-danger" id="studyErrorMsg" role="alert">Placeholder Alert</div>-->
         <button type="button" class="btn btn-danger" data-dismiss="modal" onclick="discard_study_edit()">Discard</button>
-        <button type="button" class="btn btn-primary" id="studySaveButton" onclick="save_study()">Save</button>
-        <button type="button" class="btn btn-success" id="studySubmitButton" onclick="submit_study()">Save + Submit</button>
+        <button type="button" class="btn btn-primary" id="studySaveButton" onclick="save_study(false);">Save</button>
+        <button type="button" class="btn btn-success" id="studySubmitButton" onclick="save_study(true);">Save + Submit</button>
       </div>
     </div>
   </div>
@@ -711,18 +768,18 @@ $def with (vehicles, tracks, studies)
                 treegrid-parent-${name_i} 
             "
             >
-              <td>
+              <td class="align-middle">
                 $if name_i == i:
                   <span class="treegrid-expander"></span>
                   ${name}
               </td>
-              <td>
+              <td class="align-middle">
                 V${vehicle.version}
               </td>
-              <td>${vehicle.edit_date_pars}</td>
-              <td>
+              <td class="align-middle">${vehicle.edit_date_pars}</td>
+              <td class="align-middle">
                 $if vehicle.status:
-                  <button class="btn btn-success btn-sm" onclick="derive_vehicle('${vehicle.name}', '${vehicle.version}', '${vehicles[name][0].version+1}')">View/Derive</button>
+                  <button class="btn btn-dark btn-sm" onclick="derive_vehicle('${vehicle.name}', '${vehicle.version}', '${vehicles[name][0].version+1}')">View/Derive</button>
                 $else:
                   <button class="btn btn-primary btn-sm" onclick="edit_vehicle('${vehicle.name}', '${vehicle.version}')">Edit</button>
                 $if vehicle.log:
@@ -757,16 +814,16 @@ $def with (vehicles, tracks, studies)
                 treegrid-parent-${name_i} 
             "
             >
-              <td>
+              <td class="align-middle">
                 $if name_i == i:
                   <span class="treegrid-expander"></span>
                   ${name}
               </td>
-              <td>V${track.version}</td>
-              <td>${track.edit_date_pars}</td>
-              <td>
+              <td class="align-middle">V${track.version}</td>
+              <td class="align-middle">${track.edit_date_pars}</td>
+              <td class="align-middle">
                 $if track.status:
-                  <button class="btn btn-success btn-sm" onclick="derive_track('${track.name}', '${track.version}', '${tracks[name][0].version+1}')">View/Derive</button>
+                  <button class="btn btn-dark btn-sm" onclick="derive_track('${track.name}', '${track.version}', '${tracks[name][0].version+1}')">View/Derive</button>
                 $else:
                   <button class="btn btn-primary btn-sm" onclick="edit_track('${track.name}', '${track.version}')">Edit</button>
                 $if track.log:
@@ -802,50 +859,50 @@ $def with (vehicles, tracks, studies)
           $if name_i != i:
             treegrid-parent-${name_i} 
         ">
-          <td>
+          <td class="align-middle">
             $if name_i == i:
               <span class="treegrid-expander"></span>
               ${name}
           </td>
           <td>V${study.version}</td>
           $if study.status == 0:
-            <td>
-              Drafting (Edited ${study.edit_date_pars})
-            </td><td>
+            <td class="align-middle">
+              <span class="badge badge-info">Drafting<!--(Edited ${study.edit_date_pars})--></span>
+            </td><td class="align-middle">
               <button class="btn btn-primary btn-sm" onclick="edit_study('${study.name}', '${study.version}')">Edit/Submit</button>
             </td>
           $elif study.status == 1:
-            <td>
-              Submitted (${study.submission_date_pars})
-            </td><td>
-              <button class="btn btn-success btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
+            <td class="align-middle">
+              <span class="badge badge-secondary">Submitted<!-- on ${study.submission_date_pars}--></span> 
+            </td><td class="align-middle">
+              <button class="btn btn-dark btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
             </td>
           $elif study.status == 2:
-            <td>
-              Running (${study.runs_complete}/${study.runs_total})
-            </td><td>
+            <td class="align-middle">
+              <span class="badge badge-primary">Running (${study.runs_complete}/${study.runs_total})</span>
+            </td><td class="align-middle">
               <button class="btn btn-sm btn-info" onclick="errorlog_study('${study.name}', '${study.version}')">Log</button>
-              <button class="btn btn-success btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
+              <button class="btn btn-dark btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
             </td>
           $elif study.status == 3:
-            <td>
-              Failed (${study.completion_date_pars})
-            </td><td>
+            <td class="align-middle">
+              <span class="badge badge-danger">Failed<!-- on (${study.completion_date_pars})--></span>
+            </td><td class="align-middle">
               <button class="btn btn-sm btn-warning" onclick="errorlog_study('${study.name}', '${study.version}')">Log</button>
-              <button class="btn btn-success btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
+              <button class="btn btn-dark btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
             </td>
           $elif study.status == 4:
-            <td>
-              Finished (${study.completion_date_pars})
-            </td><td>
+            <td class="align-middle">
+              <span class="badge badge-success">Finished<!-- on(${study.completion_date_pars})--></span>
+            </td><td class="align-middle">
               <button class="btn btn-sm btn-info" onclick="errorlog_study('${study.name}', '${study.version}')">Log</button>
               <button class="btn btn-sm btn-success">Results</button>
-              <button class="btn btn-success btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
+              <button class="btn btn-dark btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
             </td>
           $else:
-            <td>
+            <td class="align-middle">
               Invalid Status
-            </td><td></td>
+            </td><td class="align-middle"></td>
           </tr>
           $ i = i + 1
     <tr>

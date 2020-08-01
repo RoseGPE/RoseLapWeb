@@ -153,7 +153,7 @@ class overview:
           study_map[study.name] = [study]
       # TODO: format timestamps
 
-      return render.overview(vehicle_map, track_map, study_map)
+      return render.overview(vehicle_map, track_map, study_map, json.dumps(list(vehicle_map.keys())), json.dumps(list(track_map.keys())))
     except Exception as e:
       raise
       return json.dumps({'error': 'Server-side error.'})
@@ -427,7 +427,7 @@ class study:
             study.status = 0
             web.ctx.orm.add(study)
             
-        if 'submit' in data:
+        if 'submit' in data and data.submit.lower() == 'true':
           study.status = 1
           study.submission_date = datetime.datetime.now().isoformat()
           # TODO: dispatch for processing
