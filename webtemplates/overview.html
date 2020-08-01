@@ -480,6 +480,11 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
     }
     fr.readAsText(file);
   }
+
+  function add_track_to_study() {
+    $$("#studyEdit_tracks").data("tagsinput").add($$("#studyEdit_tracks_dropdown").val());
+    $$("#studyEdit_tracks_dropdown").val('');
+  }
 </script>
 
 <script>
@@ -601,22 +606,22 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
           </div>
       </div>
       <div class="modal-body">
-        <div class="form-group row">
+        <div class="form-group row align-middle">
           <label for="studyEdit_vehicle" class="col-sm-1 col-form-label text-right" >Vehicle</label>
-          <div class="col-sm-2">
+          <div class="col-sm-2 align-middle">
             <select class="input-group-text" id="studyEdit_vehicle" data-valid="${valid_vehicles}"></select>
           </div>
 
           <label for="studyEdit_model" class="col-sm-1 col-form-label text-right">Model</label>
-          <div class="col-sm-2">
+          <div class="col-sm-2 align-middle">
             <select class="input-group-text" id="studyEdit_model">
               <option value="onetire">VKA, One Tire</option>
             </select>
           </div>
 
           <label for="studyEdit_model" class="col-sm-2 col-form-label text-right">Mesh Size</label>
-          <div class="col-sm-3">
-            <div class="input-group">
+          <div class="col-sm-3 align-middle">
+            <div class="input-group align-middle">
               <input type="text" class="form-control" id="studyEdit_meshsize" placeholder="Mesh Size">
               <div class="input-group-append">
                 <div class="input-group-text">m</div>
@@ -625,10 +630,17 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
           </div>
         </div>
 
-        <div class="form-group row">
+        <div class="form-group row align-middle">
           <label for="studyEdit_tracks" class="col-sm-1 col-form-label text-right">Tracks</label>
-          <div class="col-sm-11">
+          <div class="col-sm-9">
             <select multiple data-role="tagsinput" id="studyEdit_tracks" data-valid="${valid_tracks}">
+            </select>
+          </div>
+          <div class="col-sm-2">
+            <select class="input-group-text" id="studyEdit_tracks_dropdown" data-valid="${valid_tracks}" onchange="add_track_to_study()">
+              <option value="" disabled >Add track...</option>
+              $for name in tracks:
+                <option value="$name" >$name</option>
             </select>
           </div>
         </div>
