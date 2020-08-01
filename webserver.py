@@ -22,6 +22,8 @@ urls = (
   '/(.*)', 'index'
 )
 
+TIMEFMT = '%d-%b-%Y %H:%M'
+
 ##### DATABASE SETUP #####
 
 db_session = scoped_session(sessionmaker(bind=engine))
@@ -121,15 +123,37 @@ class overview:
       vehicles = web.ctx.orm.query(Vehicle).order_by(Vehicle.version.desc()).all()
       vehicle_map = {}
       for vehicle in vehicles:
+        vehicle.edit_date_pars = datetime.datetime.fromisoformat(vehicle.edit_date).strftime(TIMEFMT).upper()
         if vehicle.name in vehicle_map:
           vehicle_map[vehicle.name].append(vehicle)
         else:
           vehicle_map[vehicle.name] = [vehicle]
-      tracks   = web.ctx.orm.query(Track).all()
-      studies  = web.ctx.orm.query(Study).all()
+
+      tracks = web.ctx.orm.query(Track).order_by(Track.version.desc()).all()
+      track_map = {}
+      for track in tracks:
+        track.edit_date_pars = datetime.datetime.fromisoformat(track.edit_date).strftime(TIMEFMT).upper()
+        if track.name in track_map:
+          track_map[track.name].append(track)
+        else:
+          track_map[track.name] = [track]
+
+      studies = web.ctx.orm.query(Study).order_by(Study.version.desc()).all()
+      study_map = {}
+      for study in studies:
+        if study.edit_date:
+          study.edit_date_pars = datetime.datetime.fromisoformat(study.edit_date).strftime(TIMEFMT).upper()
+        if study.submission_date:
+          study.submission_date_pars = datetime.datetime.fromisoformat(study.submission_date).strftime(TIMEFMT).upper()
+        if study.completion_date:
+          study.completion_date_pars = datetime.datetime.fromisoformat(study.completion_date).strftime(TIMEFMT).upper()
+        if study.name in study_map:
+          study_map[study.name].append(study)
+        else:
+          study_map[study.name] = [study]
       # TODO: format timestamps
 
-      return render.overview(vehicle_map, tracks, studies)
+      return render.overview(vehicle_map, track_map, study_map)
     except Exception as e:
       raise
       return json.dumps({'error': 'Server-side error.'})
@@ -189,7 +213,6 @@ class vehicle:
         filedata = str(data.filedata)
         vehicle = web.ctx.orm.query(Vehicle).filter(Vehicle.name==name).filter(Vehicle.version==version).first()
         if vehicle:
-          print("Found your ride")
           if vehicle.status != 0:
             print("But it's archived.")
             return json.dumps({'error': 'Cannot edit archived vehicles.'})
@@ -257,11 +280,67 @@ class track:
 
   def POST(self):
     web.header('Content-type', 'application/json')
-    # edit track if name and version exists
-    # error if name & version correspond to something used
-    # new track if not
-    # return track object
-    pass
+
+    # edit track if name and version correspond to something of status 0
+    # otherwise, create a new track if
+    # - name does not exist (and provided version is 1)
+    # - name exists, and provided version is 1 + version of the last track with status = 1 (e.g. never have more than one version with status 0)
+    # error otherwise
+    # TODO: validate track input
+
+    try:
+      data = web.input()
+      track = {}
+      if 'name' in data and 'version' in data:
+        name = str(data.name)
+        version = int(data.version)
+        filedata = str(data.filedata)
+        track = web.ctx.orm.query(Track).filter(Track.name==name).filter(Track.version==version).first()
+        if track:
+          if track.status != 0:
+            print("But it's archived.")
+            return json.dumps({'error': 'Cannot edit archived tracks.'})
+
+          track.filedata = filedata
+          track.edit_date = datetime.datetime.now().isoformat()
+          return json.dumps(track.as_dict())
+
+        else:
+          tracks = web.ctx.orm.query(Track).filter(Track.name==name).all()
+          if tracks:
+            track = web.ctx.orm.query(Track).filter(Track.name==name).filter(Track.status==1).order_by(Track.version.desc()).first()
+            if version != track.version + 1:
+              return json.dumps({'error': 'Nonsequential track version (should be V%d, recieved V%d)' % (track.version + 1, version)})
+
+            track = Track()
+            track.name = name
+            track.version = version
+            track.filedata = filedata
+            track.edit_date = datetime.datetime.now().isoformat()
+            track.status = 0
+            web.ctx.orm.add(track)
+            web.ctx.orm.commit()
+            return json.dumps(track.as_dict())
+          else:
+            if int(version) != 1:
+              return json.dumps({'error': 'Track versions must start at 1.'})
+
+            track = Track()
+            track.name = name
+            track.version = version
+            track.filedata = filedata
+            track.edit_date = datetime.datetime.now().isoformat()
+            track.status = 0
+            web.ctx.orm.add(track)
+            web.ctx.orm.commit()
+            return json.dumps(track.as_dict())
+
+      else:
+        return json.dumps({'error': 'Name/version not specified.'})
+      
+    except Exception as e:
+      print('track.POST', e)
+      return json.dumps({'error': 'Server-side error.'})
 
 class study:
   def GET(self):
@@ -285,11 +364,69 @@ class study:
 
   def POST(self):
     web.header('Content-type', 'application/json')
-    # edit study if not submitted
-    # error if name and version correspond to something submitted
-    # new study if not
-    # return study object
-    pass
+
+    # edit study if name and version correspond to something of status 0
+    # otherwise, create a new study if
+    # - name does not exist (and provided version is 1)
+    # - name exists, and provided version is 1 + version of the last study with status = 1 (e.g. never have more than one version with status 0)
+    # error otherwise
+    # TODO: validate study input
+
+    try:
+      data = web.input()
+      study = {}
+      if 'name' in data and 'version' in data:
+        name = str(data.name)
+        version = int(data.version)
+        filedata = str(data.filedata)
+        study = web.ctx.orm.query(Study).filter(Study.name==name).filter(Study.version==version).first()
+        if study:
+          if study.status != 0:
+            return json.dumps({'error': 'Cannot edit archived studies.'})
+
+          study.filedata = filedata
+          study.edit_date = datetime.datetime.now().isoformat()
+
+        else:
+          studies = web.ctx.orm.query(Study).filter(Study.name==name).all()
+          if studies:
+            study = web.ctx.orm.query(Study).filter(Study.name==name).filter(Study.status==1).order_by(Study.version.desc()).first()
+            if version != study.version + 1:
+              return json.dumps({'error': 'Nonsequential study version (should be V%d, recieved V%d)' % (study.version + 1, version)})
+
+            study = Study()
+            study.name = name
+            study.version = version
+            study.filedata = filedata
+            study.edit_date = datetime.datetime.now().isoformat()
+            study.status = 0
+            web.ctx.orm.add(study)
+          else:
+            if int(version) != 1:
+              return json.dumps({'error': 'Study versions must start at 1.'})
+
+            study = Study()
+            study.name = name
+            study.version = version
+            study.filedata = filedata
+            study.edit_date = datetime.datetime.now().isoformat()
+            study.status = 0
+            web.ctx.orm.add(study)
+            
+        if 'submit' in data:
+          study.status = 1
+          study.submission_date = datetime.datetime.now().isoformat()
+          # TODO: dispatch for processing
+
+        web.ctx.orm.commit()
+        return json.dumps(study.as_dict())
+
+      else:
+        return json.dumps({'error': 'Name/version not specified.'})
+      
+    except Exception as e:
+      print(e)
+      return json.dumps({'error': 'Server-side error.'})
 
 class submit:
   def POST(self):

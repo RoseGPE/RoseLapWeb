@@ -71,6 +71,7 @@ class Track(Base):
   distance        = Column(Integer, nullable=True, unique=False)
   version         = Column(Integer, nullable=True, unique=False)
   name            = Column(String,  nullable=True, unique=False)
+  filetype        = Column(String,  nullable=True, unique=False)
   filedata        = Column(String,  nullable=True, unique=False)
   edit_date       = Column(String,  nullable=True, unique=False)
   log             = Column(String,  nullable=True, unique=False)
