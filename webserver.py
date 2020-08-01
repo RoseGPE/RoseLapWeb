@@ -178,6 +178,7 @@ class view_run:
 class vehicle:
   def GET(self):
     web.header('Content-type', 'application/json')
+    # TODO: auth selectors
     try:
       data = web.input()
       vehicle = {}
@@ -197,6 +198,7 @@ class vehicle:
 
   def POST(self):
     web.header('Content-type', 'application/json')
+    # TODO: auth selectors
     # edit vehicle if name and version correspond to something of status 0
     # otherwise, create a new vehicle if
     # - name does not exist (and provided version is 1)
@@ -260,6 +262,7 @@ class vehicle:
 
 class track:
   def GET(self):
+    # TODO: auth selectors
     web.header('Content-type', 'application/json')
     try:
       data = web.input()
@@ -279,6 +282,7 @@ class track:
       return json.dumps({'error': 'Server-side error.'})
 
   def POST(self):
+    # TODO: auth selectors
     web.header('Content-type', 'application/json')
 
     # edit track if name and version correspond to something of status 0
@@ -344,6 +348,7 @@ class track:
 
 class study:
   def GET(self):
+    # TODO: auth selectors
     web.header('Content-type', 'application/json')
     try:
       data = web.input()
@@ -363,6 +368,7 @@ class study:
       return json.dumps({'error': 'Server-side error.'})
 
   def POST(self):
+    # TODO: auth selectors
     web.header('Content-type', 'application/json')
 
     # edit study if name and version correspond to something of status 0
