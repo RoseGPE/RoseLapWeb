@@ -10,3 +10,12 @@
 
 .treegrid-expander-expanded{background-image: url(/static/collapse.png); }
 .treegrid-expander-collapsed{background-image: url(/static/expand.png);}
+
+.align-middle {
+	vertical-align: bottom;
+}
+
+.inline-headers h2, .inline-headers h4, .inline-headers h3, .inline-headers h1, .inline-headers h5 {
+    display: inline-block;
+    vertical-align: middle;
+}

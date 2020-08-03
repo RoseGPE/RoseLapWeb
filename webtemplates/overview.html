@@ -1,540 +1,191 @@
 $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
 
-<link rel="stylesheet" type="text/css" href="/static/bootstrap.min.css" />
-<link rel="stylesheet" type="text/css" href="/static/custom.css" />
-<link rel="stylesheet" type="text/css" href="/static/jquery.treegrid.min.css" />
-
-<script type="text/javascript" src="/static/jquery.min.js" ></script>
-<script type="text/javascript" src="/static/bootstrap.min.js" ></script>
-<script type="text/javascript" src="/static/js-yaml.min.js" ></script>
-<script type="text/javascript" src="/static/bootstrap-table.min.js" ></script>
-<script type="text/javascript" src="/static/bootstrap-table-treegrid.min.js" ></script>
-<script type="text/javascript" src="/static/jquery-treegrid.min.js" ></script>
-
-
-<link rel="stylesheet" type="text/css" href="/static/tagsinput.css" />
-<script type="text/javascript" src="/static/tagsinput.js" ></script>
-
-<script>
-  function new_vehicle() {
-    $$("#vehicleEditModal").modal('show')
-
-    $$("#vehicleEditName").prop('disabled', false);
-    $$("#vehicleEditVersion").prop('disabled', true);
-
-    $$("#vehicleEditModal").modal('show');
-    $$("#vehicleEditText").keyup(validate_json_vehicle);
-    $$("#vehicleEditText").change(validate_json_vehicle);
-    
-    $$("#vehicleEditName").val("New Vehicle");
-    $$("#vehicleEditText").val("--- Insert your YAML here ---");
-
-    $$("#vehicleEditVersion").html('');
-    $$("#vehicleEditVersion").append(new Option(`V1`, 1));
-    $$("#vehicleEditVersion").val(1);
-
-    validate_json_vehicle();
-  }
-
-  function discard_vehicle_edit() {
-    $$("#vehicleEditModal").modal('hide')
-  }
-  
-  function save_vehicle() {
-    $$.post(
-        "/vehicle",
-        {
-          "name": $$("#vehicleEditName").val(),
-          "version": $$("#vehicleEditVersion").val(),
-          "filedata": $$("#vehicleEditText").val()
-        }
-    ).then(function(data) {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      //  $$("#vehicleEditModal").modal('hide')
-      location.reload();
-    });
-  }
-
-  function edit_vehicle(name, version) {
-    $$.get("/vehicle",
-      {
-        "name": name,
-        "version": version
-      }
-    ).then(function(data) {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      $$("#vehicleEditName").prop('disabled', true);
-      $$("#vehicleEditVersion").prop('disabled', true);
-
-      $$("#vehicleEditModal").modal('show');
-      $$("#vehicleEditText").keyup(validate_json_vehicle);
-      $$("#vehicleEditText").change(validate_json_vehicle);
-
-      $$("#vehicleEditName").val(data.name);
-      $$("#vehicleEditText").val(data.filedata);
-
-      $$("#vehicleEditVersion").html('');
-      let i = 0;
-      for (i=1; i<=data.version; i++)
-        $$("#vehicleEditVersion").append(new Option(`V$${i}`, i))
-      $$("#vehicleEditVersion").val(data.version)
-
-      validate_json_vehicle();
-    });
-  }
-
-  function derive_vehicle(name, old_version, new_version) {
-    $$.get("/vehicle",
-      {
-        "name": name,
-        "version": old_version
-      }
-    ).then(function(data) {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      $$("#vehicleEditName").prop('disabled', true);
-      $$("#vehicleEditVersion").prop('disabled', true);
-
-      $$("#vehicleEditModal").modal('show');
-      $$("#vehicleEditText").keyup(validate_json_vehicle);
-      $$("#vehicleEditText").change(validate_json_vehicle);
-
-      $$("#vehicleEditName").val(data.name);
-      $$("#vehicleEditText").val(data.filedata);
-
-      $$("#vehicleEditVersion").html('');
-      $$("#vehicleEditVersion").append(new Option(`V$${old_version} -> V$${new_version}`, new_version))
-      $$("#vehicleEditVersion").val(new_version)
-
-      validate_json_vehicle();
-    });
-  }
-
-  function validate_json_vehicle() {
-    let txt = $$("#vehicleEditText").val();
-    try {
-      obj = jsyaml.load(txt);
-      
-      $$("#vehicleErrorMsg").alert()
-      $$("#vehicleErrorMsg").html(`Valid YAML (may not be fully formed, but syntax is correct)`);
-      $$("#vehicleErrorMsg").removeClass('alert-danger');
-      $$("#vehicleErrorMsg").addClass('alert-success');
-
-      $$("#vehicleSaveButton").html('Save');
-      $$("#vehicleSaveButton").removeClass('btn-warning');
-      $$("#vehicleSaveButton").addClass('btn-primary');
-    } catch (error) {
-      $$("#vehicleErrorMsg").alert()
-      $$("#vehicleErrorMsg").html(`ERROR: $${error.message}`);
-      $$("#vehicleErrorMsg").addClass('alert-danger');
-      $$("#vehicleErrorMsg").removeClass('alert-success');
-
-      $$("#vehicleSaveButton").html('Save (with errors)');
-      $$("#vehicleSaveButton").addClass('btn-warning');
-      $$("#vehicleSaveButton").removeClass('btn-primary');
-    }
-  }
-
-  function errorlog_vehicle(name, version) {
-    $$.get("/vehicle",
-      {
-        "name": name,
-        "version": version
-      }
-    ).then(function(data) {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      $$("#errorLogType").val("Vehicle Error Log");
-      $$("#errorLogTitle").val(data.name);
-
-      $$("#errorLogVersion").html('');
-      $$("#errorLogVersion").append(new Option(`V$${data.version}`, data.version))
-      $$("#errorLogVersion").val(data.version)
-
-      $$("#errorLogBody").val(data.log)
-
-      $$("#errorLogModal").modal('show');
-    });
-  }
-
-  function new_track() {
-    $$("#trackEditModal").modal('show')
-
-    $$("#trackEditName").prop('disabled', false);
-    $$("#trackEditVersion").prop('disabled', true);
-
-    $$("#trackEditFileUpload").val('');
-
-    $$("#trackEditModal").modal('show');
-    
-    $$("#trackEditName").val("New Track");
-    $$("#trackEditText").val("--- Insert your track data here ---");
-
-    $$("#trackEditVersion").html('');
-    $$("#trackEditVersion").append(new Option(`V1`, 1));
-    $$("#trackEditVersion").val(1);
-  }
-
-  function discard_track_edit() {
-    $$("#trackEditModal").modal('hide')
-  }
-  
-  function save_track() {
-    $$.post(
-        "/track",
-        {
-          "name": $$("#trackEditName").val(),
-          "version": $$("#trackEditVersion").val(),
-          "filedata": $$("#trackEditText").val(),
-          "unit": $$("#trackEditUnit").val(),
-          "filetype": $$("#trackEditFileType").val()
-        }
-    ).then(function(data) {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      //  $$("#trackEditModal").modal('hide')
-      location.reload();
-    });
-  }
-
-  function edit_track(name, version) {
-    $$.get("/track",
-      {
-        "name": name,
-        "version": version
-      }
-    ).then(function(data) {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      $$("#trackEditName").prop('disabled', true);
-      $$("#trackEditVersion").prop('disabled', true);
-
-      $$("#trackEditFileUpload").val('');
-
-      $$("#trackEditModal").modal('show');
-
-      $$("#trackEditName").val(data.name);
-      $$("#trackEditText").val(data.filedata);
-      $$("#trackEditUnit").val(data.unit);
-      $$("#trackEditFileType").val(data.filetype);
-
-      $$("#trackEditVersion").html('');
-      let i = 0;
-      for (i=1; i<=data.version; i++)
-        $$("#trackEditVersion").append(new Option(`V$${i}`, i));
-      $$("#trackEditVersion").val(data.version);
-    });
-  }
-
-  function derive_track(name, old_version, new_version) {
-    $$.get("/track",
-      {
-        "name": name,
-        "version": old_version
-      }
-    ).then(function(data) {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      $$("#trackEditName").prop('disabled', true);
-      $$("#trackEditVersion").prop('disabled', true);
-
-      $$("#trackEditFileUpload").val('');
-
-      $$("#trackEditModal").modal('show');
-
-      $$("#trackEditName").val(data.name);
-      $$("#trackEditText").val(data.filedata);
-      $$("#trackEditUnit").val(data.unit);
-      $$("#trackEditFileType").val(data.filetype);
-
-      $$("#trackEditVersion").html('');
-      $$("#trackEditVersion").append(new Option(`V$${old_version} -> V$${new_version}`, new_version))
-      $$("#trackEditVersion").val(new_version)
-    });
-  }
-
-  function errorlog_track(name, version) {
-    $$.get("/track",
-      {
-        "name": name,
-        "version": version
-      }
-    ).then(function(data) {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      $$("#errorLogType").val("Track Error Log");
-      $$("#errorLogTitle").val(data.name);
-
-      $$("#errorLogVersion").html('');
-      $$("#errorLogVersion").append(new Option(`V$${data.version}`, data.version))
-      $$("#errorLogVersion").val(data.version)
-
-      $$("#errorLogBody").val(data.log)
-
-      $$("#errorLogModal").modal('show');
-    });
-  }
-
-  function new_study() {
-    $$("#studyEditName").prop('disabled', true);
-    $$("#studyEditVersion").prop('disabled', true);
-    $$("#studyEditModal").modal('show');
-    $$("#studyEditName").val("New Study");
-    $$("#studyEditVersion").html('');
-    $$("#studyEditVersion").append(new Option(`V1`, 1))
-    $$("#studyEditVersion").val(1)
-
-    // unpack data
-
-    //fdata = JSON.parse(data.filedata)
-
-    $$("#studyEdit_vehicle").html('');
-    $$("#studyEdit_vehicle").data("valid").forEach(function(vehicle){
-      $$("#studyEdit_vehicle").append(new Option(vehicle, vehicle));
-    })
-    //$$("#studyEdit_vehicle").val(fdata.vehicle);
-
-    /*$$("#studyEdit_tracks").tagsinput('items', fdata.tracks);
-    $$("#studyEdit_vehicle").val(fdata.vehicle);
-    $$("#studyEdit_model").val(fdata.model);
-    $$("#studyEdit_sweeps").val(fdata.sweeps);
-    $$("#studyEdit_meshsize").val(fdata.meshsize);*/
-  }
-
-  function discard_study_edit() {
-    $$("#studyEditModal").modal('hide')
-  }
-  
-  function save_study(submit) {
-    fdata = {}
-
-    fdata.tracks   = $$("#studyEdit_tracks").tagsinput('items');
-    fdata.vehicle  = $$("#studyEdit_vehicle").val();
-    fdata.model    = $$("#studyEdit_model").val();
-    fdata.sweeps   = $$("#studyEdit_sweeps").val();
-    fdata.meshsize = $$("#studyEdit_meshsize").val();
-
-    $$.post(
-        "/study",
-        {
-          "name": $$("#studyEditName").val(),
-          "version": $$("#studyEditVersion").val(),
-          "filedata": JSON.stringify(fdata),
-          "submit": submit
-        }
-    ).then(function(data) {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      //  $$("#studyEditModal").modal('hide')
-      location.reload();
-    });
-  }
-
-  function edit_study(name, version) {
-    $$.get("/study",
-      {
-        "name": name,
-        "version": version
-      }
-    ).then(function(data) {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      $$("#studyEditName").prop('disabled', true);
-      $$("#studyEditVersion").prop('disabled', true);
-      $$("#studyEditModal").modal('show');
-      $$("#studyEditName").val(data.name);
-      $$("#studyEditVersion").html('');
-      $$("#studyEditVersion").append(new Option(`V$${version}`, version))
-      $$("#studyEditVersion").val(version)
-
-      // unpack data
-
-      fdata = JSON.parse(data.filedata);
-
-      $$("#studyEdit_vehicle").html('');
-      $$("#studyEdit_vehicle").data("valid").forEach(function(vehicle){
-        $$("#studyEdit_vehicle").append(new Option(vehicle, vehicle));
-      })
-
-      $$("#studyEdit_tracks").data("tagsinput").removeAll();
-      fdata.tracks.forEach(function(track){
-        $$("#studyEdit_tracks").data("tagsinput").add(track);
-      });
-
-      $$("#studyEdit_vehicle").val(fdata.vehicle);
-      $$("#studyEdit_model").val(fdata.model);
-      $$("#studyEdit_sweeps").val(fdata.sweeps);
-      $$("#studyEdit_meshsize").val(fdata.meshsize);
-    });
-  }
-
-  function derive_study(name, old_version, new_version) {
-    $$.get("/study",
-      {
-        "name": name,
-        "version": old_version
-      }
-    ).then(function(data) {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      $$("#studyEditName").prop('disabled', true);
-      $$("#studyEditVersion").prop('disabled', true);
-      $$("#studyEditModal").modal('show');
-      $$("#studyEditName").val(data.name);
-      $$("#studyEditVersion").html('');
-      $$("#studyEditVersion").append(new Option(`V$${old_version} -> V$${new_version}`, new_version))
-      $$("#studyEditVersion").val(new_version)
-
-      // unpack data
-
-      fdata = JSON.parse(data.filedata);
-
-      $$("#studyEdit_vehicle").html('');
-      $$("#studyEdit_vehicle").data("valid").forEach(function(vehicle){
-        $$("#studyEdit_vehicle").append(new Option(vehicle, vehicle));
-      })
-
-      $$("#studyEdit_tracks").data("tagsinput").removeAll();
-      fdata.tracks.forEach(function(track){
-        $$("#studyEdit_tracks").data("tagsinput").add(track);
-      });
-      
-      $$("#studyEdit_vehicle").val(fdata.vehicle);
-      $$("#studyEdit_model").val(fdata.model);
-      $$("#studyEdit_sweeps").val(fdata.sweeps);
-      $$("#studyEdit_meshsize").val(fdata.meshsize);
-
-      
-    });
-  }
-
-  function errorlog_study(name, version) {
-    $$.get("/study",
-      {
-        "name": name,
-        "version": version
-      }
-    ).then(function(data) {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      $$("#errorLogType").val("Study Error Log");
-      $$("#errorLogTitle").val(data.name);
-
-      $$("#errorLogVersion").html('');
-      $$("#errorLogVersion").append(new Option(`V$${data.version}`, data.version))
-      $$("#errorLogVersion").val(data.version)
-
-      $$("#errorLogBody").val(data.log)
-
-      $$("#errorLogModal").modal('show');
-    });
-  }
-
-  function track_file_upload() {
-    let file = $$("#trackEditFileUpload").prop('files')[0];
-    let fr = new FileReader();
-    fr.onload = function(e) {
-      extension = file.name.substring(file.name.lastIndexOf('.')+1);
-      text = fr.result;
-
-      $$("#trackEditText").val(text);
-      $$("#trackEditFileType").val(extension);
-    }
-    fr.readAsText(file);
-  }
-
-  function add_track_to_study() {
-    $$("#studyEdit_tracks").data("tagsinput").add($$("#studyEdit_tracks_dropdown").val());
-    $$("#studyEdit_tracks_dropdown").val('');
-  }
-</script>
+<script type="text/javascript" src="/static/overview.js" ></script>
 
 <script>
   $$(document).ready(function() {
                 $$('.tree').treegrid({
                   'initialState': 'collapsed'
                 });
+                $$('.editable').editable({
+                  type: 'text',
+                  title: '',
+                  mode: 'inline',
+                  toggle: 'click',
+                  showbuttons: false,
+                  placeholder: "undefined"
+                }).on('shown', function(ev, editable) {
+                    setTimeout(function() {
+                        editable.input.$$input.select();
+                    },0);
+                });
             });
 </script>
-
-<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
-  <ul class="navbar-nav">
-    <li class="navbar-brand">
-      <a class=" nav-link disabled">
-        RoseLap
-      </a>
-    </li>
-  </ul>
-  <ul class="navbar-nav ml-auto mr-1">
-    <li class="nav-item">
-      <a class=" nav-link disabled">
-        User: $ctx.username
-      </a>
-    </li>
-    <li class="nav-item">
-      <a href="/logout" class="nav-link btn btn-danger">
-        Logout
-      </a>
-    </li>
-  </ul>
-</nav>
-<br/>
 
 <!-- Modals -->
 <div class="modal fade bd-example-modal-lg" id="vehicleEditModal" tabindex="-1" role="dialog" aria-labelledby="vehicleEditModal" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
-      <div class="modal-header input-group mb-3">
-          <div class="input-group-prepend">
-            <span class="input-group-text">Editing Vehicle</span>
-          </div>
+      <div class="modal-header">
+        <div class="input-group">
+          <div class="input-group-addon" id="vehicleEditType">Edit Vehicle</div>
           <input id="vehicleEditName" type="text" class="form-control" placeholder="" aria-label="Vehicle Name" aria-describedby="basic-addon1" disabled>
-          <div class="input-group-append">
-            <select class="input-group-text" id="vehicleEditVersion" disabled>
-            </select>
+          <div class="input-group-addon" id="vehicleEditVersion" ></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-sm-6">
+          <div class="modal-body">
+            <h4>Mass</h4>
+            <hr class="solid">
+
+            <table class="table table-bordered table-striped">
+              <tr>
+                <td width="40%">Mass</td>
+                <td width="30%"><a href="#" id="vehicleEdit_mass.mass" class="editable"></a></td>
+                <td width="30%"><b>kg</b></td>
+              </tr>
+              <tr>
+                <td>CG Position</td>
+                <td>[<a href="#" id="vehicleEdit_mass.cg" class="editable"></a>]</td>
+                <td>[x,y,z] <b>m</b></td>
+              </tr>
+              <tr>
+                <td>MOI About CG</td>
+                <td>[<a href="#" id="vehicleEdit_mass.moi" class="editable"></a>]</td>
+                <td>[x,y,z] <b>kg m^2</b></td>
+              </tr>
+            </table>
           </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="modal-body">
+            <h4>Brakes</h4>
+            <hr class="solid">
+
+            <table class="table table-bordered table-striped">
+              <tr>
+                <td width="50%">Brake Mode</td>
+                <td width="50%" colspan=2 ><a href="#" data-type="select" id="vehicleEdit_brakes.mode" class="editable" data-source="[{value: 'fixed', text: 'Fixed Bias'}, {value: 'perfect', text: 'Perfect Bias'}]" data-value="perfect" ></a></td>
+              </tr>
+              <tr id="vehicleEditRow_brakes.front_bias">
+                <td>Front Bias</td>
+                <td><a href="#" id="vehicleEdit_brakes.front_bias" class="editable"></a></td>
+                <td><b>%</b></td>
+              </tr>
+            </table>
+          </div>
+        </div>
       </div>
-      <div class="modal-body">
-        <textarea id="vehicleEditText" class="textedit" onchange="validate_json_vehicle()">Placeholder Text</textarea>
+
+      <div class="row">
+      $for axle in ['front', 'rear']:
+        <div class="col-sm-6">
+        $ Axle = axle.capitalize()
+        <div class="modal-body">
+          <div class="inline-headers">
+            <h4>${Axle} Tires</h4>
+            $if axle == 'rear':
+              <h5 style="float: right;"><label class="checkbox-inline"><input type="checkbox" class="checkbox" onclick="toggle_front_rear_mirror()" />Same as Front</label></h5>
+          </div>
+          <hr class="solid">
+          
+          
+
+          <table class="table table-bordered table-striped">
+            <tr>
+              <td width="50%">Track Width</td>
+              <td width="30%"><a href="#" id="vehicleEdit_${axle}_axle.y" class="editable"></a></td>
+              <td width="20%"><b>(m)</b></td>
+            </tr>
+            <tr>
+              <td>Axle Position</td>
+              <td><a href="#" id="vehicleEdit_${axle}_axle.x" class="editable"></a></td>
+              <td><b>m</b></td>
+            </tr>
+            <tr>
+              <td>Tire Model</td>
+              <td colspan=2 ><a data-type="select" id="vehicleEdit_${axle}_axle.model" data-source="[{value: 'mu', text: 'Coloumb'}]" data-value="mu" class="editable"></a></td>
+            </tr>
+            <tr id="vehicleEditRow_${axle}_mu">
+              <td>Coloumb Friction</td>
+              <td><a data-type="select" id="vehicleEdit_${axle}_mu" class="editable"></a></td>
+              <td><b>N / N</b></td>
+            </tr>
+          </table>
+        </div>
+        </div>
       </div>
+
+      <div class="row">
+        <div class="col-sm-6">
+          <div class="modal-body">
+            <h4>Powertrain</h4>
+            <hr class="solid">
+
+            <table class="table table-bordered table-striped">
+              <tr>
+                <td width="50%">Engine Crank RPM Map</td>
+                <td width="30%">[<a href="#" id="vehicleEdit_powertrain.omega_map" class="editable"></a>]</td>
+                <td width="20%"><b>RPM</b></td>
+              </tr>
+              <tr>
+                <td>Engine Crank Torque Map</td>
+                <td>[<a href="#" id="vehicleEdit_powertrain.torque_map" class="editable"></a>]</td>
+                <td><b>N-m</b></td>
+              </tr>
+              <tr>
+                <td>Engine Power Consumption Map</td>
+                <td>[<a href="#" id="vehicleEdit_powertrain.power_map" class="editable"></a>]</td>
+                <td><b>N-m</b></td>
+              </tr>
+              <tr>
+                <td>Transmission Type</td>
+                <td><a href="#" data-type="select" id="vehicleEdit_powertrain.trans_gears" class="editable" data-source="[{value: 'sequential', text: 'Sequential'}, {value: 'manual', text: 'Manual'}, {value: 'cvt', text: 'CVT'}]" data-value="sequential" ></a></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>Final Drive Ratio</td>
+                <td><a href="#" id="vehicleEdit_powertrain.gear_ratio" class="editable"></a></td>
+                <td></td>
+              </tr>
+              <tr id="vehicleEditRow_powertrain.shift_time">
+                <td>Shift Time</td>
+                <td><a href="#" id="vehicleEdit_powertrain.shift_time" class="editable"></a></td>
+                <td><b>s</b></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="modal-body">
+            <h4>Aerodynamics</h4>
+            <hr class="solid">
+
+            <table class="table table-bordered table-striped">
+              <tr>
+                <td width="50%">Aerodynamic Reference Velocity</td>
+                <td width="30%"><a href="#" id="vehicleEdit_aero.force_v" class="editable"></a></td>
+                <td width="20%"><b>(m/s)</b></td>
+              </tr>
+              <tr>
+                <td>Aerodynamic Force at Reference Velocity</td>
+                <td>[<a href="#" id="vehicleEdit_aero.force" class="editable"></a>]</td>
+                <td>[x,y,z] <b>(N)</b></td>
+              </tr>
+              <tr>
+                <td>CP Position</td>
+                <td>[<a href="#" id="vehicleEdit_aero.cp" class="editable"></a>]</td>
+                <td>[x,y,z] <b>(m)</b></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+
+
       <div class="modal-footer">
         <div class="alert alert-danger" id="vehicleErrorMsg" role="alert">Placeholder Alert</div>
         <button type="button" class="btn btn-danger" data-dismiss="modal" onclick="discard_vehicle_edit()">Discard</button>
@@ -548,15 +199,12 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
 <div class="modal fade bd-example-modal-lg" id="trackEditModal" tabindex="-1" role="dialog" aria-labelledby="trackEditModal" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
-      <div class="modal-header input-group mb-3">
-          <div class="input-group-prepend">
-            <span class="input-group-text">Editing Track</span>
-          </div>
+      <div class="modal-header">
+        <div class="input-group">
+          <div class="input-group-addon" id="trackEditType">Edit Track</div>
           <input id="trackEditName" type="text" class="form-control" placeholder="" aria-label="Vehicle Name" aria-describedby="basic-addon1" disabled>
-          <div class="input-group-append">
-            <select class="input-group-text" id="trackEditVersion" disabled>
-            </select>
-          </div>
+          <div class="input-group-addon" id="trackEditVersion" ></div>
+        </div>
       </div>
       <div class="modal-body">
         <div class="form-row">
@@ -595,15 +243,12 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
 <div class="modal fade bd-example-modal-lg" id="studyEditModal" tabindex="-1" role="dialog" aria-labelledby="studyEditModal" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
-      <div class="modal-header input-group mb-3">
-          <div class="input-group-prepend">
-            <span class="input-group-text">Editing Study</span>
-          </div>
+      <div class="modal-header">
+        <div class="input-group">
+          <div class="input-group-addon" id="studyEditType">Edit Study</div>
           <input id="studyEditName" type="text" class="form-control" placeholder="" aria-label="Vehicle Name" aria-describedby="basic-addon1" disabled>
-          <div class="input-group-append">
-            <select class="input-group-text" id="studyEditVersion" disabled>
-            </select>
-          </div>
+          <div class="input-group-addon" id="studyEditVersion" ></div>
+        </div>
       </div>
       <div class="modal-body">
         <div class="form-group row align-middle">
@@ -666,15 +311,12 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
 <div class="modal fade bd-example-modal-lg" id="errorLogModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
-      <div class="modal-header input-group mb-3">
-          <div class="input-group-prepend">
-            <input type="text" class="input-group-text" id="errorLogType"></input>
-          </div>
+      <div class="modal-header">
+        <div class="input-group">
+          <div class="input-group-addon" id="errorLogType"></div>
           <input id="errorLogTitle" type="text" class="form-control" placeholder="" aria-label="Vehicle Name" aria-describedby="basic-addon1" disabled>
-          <div class="input-group-append">
-            <select class="input-group-text" id="errorLogVersion" disabled>
-            </select>
-          </div>
+          <div class="input-group-addon" id="errorLogVersion" ></div>
+        </div>
       </div>
       <div class="modal-body">
         <textarea id="errorLogBody" class="textedit" readonly>Placeholder Text</textarea>
@@ -686,241 +328,169 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
   </div>
 </div>
 
-<!-- Real Interface -->
+<div class="row">
+  <div class="col-sm-6">
+    <!--<button id="remove" class="btn btn-light disabled">Vehicles</button>-->
 
-<div class="container">
-
-<script>
-  var $$table = $$('#table')
-
-  function mounted() {
-    $$table.bootstrapTable({
-      url: 'json/treegrid.json',
-      sidePagination: 'server',
-      idField: 'id',
-      showColumns: true,
-      columns: [
-        {
-          field: 'ck',
-          checkbox: true
-        },
-        {
-          field: 'name',
-          title: '名称'
-        },
-        {
-          field: 'status',
-          title: '状态',
-          sortable: true,
-          align: 'center',
-          formatter: 'statusFormatter'
-        },
-        {
-          field: 'permissionValue',
-          title: '权限值'
-        }
-      ],
-      treeShowField: 'name',
-      parentIdField: 'pid',
-      onPostBody: function() {
-        var columns = $$table.bootstrapTable('getOptions').columns
-
-        if (columns && columns[0][1].visible) {
-          $$table.treegrid({
-            treeColumn: 1,
-            onChange: function() {
-              $$table.bootstrapTable('resetWidth')
-            }
-          })
-        }
-      }
-    })
-  }
-
-  function typeFormatter(value, row, index) {
-    if (value === 'menu') {
-      return '菜单'
-    }
-    if (value === 'button') {
-      return '按钮'
-    }
-    if (value === 'api') {
-      return '接口'
-    }
-    return '-'
-  }
-
-  function statusFormatter(value, row, index) {
-    if (value === 1) {
-      return '<span class="label label-success">正常</span>'
-    }
-    return '<span class="label label-default">锁定</span>'
-  }
-</script>
-
-  <div class="row">
-    <div class="col-sm-6">
-      <!--<button id="remove" class="btn btn-light disabled">Vehicles</button>-->
-
-      <table class="table table-striped tree">
-        <thead>
-          <tr>
-            <th scope="col">Vehicle</th>
-            <th scope="col">Version</th>
-            <th scope="col">Last Edit</th>
-            <th scope="col"></th>
-          </tr>
-        </thead>
-        $ i = 0
-        $for name in vehicles:
-          $ name_i = i
-          $for vehicle in vehicles[name]:
-            <tr data-index="${i}" class="treegrid-${i} treegrid-collapsed
-              $if name_i != i:
-                treegrid-parent-${name_i} 
-            "
-            >
-              <td class="align-middle">
-                $if name_i == i:
-                  <span class="treegrid-expander"></span>
-                  ${name}
-              </td>
-              <td class="align-middle">
-                V${vehicle.version}
-              </td>
-              <td class="align-middle">${vehicle.edit_date_pars}</td>
-              <td class="align-middle">
-                $if vehicle.status:
-                  <button class="btn btn-dark btn-sm" onclick="derive_vehicle('${vehicle.name}', '${vehicle.version}', '${vehicles[name][0].version+1}')">View/Derive</button>
-                $else:
-                  <button class="btn btn-primary btn-sm" onclick="edit_vehicle('${vehicle.name}', '${vehicle.version}')">Edit</button>
-                $if vehicle.log:
-                  <button class="btn btn-sm btn-warning" onclick="errorlog_vehicle('${vehicle.name}', '${vehicle.version}')">Error Log</button>
-              </td>
-            </tr>
-            $ i = i+1
+    <table class="table table-striped tree table-condensed">
+      <thead>
         <tr>
-          <td colspan="5">
-            <button id="remove" class="btn btn-secondary btn-block btn-sm" onclick="new_vehicle()">+ Create Vehicle</button>
-          </td>
+          <th scope="col">Vehicle</th>
+          <th scope="col">Version</th>
+          <th scope="col">Last Edit</th>
+          <th scope="col"></th>
         </tr>
-      </table>
-
-    </div>
-    <div class="col-sm-6">
-      <table class="table table-striped tree">
-        <thead>
-          <tr>
-            <th scope="col">Track</th>
-            <th scope="col">Version</th>
-            <th scope="col">Last Edit</th>
-            <th scope="col"></th>
+      </thead>
+      $ i = 0
+      $for name in vehicles:
+        $ name_i = i
+        $for vehicle in vehicles[name]:
+          <tr data-index="${i}" class="treegrid-${i} treegrid-collapsed
+            $if name_i != i:
+              treegrid-parent-${name_i} 
+          "
+          >
+            <td class="align-middle">
+              $if name_i == i:
+                <span class="treegrid-expander"></span>
+                ${name}
+            </td>
+            <td class="align-middle">
+              V${vehicle.version}
+            </td>
+            <td class="align-middle">${vehicle.edit_date_pars}</td>
+            <td class="align-middle">
+              $if vehicle.status:
+                <button class="btn btn-default btn-sm" onclick="edit_vehicle('${vehicle.name}', '${vehicle.version}', '${vehicles[name][0].version+1}')">View/Derive</button>
+              $else:
+                <button class="btn btn-primary btn-sm" onclick="edit_vehicle('${vehicle.name}', '${vehicle.version}')">Edit</button>
+              $if vehicle.log:
+                <button class="btn btn-sm btn-warning" onclick="errorlog_vehicle('${vehicle.name}', '${vehicle.version}')">Error Log</button>
+            </td>
           </tr>
-        </thead>
-        $ i = 0
-        $for name in tracks:
-          $ name_i = i
-          $for track in tracks[name]:
-            <tr data-index="${i}" class="treegrid-${i} treegrid-collapsed
-              $if name_i != i:
-                treegrid-parent-${name_i} 
-            "
-            >
-              <td class="align-middle">
-                $if name_i == i:
-                  <span class="treegrid-expander"></span>
-                  ${name}
-              </td>
-              <td class="align-middle">V${track.version}</td>
-              <td class="align-middle">${track.edit_date_pars}</td>
-              <td class="align-middle">
-                $if track.status:
-                  <button class="btn btn-dark btn-sm" onclick="derive_track('${track.name}', '${track.version}', '${tracks[name][0].version+1}')">View/Derive</button>
-                $else:
-                  <button class="btn btn-primary btn-sm" onclick="edit_track('${track.name}', '${track.version}')">Edit</button>
-                $if track.log:
-                  <button class="btn btn-sm btn-warning" onclick="errorlog_track('${track.name}', '${track.version}')">Error Log</button>
-              </td>
-              <!--<th>
-                <button class="btn-primary" onclick="edit_track(${track.name}, ${track.version})">Edit</button>
-              </th>-->
-            </tr>
-        <tr>
-          <td colspan="5">
-            <button id="remove" class="btn btn-secondary btn-block btn-sm" onclick="new_track()">+ Create Track</button>
-          </td>
-        </tr>
-      </table>
-    </div>
-  </div>
-
-  <table class="table table-striped tree">
-    <thead>
+          $ i = i+1
       <tr>
-        <th scope="col">Study</th>
-        <th scope="col">Version</th>
-        <th scope="col">State</th>
-        <th scope="col"></th>
+        <td colspan="5">
+          <button id="remove" class="btn btn-default btn-block btn-sm" onclick="new_vehicle()">+ Create Vehicle</button>
+        </td>
       </tr>
-    </thead>
-    $ i = 0
-    $for name in studies:
-      $ name_i = i
-      $for study in studies[name]:
-        <tr data-index="${i}" class="treegrid-${i} treegrid-collapsed
-          $if name_i != i:
-            treegrid-parent-${name_i} 
-        ">
-          <td class="align-middle">
-            $if name_i == i:
-              <span class="treegrid-expander"></span>
-              ${name}
-          </td>
-          <td>V${study.version}</td>
-          $if study.status == 0:
+    </table>
+
+  </div>
+  <div class="col-sm-6">
+    <table class="table table-striped tree table-condensed">
+      <thead>
+        <tr>
+          <th scope="col">Track</th>
+          <th scope="col">Version</th>
+          <th scope="col">Last Edit</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      $ i = 0
+      $for name in tracks:
+        $ name_i = i
+        $for track in tracks[name]:
+          <tr data-index="${i}" class="treegrid-${i} treegrid-collapsed
+            $if name_i != i:
+              treegrid-parent-${name_i} 
+          "
+          >
             <td class="align-middle">
-              <span class="badge badge-info">Drafting<!--(Edited ${study.edit_date_pars})--></span>
-            </td><td class="align-middle">
-              <button class="btn btn-primary btn-sm" onclick="edit_study('${study.name}', '${study.version}')">Edit/Submit</button>
+              $if name_i == i:
+                <span class="treegrid-expander"></span>
+                ${name}
             </td>
-          $elif study.status == 1:
+            <td class="align-middle">V${track.version}</td>
+            <td class="align-middle">${track.edit_date_pars}</td>
             <td class="align-middle">
-              <span class="badge badge-secondary">Submitted<!-- on ${study.submission_date_pars}--></span> 
-            </td><td class="align-middle">
-              <button class="btn btn-dark btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
+              $if track.status:
+                <button class="btn btn-default btn-sm" onclick="derive_track('${track.name}', '${track.version}', '${tracks[name][0].version+1}')">View/Derive</button>
+              $else:
+                <button class="btn btn-primary btn-sm" onclick="edit_track('${track.name}', '${track.version}')">Edit</button>
+              $if track.log:
+                <button class="btn btn-sm btn-warning" onclick="errorlog_track('${track.name}', '${track.version}')">Error Log</button>
             </td>
-          $elif study.status == 2:
-            <td class="align-middle">
-              <span class="badge badge-primary">Running (${study.runs_complete}/${study.runs_total})</span>
-            </td><td class="align-middle">
-              <button class="btn btn-sm btn-info" onclick="errorlog_study('${study.name}', '${study.version}')">Log</button>
-              <button class="btn btn-dark btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
-            </td>
-          $elif study.status == 3:
-            <td class="align-middle">
-              <span class="badge badge-danger">Failed<!-- on (${study.completion_date_pars})--></span>
-            </td><td class="align-middle">
-              <button class="btn btn-sm btn-warning" onclick="errorlog_study('${study.name}', '${study.version}')">Log</button>
-              <button class="btn btn-dark btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
-            </td>
-          $elif study.status == 4:
-            <td class="align-middle">
-              <span class="badge badge-success">Finished<!-- on(${study.completion_date_pars})--></span>
-            </td><td class="align-middle">
-              <button class="btn btn-sm btn-info" onclick="errorlog_study('${study.name}', '${study.version}')">Log</button>
-              <button class="btn btn-sm btn-success">Results</button>
-              <button class="btn btn-dark btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
-            </td>
-          $else:
-            <td class="align-middle">
-              Invalid Status
-            </td><td class="align-middle"></td>
+            <!--<th>
+              <button class="btn-primary" onclick="edit_track(${track.name}, ${track.version})">Edit</button>
+            </th>-->
           </tr>
           $ i = i + 1
-    <tr>
-      <td colspan="5">
-        <button id="remove" class="btn btn-secondary btn-block btn-sm" onclick="new_study()">+ Create Study</button>
-      </td>
-    </tr>
-  </table>
+      <tr>
+        <td colspan="5">
+          <button id="remove" class="btn btn-default btn-block btn-sm" onclick="new_track()">+ Create Track</button>
+        </td>
+      </tr>
+    </table>
+  </div>
 </div>
+
+<table class="table table-striped tree table-condensed">
+  <thead>
+    <tr>
+      <th scope="col">Study</th>
+      <th scope="col">Version</th>
+      <th scope="col">State</th>
+      <th scope="col"></th>
+    </tr>
+  </thead>
+  $ i = 0
+  $for name in studies:
+    $ name_i = i
+    $for study in studies[name]:
+      <tr data-index="${i}" class="treegrid-${i} treegrid-collapsed
+        $if name_i != i:
+          treegrid-parent-${name_i} 
+      ">
+        <td class="align-middle">
+          $if name_i == i:
+            <span class="treegrid-expander"></span>
+            ${name}
+        </td>
+        <td>V${study.version}</td>
+        $if study.status == 0:
+          <td class="align-middle">
+            <span class="label label-info">Drafting<!--(Edited ${study.edit_date_pars})--></span>
+          </td><td class="align-middle">
+            <button class="btn btn-primary btn-sm" onclick="edit_study('${study.name}', '${study.version}')">Edit/Submit</button>
+          </td>
+        $elif study.status == 1:
+          <td class="align-middle">
+            <span class="label label-secondary">Submitted<!-- on ${study.submission_date_pars}--></span> 
+          </td><td class="align-middle">
+            <button class="btn btn-default btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
+          </td>
+        $elif study.status == 2:
+          <td class="align-middle">
+            <span class="label label-primary">Running (${study.runs_complete}/${study.runs_total})</span>
+          </td><td class="align-middle">
+            <button class="btn btn-sm btn-info" onclick="runlog_study('${study.name}', '${study.version}')">Log</button>
+            <button class="btn btn-default btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
+          </td>
+        $elif study.status == 3:
+          <td class="align-middle">
+            <span class="label label-danger">Failed<!-- on (${study.completion_date_pars})--></span>
+          </td><td class="align-middle">
+            <button class="btn btn-sm btn-warning" onclick="runlog_study('${study.name}', '${study.version}')">Log</button>
+            <button class="btn btn-default btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
+          </td>
+        $elif study.status == 4:
+          <td class="align-middle">
+            <span class="label label-success">Finished<!-- on(${study.completion_date_pars})--></span>
+          </td><td class="align-middle">
+            <button class="btn btn-sm btn-info" onclick="runlog_study('${study.name}', '${study.version}')">Log</button>
+            <button class="btn btn-sm btn-success">Results</button>
+            <button class="btn btn-default btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
+          </td>
+        $else:
+          <td class="align-middle">
+            Invalid Status
+          </td><td class="align-middle"></td>
+        </tr>
+        $ i = i + 1
+  <tr>
+    <td colspan="5">
+      <button id="remove" class="btn btn-default btn-block btn-sm" onclick="new_study()">+ Create Study</button>
+    </td>
+  </tr>
+</table>

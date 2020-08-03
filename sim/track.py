@@ -13,13 +13,13 @@ EPSILON = 1e-4 # small amount used for distinguishing points in distance-curvatu
 class Track:
   "Track object; new to V6"
 
-  def __init__(self, filetype, filedata):
+  def __init__(self, filetype, filedata, unit):
     self.filetype = filetype.lower()
     # self.dc is distance-curvature data; matrix is "tall" (fixed columns variable # rows)
     if self.filetype == 'dxf':
       # DXF data
       # TODO: units
-      self.dc = dxf_to_dc(filedata)
+      self.dc = dxf_to_dc(filedata, UCONVS[unit])
     if self.filetype == 'csv':
       # TODO: Raw distance-curvature data
       pass
@@ -33,7 +33,17 @@ class Track:
   def __repr__(self):
     return "Track (type=%s, n_datapts=%d)" % (self.filetype, np.size(self.dc, axis=0))
 
-def dxf_to_dc(data):
+UCONVS = {
+  "mi": 1609,
+  "ft": 0.3048,
+  "in": 0.0254,
+  "mm": 1e-3,
+  "m":  1,
+  "km": 1e+3,
+  "nmi": 1852 #nautical mile
+}
+
+def dxf_to_dc(data, scaling):
   "Converts DXF data into distance-curvature data. DXF will start at the endpoint which is connected to the origin (0,0)"
 
   dxf_output = []   # list of elements
@@ -152,7 +162,7 @@ def dxf_to_dc(data):
     shape = dxf_output[index]
     if shape[0] == 'line':
       # Add start point of sector
-      sectors = np.vstack((sectors, np.array([length, 0])))
+      sectors = np.vstack((sectors, np.array([length*scaling, 0])))
 
       # Compute distance of line in straightforward fashion
       dx=shape[3]-shape[1]
@@ -160,7 +170,7 @@ def dxf_to_dc(data):
       length = math.hypot(dx, dy)
 
       # Add a point that has no curvature
-      sectors = np.vstack((sectors, np.array([length-EPSILON, 0])))
+      sectors = np.vstack((sectors, np.array([length*scaling-EPSILON, 0])))
     elif shape[0] == 'arc':
       # xc yc radius start_angle end_angle direction x1 y1 x2 y2
       arc_angle = shape[5] - shape[4]
@@ -172,11 +182,11 @@ def dxf_to_dc(data):
       arc_angle = arc_angle % 360
 
       # Add start point of sector
-      sectors = np.vstack((sectors, np.array([length, 1.0/shape[3]])))
+      sectors = np.vstack((sectors, np.array([length*scaling, 1.0/shape[3]/scaling])))
 
       length = shape[3]*math.radians(arc_angle)
 
       # Add end point of sector
-      sectors = np.vstack((sectors, np.array([length-EPSILON, 1.0/shape[3]])))
+      sectors = np.vstack((sectors, np.array([length*scaling-EPSILON, 1.0/shape[3]/scaling])))
   
   return sectors

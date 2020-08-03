@@ -4,6 +4,26 @@ import numpy as np
 import math
 
 EPSILON = 1e-4
+G = 9.81 # Gravity
+
+# Remember, use ISO coordinate system.
+# X: Longitudinal   / Roll
+# Y: Lateral (Left) / Pitch
+# Z: Vertical       / Yaw
+
+# Constants for convenience
+LONG  = 0
+LAT   = 1
+VERT  = 2
+ROLL  = 0
+PITCH = 1
+YAW   = 2
+
+# Tire numbers
+FL = 0
+FR = 1
+BL = 2
+BR = 3
 
 class Vehicle:
   "Vehicle object; new to V6"
@@ -15,7 +35,11 @@ class Vehicle:
       # YAML data
       # TODO: units
       # for key, value in yaml.load(filedata).__dict__.items():
-      self.__dict__.update(yaml.load(filedata).__dict__) 
+      self.__dict__.update(yaml.load(filedata).__dict__)
+      self.mass = Mass(self.mass)
+      self.tires = [Tire(tire) for tire in self.tires]
+      self.powertrain = Powertrain(self.powertrain)
+      self.brakes = Brakes(self.brakes)
 
     self.g = 9.81
     self.v_max = self.engine_rpms[-1]*2.0*3.1415/60.0/self.engine_reduction/self.gears[-1]/self.final_drive_reduction*self.comb_tire_radius
@@ -23,7 +47,80 @@ class Vehicle:
   def __repr__(self):
     return "Vehicle (type=%s)" % (self.filetype)
 
-  def eng_force(self, vel, gear):
+class Aero:
+  def __init__(self, var):
+    if var.force:
+      self.force_1ms = [force/var.force_v/var.force_v for force in var.force] # Scale back based on input speed
+    else:
+      self.force_1ms = [0,0,0]
+
+    if var.cp: self.cp = var.cp
+
+    # TODO: Moments
+    # TODO: DRS
+
+  def force(self, v):
+    return [force*v*v for force in self.force_1ms]
+
+class Mass:
+  def __init__(self, var):
+    self.mass  = var.mass # Should be a float
+    if var.moi: self.moi   = var.moi # Optional; should be a list: roll, pitch, yaw
+    if var.cg:  self.cg    = var.cg  # Optional; should be a list: long, lat, vert
+
+class Tire:
+  def __init__(self, var):
+    self.model = var.model.lower() # Should be a string (see below for options)
+    if var.pos:  self.pos   = var.pos           # Optional; should be a list: long, lat, vert
+    if var.mass: self.mass  = Tire(var.mass)    # Optional; should be a Mass object
+
+    if self.model == 'mu':
+      self.mu = var.mu
+    # TODO: other models
+
+  def force_lat_remain(self, N, f_long):
+    if self.model == 'mu':
+      return math.sqrt((self.mu*N)**2 - f_long**2)
+
+  def force_long_remain(self, N, f_lat):
+    if self.model == 'mu':
+      return math.sqrt((self.mu*N)**2 - f_lat**2)
+
+class Powertrain:
+  def __init__(self, var):
+    self.omega_map    = [spd*math.pi/30 for spd in var.rpm_map] # Motor velocity map; convert RPM to rad/s
+    self.torque_map   = var.torque_map   # Torque output map
+    self.power_map    = var.power_map    # Power consumption map
+    self.trans_gears  = var.trans_gears  # Transmission ratios
+    self.gear_ratio   = var.gear_ratio   # Final Drive Ratio
+    self.trans_type   = var.trans_type   # Transmission type
+    self.shift_time   = var.shift_time   # Shift time
+
+    self.omega_max    = max(self.rpm_map)*min(self.gears)
+
+  def state(self, gear, wheel_rpm, traction_limit):
+    """ return: a tuple with
+     - Gear Number
+     - Throttle Percentage
+     - Crank RPM
+     - Power Consumption
+     - Torque """
+    pass
+
+  def ideal_gear(self, wheel_rpm, traction_limit):
+    pass
+
+class Brakes:
+  # BOTH BRAKES, NOT JUST ONE
+  def __init__(self, var):
+    self.mode = var.mode
+    if self.mode == 'fixed':
+      self.front_bias = var.front_bias
+      self.rear_bias  = 1-var.front_bias
+
+### Old code not following new OO standard ###
+"""
+def eng_force(self, vel, gear):
     if np.isinf(gear):
       gear = self.best_gear(vel, np.inf)
 
@@ -158,5 +255,4 @@ class Vehicle:
     f_long[s] = f_x_max[s]*math.sqrt(max(1-f_y[s]**2/f_y_max[s]**2,0.0))
 
     return (f_long,f_x_max)
-
-
+"""

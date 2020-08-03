@@ -1,0 +1,48 @@
+$def with (content)
+
+<link rel="stylesheet" type="text/css" href="/static/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css" href="/static/custom.css" />
+<link rel="stylesheet" type="text/css" href="/static/jquery.treegrid.min.css" />
+<link rel="stylesheet" type="text/css" href="/static/bootstrap-editable.css" />
+
+<script type="text/javascript" src="/static/jquery.min.js" ></script>
+<script type="text/javascript" src="/static/popper.min.js"></script>
+<script type="text/javascript" src="/static/bootstrap.min.js" ></script>
+<script type="text/javascript" src="/static/js-yaml.min.js" ></script>
+<!--<script type="text/javascript" src="/static/bootstrap-table.min.js" ></script>-->
+<script type="text/javascript" src="/static/bootstrap-table-treegrid.min.js" ></script>
+<script type="text/javascript" src="/static/jquery-treegrid.min.js" ></script>
+<script type="text/javascript" src="/static/bootstrap-editable.min.js"></script>
+
+<link rel="stylesheet" type="text/css" href="/static/tagsinput.css" />
+<script type="text/javascript" src="/static/tagsinput.js" ></script>
+
+<nav class="navbar navbar-inverse">
+  <ul class="navbar-nav">
+    <li class="navbar-header">
+      <a class="navbar-brand">
+        RoseLap
+      </a>
+    </li>
+  </ul>
+  <ul class="nav navbar-nav navbar-right">
+    $if ctx.username:
+      <li>
+        <a class=" nav-link disabled">
+          User: $ctx.username
+        </a>
+      </li>
+      <li>
+        <a href="/logout" class="nav-link btn btn-danger">
+          Logout
+        </a>
+      </li>
+  </ul>
+</nav>
+<br/>
+
+
+
+<div class="container">
+	$:content
+</div>

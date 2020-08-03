@@ -5,8 +5,10 @@ from database import *
 import json
 import datetime
 import time
+import traceback
+#import socket
 
-render = web.template.render('webtemplates/', globals={'ctx': web.ctx})
+render = web.template.render('webtemplates/', globals={'ctx': web.ctx}, base='layout')
 
 web.config.debug = False
 
@@ -113,7 +115,7 @@ class logout:
 
 class index:
   def GET(self, args):
-    return "boring index page"
+    raise web.seeother('/overview')
 
 class overview:
   def GET(self):
@@ -154,8 +156,8 @@ class overview:
       # TODO: format timestamps
 
       return render.overview(vehicle_map, track_map, study_map, json.dumps(list(vehicle_map.keys())), json.dumps(list(track_map.keys())))
-    except Exception as e:
-      raise
+    except Exception:
+      traceback.print_exc()
       return json.dumps({'error': 'Server-side error.'})
 
 class user_management:
@@ -371,8 +373,12 @@ class study:
       else:
         json.dumps({'error': 'id or name/version not specified.'})
 
+      if 'exlog' in data and str(data.exlog).lower() == 'true':
+        study.include_exlog()
+
       return json.dumps(study.as_dict())
-    except Exception as e:
+    except Exception:
+      traceback.print_exc()
       return json.dumps({'error': 'Server-side error.'})
 
   def POST(self):
@@ -400,11 +406,12 @@ class study:
 
           study.filedata = filedata
           study.edit_date = datetime.datetime.now().isoformat()
+          web.ctx.orm.commit()
 
         else:
           studies = web.ctx.orm.query(Study).filter(Study.name==name).all()
           if studies:
-            study = web.ctx.orm.query(Study).filter(Study.name==name).filter(Study.status==1).order_by(Study.version.desc()).first()
+            study = web.ctx.orm.query(Study).filter(Study.name==name).filter(Study.status!=0).order_by(Study.version.desc()).first()
             if version != study.version + 1:
               return json.dumps({'error': 'Nonsequential study version (should be V%d, recieved V%d)' % (study.version + 1, version)})
 
@@ -415,6 +422,7 @@ class study:
             study.edit_date = datetime.datetime.now().isoformat()
             study.status = 0
             web.ctx.orm.add(study)
+            web.ctx.orm.commit()
           else:
             if int(version) != 1:
               return json.dumps({'error': 'Study versions must start at 1.'})
@@ -426,20 +434,27 @@ class study:
             study.edit_date = datetime.datetime.now().isoformat()
             study.status = 0
             web.ctx.orm.add(study)
+            web.ctx.orm.commit()
             
         if 'submit' in data and data.submit.lower() == 'true':
           study.status = 1
           study.submission_date = datetime.datetime.now().isoformat()
-          # TODO: dispatch for processing
-
-        web.ctx.orm.commit()
+          web.ctx.orm.commit()
+          # TODO: dispatch for processing?
+          """s = socket.socket()
+          s.connect(("localhost", 8100))
+          s.sendall("START".encode("utf-8"))
+          s.close()"""
+          """p = mp.Process(target=scheduler.run, args=(study.id,))
+          p.start()"""
+        
         return json.dumps(study.as_dict())
 
       else:
         return json.dumps({'error': 'Name/version not specified.'})
       
-    except Exception as e:
-      print(e)
+    except Exception:
+      traceback.print_exc()
       return json.dumps({'error': 'Server-side error.'})
 
 class submit:
