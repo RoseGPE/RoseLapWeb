@@ -26,17 +26,25 @@ BL = 2
 BR = 3
 
 class Vehicle:
-  "Vehicle object; new to V6"
+  """
+  Vehicles consist of:
+   - mass:   Mass
+   - aero:   Aero
+   - tires:  Multiple tires
+   - brakes: Brakes
+   - powertrain: Powertrain
+  """
 
   def __init__(self, filetype, filedata):
     self.filetype = filetype.lower()
     # self.dc is distance-curvature data; matrix is "tall" (fixed columns variable # rows)
     if self.filetype == 'yaml':
       # YAML data
-      # TODO: units
-      # for key, value in yaml.load(filedata).__dict__.items():
+
+      
       self.__dict__.update(yaml.load(filedata).__dict__)
       self.mass = Mass(self.mass)
+      self.aero = Aero(self.aero)
       self.tires = [Tire(tire) for tire in self.tires]
       self.powertrain = Powertrain(self.powertrain)
       self.brakes = Brakes(self.brakes)
@@ -48,6 +56,12 @@ class Vehicle:
     return "Vehicle (type=%s)" % (self.filetype)
 
 class Aero:
+  """
+    Aero takes parameters:
+    - force_v : Velocity at which force is evaluated
+    - force:    Force at specified velocity
+    - cp:       list, position of center of pressure relative to vehicle origin
+  """
   def __init__(self, var):
     if var.force:
       self.force_1ms = [force/var.force_v/var.force_v for force in var.force] # Scale back based on input speed
@@ -63,12 +77,21 @@ class Aero:
     return [force*v*v for force in self.force_1ms]
 
 class Mass:
+  """
+    Mass takes parameters:
+    - mass : total mass of object
+    - moi  : (optional) list of moments of inertia about CG
+    - cg   : (optional) position of CG relative to vehicle origin
+  """
   def __init__(self, var):
     self.mass  = var.mass # Should be a float
     if var.moi: self.moi   = var.moi # Optional; should be a list: roll, pitch, yaw
     if var.cg:  self.cg    = var.cg  # Optional; should be a list: long, lat, vert
 
 class Tire:
+  """
+    Tires are really complex.
+  """
   def __init__(self, var):
     self.model = var.model.lower() # Should be a string (see below for options)
     if var.pos:  self.pos   = var.pos           # Optional; should be a list: long, lat, vert
@@ -87,6 +110,11 @@ class Tire:
       return math.sqrt((self.mu*N)**2 - f_lat**2)
 
 class Powertrain:
+  """
+    Powertrains take parameters:
+    - omega_map, torque_map: A torque curve
+    - power_map: A list whose primary axis is oriented in omega, and secondary axis is oriented in throttle (assuming even spacing)
+  """
   def __init__(self, var):
     self.omega_map    = [spd*math.pi/30 for spd in var.rpm_map] # Motor velocity map; convert RPM to rad/s
     self.torque_map   = var.torque_map   # Torque output map
@@ -111,7 +139,11 @@ class Powertrain:
     pass
 
 class Brakes:
-  # BOTH BRAKES, NOT JUST ONE
+  """
+    Brakes take parameters:
+    - mode: fixed or perfect
+    - front_bias: front brake bias as a fraction of 1
+  """
   def __init__(self, var):
     self.mode = var.mode
     if self.mode == 'fixed':
