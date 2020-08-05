@@ -17,6 +17,19 @@ function nested_obj_set(obj, keys, val) {
   return nested_obj_set(obj[keys[0]], keys.slice(1), val);
 }
 
+function ged(edt) {
+  return $("#"+edt).editable("getValue")[edt];
+}
+
+
+
+
+
+
+
+
+
+
 
 function new_vehicle() {
   $("#vehicleEditModal").modal('show');
@@ -39,17 +52,16 @@ function save_vehicle() {
   let x = 12;
   $("[id^=vehicleEdit_]").each(function(index){
     let varname = $(this).attr('id').substring(x);
-    let v = null;
+    let v = ged($(this).attr('id'));
     let ptype = $(this).data("parse");
     if(ptype && ptype.includes("list")) {
       if (ptype.includes("str"))
-        v = $(this).html().split(',').map(function(bit){return bit.trim();});
+        v = v.split(',').map(function(bit){return bit.trim();});
       else
-        v = $(this).html().split(',').map(function(bit){return parseFloat(bit);});
+        v = v.split(',').map(function(bit){return parseFloat(bit);});
     } else {
-      v = $(this).html();
       if (! (ptype && ptype.includes("str")))
-        return parseFloat(v);
+        v = parseFloat(v);
     }
     nested_obj_set(fdata, varname.split('-'), v);
   });
@@ -89,6 +101,8 @@ function edit_vehicle(name, version, new_version) {
     $("#vehicleEditName").prop('disabled', true);
     $("#vehicleEditName").val(data.name);
 
+    $("#vehicleErrorMsg").hide();
+
     if (typeof(new_version) == 'undefined'){
       $("#vehicleEditVersion").html(`V${data.version}`);
       $("#vehicleEditVersion").data("version", data.version);
@@ -99,15 +113,16 @@ function edit_vehicle(name, version, new_version) {
     }
 
     fdata = JSON.parse(data.filedata);
-    console.log(fdata);
+    //console.log(fdata);
 
     let x = 12;
     $("[id^=vehicleEdit_]").each(function(index){
       let varname = $(this).attr('id').substring(x);
       let v = String(nested_obj_get(fdata, varname.split('-')));
-      console.log(varname, v)
-      $(this).html(v);
-    })
+      $(this).editable("setValue", v === null || v === undefined ? "-" : v);
+    });
+
+    validate_vehicle();
   });
 }
 
@@ -134,6 +149,55 @@ function errorlog_vehicle(name, version) {
   });
 }
 
+
+
+
+
+
+
+
+
+
+
+function validate_vehicle() {
+  console.log("validating");
+  if (ged("vehicleEdit_brakes-mode") == 'perfect') {
+    $("#vehicleEditRow_brakes-front_bias").hide();
+  } else {
+    $("#vehicleEditRow_brakes-front_bias").show();
+  }
+
+  if (ged("vehicleEdit_front_axle-model") == 'mu') {
+    $("#vehicleEditRow_front_axle-mu").show();
+  } else {
+    $("#vehicleEditRow_front_axle-mu").hide();
+  }
+
+  if (ged("vehicleEdit_rear_axle-model") == 'mu') {
+    $("#vehicleEditRow_rear_axle-mu").show();
+  } else {
+    $("#vehicleEditRow_rear_axle-mu").hide();
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function new_track() {
   $("#trackEditModal").modal('show')
 
@@ -148,6 +212,8 @@ function new_track() {
 
   $("#trackEditVersion").html(`V1`);
   $("#trackEditVersion").data("version", 1);
+
+  $("#vehicleErrorMsg").hide();
 }
 
 function discard_track_edit() {
@@ -198,6 +264,8 @@ function edit_track(name, version, new_version) {
     $("#trackEditUnit").val(data.unit);
     $("#trackEditFileType").val(data.filetype);
 
+    $("#vehicleErrorMsg").hide();
+
     if (typeof(new_version) == 'undefined'){
       $("#trackEditVersion").html(`V${data.version}`);
       $("#trackEditVersion").data("version", data.version);
@@ -241,24 +309,32 @@ function new_study() {
   $("#studyEditVersion").html('V1');
   $("#studyEditVersion").data("version", 1)
 
-  // unpack data
-
-  //fdata = JSON.parse(data.filedata)
-
   $("#studyEdit_vehicle").html('');
   $("#studyEdit_vehicle").data("valid").forEach(function(vehicle){
     $("#studyEdit_vehicle").append(new Option(vehicle, vehicle));
   });
 
   $("#studyEdit_tracks_dropdown").val('');
-  //$("#studyEdit_vehicle").val(fdata.vehicle);
-
-  /*$("#studyEdit_tracks").tagsinput('items', fdata.tracks);
-  $("#studyEdit_vehicle").val(fdata.vehicle);
-  $("#studyEdit_model").val(fdata.model);
-  $("#studyEdit_sweeps").val(fdata.sweeps);
-  $("#studyEdit_meshsize").val(fdata.meshsize);*/
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function discard_study_edit() {
   $("#studyEditModal").modal('hide')

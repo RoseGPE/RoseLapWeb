@@ -7,17 +7,29 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
                 $$('.tree').treegrid({
                   'initialState': 'collapsed'
                 });
+
                 $$('.editable').editable({
                   type: 'text',
                   title: '',
                   mode: 'inline',
                   toggle: 'click',
                   showbuttons: false,
-                  placeholder: "undefined"
+                  placeholder: "undefined",
+                  saveonchange: true,
+                  emptytext: 'unset'
                 }).on('shown', function(ev, editable) {
                     setTimeout(function() {
                         editable.input.$$input.select();
                     },0);
+                }).on('save', function(){
+                    var that = this;
+                    setTimeout(function() {
+                      validate_vehicle();
+                      x = $$(that).closest('tr').next();
+                      //console.log(x, x.is(":visible"));
+                      if (x.is(":visible"))
+                        x.find('.editable').editable('show');
+                    }, 200);
                 });
             });
 </script>
@@ -67,7 +79,7 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
             <table class="table table-bordered table-striped">
               <tr>
                 <td width="50%">Brake Mode</td>
-                <td width="50%" colspan=2 ><a href="#" data-type="select" id="vehicleEdit_brakes-mode" class="editable" data-source="[{value: 'fixed', text: 'Fixed Bias'}, {value: 'perfect', text: 'Perfect Bias'}]" data-value="perfect" ></a></td>
+                <td width="50%" colspan=2 ><a href="#" data-type="select" id="vehicleEdit_brakes-mode" class="editable" data-source="[{value: 'fixed', text: 'Fixed Bias'}, {value: 'perfect', text: 'Perfect Bias'}]" data-value="perfect"></a></td>
               </tr>
               <tr id="vehicleEditRow_brakes-front_bias">
                 <td>Front Bias</td>
@@ -90,10 +102,7 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
               <h5 style="float: right;"><label class="checkbox-inline"><input type="checkbox" class="checkbox" onclick="toggle_front_rear_mirror()" />Same as Front</label></h5>
           </div>
           <hr class="solid">
-          
-          
-
-          <table class="table table-bordered table-striped">
+            <table class="table table-bordered table-striped">
             <tr>
               <td width="50%">Track Width</td>
               <td width="30%"><a href="#" id="vehicleEdit_${axle}_axle-y" class="editable"></a></td>
@@ -106,11 +115,11 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
             </tr>
             <tr>
               <td>Tire Model</td>
-              <td colspan=2 ><a data-type="select" id="vehicleEdit_${axle}_axle-model" data-source="[{value: 'mu', text: 'Coloumb'}]" data-value="mu" class="editable"></a></td>
+              <td colspan=2 ><a data-type="select" id="vehicleEdit_${axle}_axle-model" data-source="[{value: 'mu', text: 'Coloumb'}, {value: 'bs', text: 'Undefined'}]" class="editable"></a></td>
             </tr>
-            <tr id="vehicleEditRow_${axle}_mu">
+            <tr id="vehicleEditRow_${axle}_axle-mu">
               <td>Coloumb Friction</td>
-              <td><a data-type="select" id="vehicleEdit_${axle}-mu" class="editable"></a></td>
+              <td><a id="vehicleEdit_${axle}_axle-mu" class="editable"></a></td>
               <td><b>N / N</b></td>
             </tr>
           </table>
@@ -147,7 +156,7 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
               </tr>
               <tr id="vehicleEditRow_powertrain-trans_gears">
                 <td>Transmission Gear Ratios</td>
-                <td><a href="#" id="vehicleEdit_powertrain-trans_gears" data-parse="list"></a></td>
+                <td>[<a href="#" id="vehicleEdit_powertrain-trans_gears" class="editable" data-parse="list"></a>]</td>
                 <td></td>
               </tr>
               <tr>
@@ -176,20 +185,18 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
               </tr>
               <tr>
                 <td>Aerodynamic Force at Reference Velocity</td>
-                <td>[<a href="#" id="vehicleEdit_aero-force" class="editable"></a>]</td>
+                <td>[<a href="#" id="vehicleEdit_aero-force" class="editable" data-parse="list"></a>]</td>
                 <td>[x,y,z] <b>(N)</b></td>
               </tr>
               <tr>
                 <td>CP Position</td>
-                <td>[<a href="#" id="vehicleEdit_aero-cp" class="editable"></a>]</td>
+                <td>[<a href="#" id="vehicleEdit_aero-cp" class="editable" data-parse="list"></a>]</td>
                 <td>[x,y,z] <b>(m)</b></td>
               </tr>
             </table>
           </div>
         </div>
       </div>
-
-
 
       <div class="modal-footer">
         <div class="alert alert-danger" id="vehicleErrorMsg" role="alert">Placeholder Alert</div>
