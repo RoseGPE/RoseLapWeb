@@ -1,21 +1,32 @@
+function nested_obj_get(obj, keys){
+  next = obj[keys[0]]
+  if (keys.length == 1)
+    return next
+
+  if (next)
+    return nested_obj_get(next, keys.slice(1));
+}
+
+function nested_obj_set(obj, keys, val) {
+  if (keys.length == 1)
+    return obj[keys[0]] = val;
+  
+  if (typeof(obj[keys[0]]) == 'undefined')
+    obj[keys[0]] = {}
+  
+  return nested_obj_set(obj[keys[0]], keys.slice(1), val);
+}
+
 
 function new_vehicle() {
-  $("#vehicleEditModal").modal('show')
+  $("#vehicleEditModal").modal('show');
 
   $("#vehicleEditName").prop('disabled', false);
-
-  $("#vehicleEditModal").modal('show');
-  $("#vehicleEditText").keyup(validate_json_vehicle);
-  $("#vehicleEditText").change(validate_json_vehicle);
-  
   $("#vehicleEditName").val("New Vehicle");
-  $("#vehicleEditText").val("--- Insert your YAML here ---");
 
-  $("#vehicleEditVersion").html('');
-  $("#vehicleEditVersion").append(new Option(`V1`, 1));
+  $("#vehicleEditVersion").html(`V1`);
+  $("#vehicleEditVersion").data("version", 1);
   $("#vehicleEditVersion").val(1);
-
-  validate_json_vehicle();
 }
 
 function discard_vehicle_edit() {
@@ -23,12 +34,32 @@ function discard_vehicle_edit() {
 }
 
 function save_vehicle() {
+  fdata = {}
+
+  let x = 12;
+  $("[id^=vehicleEdit_]").each(function(index){
+    let varname = $(this).attr('id').substring(x);
+    let v = null;
+    let ptype = $(this).data("parse");
+    if(ptype && ptype.includes("list")) {
+      if (ptype.includes("str"))
+        v = $(this).html().split(',').map(function(bit){return bit.trim();});
+      else
+        v = $(this).html().split(',').map(function(bit){return parseFloat(bit);});
+    } else {
+      v = $(this).html();
+      if (! (ptype && ptype.includes("str")))
+        return parseFloat(v);
+    }
+    nested_obj_set(fdata, varname.split('-'), v);
+  });
+
   $.post(
       "/vehicle",
       {
         "name": $("#vehicleEditName").val(),
         "version": $("#vehicleEditVersion").data("version"),
-        "filedata": $("#vehicleEditText").val()
+        "filedata": JSON.stringify(fdata)
       }
   ).then(function(data) {
     if (data.error) {
@@ -53,14 +84,10 @@ function edit_vehicle(name, version, new_version) {
       return;
     }
 
-    $("#vehicleEditName").prop('disabled', true);
-
     $("#vehicleEditModal").modal('show');
-    $("#vehicleEditText").keyup(validate_json_vehicle);
-    $("#vehicleEditText").change(validate_json_vehicle);
 
+    $("#vehicleEditName").prop('disabled', true);
     $("#vehicleEditName").val(data.name);
-    $("#vehicleEditText").val(data.filedata);
 
     if (typeof(new_version) == 'undefined'){
       $("#vehicleEditVersion").html(`V${data.version}`);
@@ -71,33 +98,17 @@ function edit_vehicle(name, version, new_version) {
       $("#vehicleEditVersion").data("version", new_version);   
     }
 
-    validate_json_vehicle();
+    fdata = JSON.parse(data.filedata);
+    console.log(fdata);
+
+    let x = 12;
+    $("[id^=vehicleEdit_]").each(function(index){
+      let varname = $(this).attr('id').substring(x);
+      let v = String(nested_obj_get(fdata, varname.split('-')));
+      console.log(varname, v)
+      $(this).html(v);
+    })
   });
-}
-
-function validate_json_vehicle() {
-  let txt = $("#vehicleEditText").val();
-  try {
-    obj = jsyaml.load(txt);
-    
-    $("#vehicleErrorMsg").alert()
-    $("#vehicleErrorMsg").html(`Valid YAML (may not be fully formed, but syntax is correct)`);
-    $("#vehicleErrorMsg").removeClass('alert-danger');
-    $("#vehicleErrorMsg").addClass('alert-success');
-
-    $("#vehicleSaveButton").html('Save');
-    $("#vehicleSaveButton").removeClass('btn-warning');
-    $("#vehicleSaveButton").addClass('btn-primary');
-  } catch (error) {
-    $("#vehicleErrorMsg").alert()
-    $("#vehicleErrorMsg").html(`ERROR: ${error.message}`);
-    $("#vehicleErrorMsg").addClass('alert-danger');
-    $("#vehicleErrorMsg").removeClass('alert-success');
-
-    $("#vehicleSaveButton").html('Save (with errors)');
-    $("#vehicleSaveButton").addClass('btn-warning');
-    $("#vehicleSaveButton").removeClass('btn-primary');
-  }
 }
 
 function errorlog_vehicle(name, version) {

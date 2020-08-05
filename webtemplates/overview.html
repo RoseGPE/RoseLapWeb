@@ -43,17 +43,17 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
             <table class="table table-bordered table-striped">
               <tr>
                 <td width="40%">Mass</td>
-                <td width="30%"><a href="#" id="vehicleEdit_mass.mass" class="editable"></a></td>
+                <td width="30%"><a href="#" id="vehicleEdit_mass-mass" class="editable"></a></td>
                 <td width="30%"><b>kg</b></td>
               </tr>
               <tr>
                 <td>CG Position</td>
-                <td>[<a href="#" id="vehicleEdit_mass.cg" class="editable"></a>]</td>
+                <td>[<a href="#" id="vehicleEdit_mass-cg" class="editable" data-parse="list"></a>]</td>
                 <td>[x,y,z] <b>m</b></td>
               </tr>
               <tr>
                 <td>MOI About CG</td>
-                <td>[<a href="#" id="vehicleEdit_mass.moi" class="editable"></a>]</td>
+                <td>[<a href="#" id="vehicleEdit_mass-moi" class="editable" data-parse="list"></a>]</td>
                 <td>[x,y,z] <b>kg m^2</b></td>
               </tr>
             </table>
@@ -67,11 +67,11 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
             <table class="table table-bordered table-striped">
               <tr>
                 <td width="50%">Brake Mode</td>
-                <td width="50%" colspan=2 ><a href="#" data-type="select" id="vehicleEdit_brakes.mode" class="editable" data-source="[{value: 'fixed', text: 'Fixed Bias'}, {value: 'perfect', text: 'Perfect Bias'}]" data-value="perfect" ></a></td>
+                <td width="50%" colspan=2 ><a href="#" data-type="select" id="vehicleEdit_brakes-mode" class="editable" data-source="[{value: 'fixed', text: 'Fixed Bias'}, {value: 'perfect', text: 'Perfect Bias'}]" data-value="perfect" ></a></td>
               </tr>
-              <tr id="vehicleEditRow_brakes.front_bias">
+              <tr id="vehicleEditRow_brakes-front_bias">
                 <td>Front Bias</td>
-                <td><a href="#" id="vehicleEdit_brakes.front_bias" class="editable"></a></td>
+                <td><a href="#" id="vehicleEdit_brakes-front_bias" class="editable"></a></td>
                 <td><b>%</b></td>
               </tr>
             </table>
@@ -96,21 +96,21 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
           <table class="table table-bordered table-striped">
             <tr>
               <td width="50%">Track Width</td>
-              <td width="30%"><a href="#" id="vehicleEdit_${axle}_axle.y" class="editable"></a></td>
+              <td width="30%"><a href="#" id="vehicleEdit_${axle}_axle-y" class="editable"></a></td>
               <td width="20%"><b>(m)</b></td>
             </tr>
             <tr>
               <td>Axle Position</td>
-              <td><a href="#" id="vehicleEdit_${axle}_axle.x" class="editable"></a></td>
+              <td><a href="#" id="vehicleEdit_${axle}_axle-x" class="editable"></a></td>
               <td><b>m</b></td>
             </tr>
             <tr>
               <td>Tire Model</td>
-              <td colspan=2 ><a data-type="select" id="vehicleEdit_${axle}_axle.model" data-source="[{value: 'mu', text: 'Coloumb'}]" data-value="mu" class="editable"></a></td>
+              <td colspan=2 ><a data-type="select" id="vehicleEdit_${axle}_axle-model" data-source="[{value: 'mu', text: 'Coloumb'}]" data-value="mu" class="editable"></a></td>
             </tr>
             <tr id="vehicleEditRow_${axle}_mu">
               <td>Coloumb Friction</td>
-              <td><a data-type="select" id="vehicleEdit_${axle}_mu" class="editable"></a></td>
+              <td><a data-type="select" id="vehicleEdit_${axle}-mu" class="editable"></a></td>
               <td><b>N / N</b></td>
             </tr>
           </table>
@@ -127,32 +127,37 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
             <table class="table table-bordered table-striped">
               <tr>
                 <td width="50%">Engine Crank RPM Map</td>
-                <td width="30%">[<a href="#" id="vehicleEdit_powertrain.omega_map" class="editable"></a>]</td>
+                <td width="30%">[<a href="#" id="vehicleEdit_powertrain-omega_map" class="editable" data-parse="list"></a>]</td>
                 <td width="20%"><b>RPM</b></td>
               </tr>
               <tr>
                 <td>Engine Crank Torque Map</td>
-                <td>[<a href="#" id="vehicleEdit_powertrain.torque_map" class="editable"></a>]</td>
+                <td>[<a href="#" id="vehicleEdit_powertrain-torque_map" class="editable" data-parse="list"></a>]</td>
                 <td><b>N-m</b></td>
               </tr>
               <tr>
                 <td>Engine Power Consumption Map</td>
-                <td>[<a href="#" id="vehicleEdit_powertrain.power_map" class="editable"></a>]</td>
+                <td>[<a href="#" id="vehicleEdit_powertrain-power_map" class="editable" data-parse="list"></a>]</td>
                 <td><b>N-m</b></td>
               </tr>
               <tr>
                 <td>Transmission Type</td>
-                <td><a href="#" data-type="select" id="vehicleEdit_powertrain.trans_gears" class="editable" data-source="[{value: 'sequential', text: 'Sequential'}, {value: 'manual', text: 'Manual'}, {value: 'cvt', text: 'CVT'}]" data-value="sequential" ></a></td>
+                <td><a href="#" data-type="select" id="vehicleEdit_powertrain-trans_type" class="editable" data-source="[{value: 'sequential', text: 'Sequential'}, {value: 'manual', text: 'Manual'}, {value: 'cvt', text: 'CVT'}]" data-value="sequential" ></a></td>
+                <td></td>
+              </tr>
+              <tr id="vehicleEditRow_powertrain-trans_gears">
+                <td>Transmission Gear Ratios</td>
+                <td><a href="#" id="vehicleEdit_powertrain-trans_gears" data-parse="list"></a></td>
                 <td></td>
               </tr>
               <tr>
                 <td>Final Drive Ratio</td>
-                <td><a href="#" id="vehicleEdit_powertrain.gear_ratio" class="editable"></a></td>
+                <td><a href="#" id="vehicleEdit_powertrain-gear_ratio" class="editable"></a></td>
                 <td></td>
               </tr>
-              <tr id="vehicleEditRow_powertrain.shift_time">
+              <tr id="vehicleEditRow_powertrain-shift_time">
                 <td>Shift Time</td>
-                <td><a href="#" id="vehicleEdit_powertrain.shift_time" class="editable"></a></td>
+                <td><a href="#" id="vehicleEdit_powertrain-shift_time" class="editable"></a></td>
                 <td><b>s</b></td>
               </tr>
             </table>
@@ -166,17 +171,17 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
             <table class="table table-bordered table-striped">
               <tr>
                 <td width="50%">Aerodynamic Reference Velocity</td>
-                <td width="30%"><a href="#" id="vehicleEdit_aero.force_v" class="editable"></a></td>
+                <td width="30%"><a href="#" id="vehicleEdit_aero-force_v" class="editable"></a></td>
                 <td width="20%"><b>(m/s)</b></td>
               </tr>
               <tr>
                 <td>Aerodynamic Force at Reference Velocity</td>
-                <td>[<a href="#" id="vehicleEdit_aero.force" class="editable"></a>]</td>
+                <td>[<a href="#" id="vehicleEdit_aero-force" class="editable"></a>]</td>
                 <td>[x,y,z] <b>(N)</b></td>
               </tr>
               <tr>
                 <td>CP Position</td>
-                <td>[<a href="#" id="vehicleEdit_aero.cp" class="editable"></a>]</td>
+                <td>[<a href="#" id="vehicleEdit_aero-cp" class="editable"></a>]</td>
                 <td>[x,y,z] <b>(m)</b></td>
               </tr>
             </table>
