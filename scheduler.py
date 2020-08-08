@@ -11,6 +11,7 @@ import json as json
 import traceback
 from sim.track import Track
 from sim.vehicle import Vehicle
+import itertools
 
 def run(study_id):
   print("#### scheduler.run(study_id=%d) STARTED ####" % study_id)
@@ -40,7 +41,7 @@ def run(study_id):
     # Grab latest versions of vehicle and tracks used, set their status to used
     db_vehicle = db_session.query(db.Vehicle).filter(db.Vehicle.name == spec.vehicle).order_by(db.Vehicle.version.desc()).first()
     db_vehicle.status = db.STATUS_SUBMITTED
-    vehicle = Vehicle(db_vehicle.filedata, 'yaml') # core vehicle object used in sim
+    vehicle = Vehicle('yaml', db_vehicle.filedata) # core vehicle object used in sim
 
     # Sort tracks by version (highest first). Then sort out each track uniquely
     raw_tracks = db_session.query(db.Track).filter(db.Track.name.in_(spec.tracks)).order_by(db.Track.version.desc()).all()
@@ -60,22 +61,33 @@ def run(study_id):
     print("Model: ", repr(spec.model))
     print("")
 
-    # Figure out how many runs will happen in all (assume no searching)
+    # Figure out how many runs will happen in all
     study.runs_total    = 1
     study.runs_complete = 0
+    axis_lengths = []
+    axis_choices = []
     for axis in spec.sweeps:
       for variable in axis.variables:
         if type(variable.values) == type({}):
           variable.values = np.linspace(variable.values.start, variable.values.end, variable.values.length).tolist()
-      study.runs_total *= len(axis.variables[0].values)
+      axis_lengths.append(len(axis.variables[0].values))
+      axis_choices.append(range(axis_lengths[-1]))
+      study.runs_total *= axis_lengths[-1]
 
     print("Run size is %d runs." % study.runs_total)
+    print("")
 
     # Study actually runs from here; commit everything to the database
     study.run()
     db_session.commit()
 
     ## Dispatch workers to compute results
+    for permutation in itertools.product(*axis_choices):
+      print("Permutation ", permutation)
+      # TODO: actual dispatch, thread pool, variable parse/edit
+      study.runs_complete++
+      db_session.commit()
+
 
     ## Create a manifest file
     print("------ Building Manifest ------")

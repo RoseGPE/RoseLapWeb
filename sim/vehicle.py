@@ -45,12 +45,12 @@ class Vehicle:
       self.__dict__.update(yaml.load(filedata).__dict__)
       self.mass = Mass(self.mass)
       self.aero = Aero(self.aero)
-      self.tires = [Tire(tire) for tire in self.tires]
+      #self.tires = [Tire(tire) for tire in self.tires]
       self.powertrain = Powertrain(self.powertrain)
       self.brakes = Brakes(self.brakes)
 
     self.g = 9.81
-    self.v_max = self.engine_rpms[-1]*2.0*3.1415/60.0/self.engine_reduction/self.gears[-1]/self.final_drive_reduction*self.comb_tire_radius
+    self.v_max = self.powertrain.omega_max
 
   def __repr__(self):
     return "Vehicle (type=%s)" % (self.filetype)
@@ -123,7 +123,7 @@ class Powertrain:
     self.trans_type   = var.trans_type   # Transmission type
     self.shift_time   = var.shift_time   # Shift time
 
-    self.omega_max    = max(self.rpm_map)*min(self.gears)
+    self.omega_max    = max(self.omega_map)*min(self.trans_gears)
 
   def state(self, gear, wheel_rpm, traction_limit):
     """ return: a tuple with

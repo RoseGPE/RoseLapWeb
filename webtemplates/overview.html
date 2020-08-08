@@ -120,6 +120,11 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
               <td><b>m</b></td>
             </tr>
             <tr>
+              <td>Tire Diameter</td>
+              <td><a href="#" id="vehicleEdit_${axle}_axle-diameter" class="editable"></a></td>
+              <td><b>m</b></td>
+            </tr>
+            <tr>
               <td>Tire Model</td>
               <td colspan=2 ><a data-type="select" id="vehicleEdit_${axle}_axle-model" data-source="[{value: 'mu', text: 'Coloumb'}, {value: 'bs', text: 'Undefined'}]" class="editable"></a></td>
             </tr>
@@ -142,7 +147,7 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
             <table class="table table-bordered table-striped">
               <tr>
                 <td width="50%">Engine Crank RPM Map</td>
-                <td width="30%">[<a href="#" id="vehicleEdit_powertrain-omega_map" class="editable" data-parse="list"></a>]</td>
+                <td width="30%">[<a href="#" id="vehicleEdit_powertrain-rpm_map" class="editable" data-parse="list"></a>]</td>
                 <td width="20%"><b>RPM</b></td>
               </tr>
               <tr>
