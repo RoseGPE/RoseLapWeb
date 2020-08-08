@@ -61,8 +61,15 @@ def run(study_id):
     print("")
 
     # Figure out how many runs will happen in all (assume no searching)
-    study.runs_total    = 10
+    study.runs_total    = 1
     study.runs_complete = 0
+    for axis in spec.sweeps:
+      for variable in axis.variables:
+        if type(variable.values) == type({}):
+          variable.values = np.linspace(variable.values.start, variable.values.end, variable.values.length).tolist()
+      study.runs_total *= len(axis.variables[0].values)
+
+    print("Run size is %d runs." % study.runs_total)
 
     # Study actually runs from here; commit everything to the database
     study.run()
