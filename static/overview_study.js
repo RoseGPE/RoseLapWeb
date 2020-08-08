@@ -190,7 +190,7 @@ VARIABLES  = {
 function add_sweep_axis() {
   i = $("#vehicleEdit_sweeps").children().length;
   $("#vehicleEdit_sweeps").append(`<div>
-    <label>Sweep Axis</label><button style="float: right" class="btn btn-danger" onclick="remove_sweep_var()">Delete Sweep Axis</button><button style="float:right" class="btn btn-success" onclick="add_sweep_variable(${i});">+ Add Variable</button>
+    <label>Sweep Axis</label><button style="float: right" class="btn btn-danger" onclick="remove_sweep(parent($(this), 1).prevAll().length)">Delete Sweep Axis</button><button style="float:right" class="btn btn-success" onclick="add_sweep_variable(${i});">+ Add Variable</button>
     <table class="table table-condensed" id="vehicleEdit_sweeps_table_${i}">
       <tr class="active">
         <th style="text-align: right"></th>
@@ -329,4 +329,9 @@ function remove_sweep_var(axis, variable) {
 
 function remove_sweep_entry(axis, entry) {
   console.log("remove_sweep_entry", axis, entry);
+}
+
+function remove_sweep(axis) {
+  console.log("remove_sweep", axis);
+  $("#vehicleEdit_sweeps").children()[axis].remove()
 }
