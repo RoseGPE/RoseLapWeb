@@ -38,27 +38,6 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
                 });
                 setup_editable();
             });
-
-  $$('.btn-toggle').click(function() {
-    $$(this).find('.btn').toggleClass('active');  
-    
-    if ($$(this).find('.btn-primary').length>0) {
-      $$(this).find('.btn').toggleClass('btn-primary');
-    }
-    if ($$(this).find('.btn-danger').length>0) {
-      $$(this).find('.btn').toggleClass('btn-danger');
-    }
-    if ($$(this).find('.btn-success').length>0) {
-      $$(this).find('.btn').toggleClass('btn-success');
-    }
-    if ($$(this).find('.btn-info').length>0) {
-      $$(this).find('.btn').toggleClass('btn-info');
-    }
-    
-    $$(this).find('.btn').toggleClass('btn-default');
-       
-  });
-
 </script>
 
 <!-- Modals -->
@@ -280,7 +259,7 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
 
 
 <div class="modal fade bd-example-modal-lg" id="studyEditModal" tabindex="-1" role="dialog" aria-labelledby="studyEditModal" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
+  <div class="modal-dialog modal-lg" style="width: 100%; height: 100%;" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <div class="input-group">

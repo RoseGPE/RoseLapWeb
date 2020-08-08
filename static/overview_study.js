@@ -201,10 +201,8 @@ function add_sweep_axis() {
       <tr>
         <td></td>
       </tr>
-      <tr>
-        <td colspan=100><button class="btn btn-block btn-secondary" onclick="add_sweep_entry(${i});">+ Add Entries</button></td>
-      </tr>
     </table>
+    <button class="btn btn-block btn-secondary" onclick="add_sweep_entry(${i});">+ Add Entries</button>
     </div>`);
 }
 
@@ -227,23 +225,21 @@ function togglebtn(x) {
   $(x).find('.btn').toggleClass('btn-default');
 }
 
+function parent(x, n) {
+  if(n)
+    return parent(x.parent(), n-1);
+  return x;
+}
+
 function add_sweep_variable(axis) {
   let rows    = $(`#vehicleEdit_sweeps_table_${axis} tr`);
   let vars    = rows[0].cells.length-1;
 
-  let a  = $(`<a class="editable typeahead"></a>`);
-  a.editable({
-    type: 'typeaheadjs',
-    title: '',
-    mode: 'inline',
-    toggle: 'click',
-    showbuttons: true,
-    placeholder: "TYPE VARIABLE HERE",
-    emptytext: "DEFINE VARIABLE",
-    typeahead: {
-      local: Object.keys(VARIABLES),
-      limit: 20
-    },
+  let a  = $(`<input type="text" class="form-control form-inline typeahead" data-provide="typeahead" autocomplete="off" />`);
+  a.typeahead({
+      source: Object.keys(VARIABLES),
+      items: 20
+    }); /*,
     validate: function(val) {
       if (! VARIABLES.hasOwnProperty(val))
         return "Invalid Variable."
@@ -252,7 +248,7 @@ function add_sweep_variable(axis) {
       setTimeout(function() {
           editable.input.$input.select();
       },0);
-  });
+  });*/
 
   let tc = $(`<th style="text-align: center; vertical-align: center;" >
     <div>
@@ -262,14 +258,30 @@ function add_sweep_variable(axis) {
       </div> - <div class="btn-group btn-toggle" onclick="togglebtn(this)" >
         <button class="btn btn-xs active btn-info" >List</button>
         <button class="btn btn-xs btn-default" >Range</button>
-      </div>
-      <button class="btn btn-xs btn-danger" onclick="remove_sweep_var()">Delete</button>
+      </div> - <button class="btn btn-xs btn-danger" onclick="remove_sweep_var(parent($(this), 6).prevAll().length, parent($(this), 2).prevAll().length);">&times; Remove</button>
     </div></th>`).prepend(a);
   tc.insertBefore(rows[0].cells[vars]);
 
-  for (let i=1; i<rows.length-1; i++) {
-    console.log(i, vars);
-    $(`<td>init</td>`).insertBefore(rows[i].cells[vars]);
+  for (let i=1; i<rows.length; i++) {
+    let cell = $(`<td></td>`);
+    let inp  = $(`<a class="editable"></a>`);
+    inp.editable({
+      type: 'text',
+      title: '',
+      mode: 'inline',
+      toggle: 'click',
+      showbuttons: false,
+      placeholder: "undefined",
+      saveonchange: true,
+      emptytext: "unset",
+    }).on('shown', function(ev, editable) {
+        setTimeout(function() {
+            editable.input.$$input.select();
+        },0);
+    });
+
+    cell.append(inp);
+    cell.insertBefore(rows[i].cells[vars]);
   }
 
 }
@@ -280,8 +292,41 @@ function add_sweep_entry(axis) {
 
   let row = $("<tr></tr>");
   for (let i=0; i<vars; i++) {
-    row.append($(`<td>new</td>`));
+    let cell = $(`<td></td>`);
+    let inp  = $(`<a class="editable"></a>`);
+    inp.editable({
+      type: 'text',
+      title: '',
+      mode: 'inline',
+      toggle: 'click',
+      showbuttons: false,
+      placeholder: "undefined",
+      saveonchange: true,
+      emptytext: "unset",
+    }).on('shown', function(ev, editable) {
+        setTimeout(function() {
+            editable.input.$$input.select();
+        },0);
+    });
+
+    cell.append(inp);
+    row.append(cell);
   }
   row.append($("<td></td>"))
   $(row).insertBefore(rows[rows.length-1]);
+}
+
+function remove_sweep_var(axis, variable) {
+  console.log("remove_sweep_var", axis, variable);
+
+  let rows = $(`#vehicleEdit_sweeps_table_${axis} tr`);
+  let vars = rows[0].cells.length-1
+
+  for (let i=0; i<rows.length; i++) {
+    $(rows[i]).children()[variable].remove()
+  }
+}
+
+function remove_sweep_entry(axis, entry) {
+  console.log("remove_sweep_entry", axis, entry);
 }
