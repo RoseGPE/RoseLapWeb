@@ -190,7 +190,7 @@ VARIABLES  = {
 function add_sweep_axis() {
   i = $("#vehicleEdit_sweeps").children().length;
   $("#vehicleEdit_sweeps").append(`<div>
-    <label>Sweep Axis</label><button style="float: right" class="btn btn-danger" onclick="remove_sweep(parent($(this), 1).prevAll().length)">Delete Sweep Axis</button><button style="float:right" class="btn btn-success" onclick="add_sweep_variable(${i});">+ Add Variable</button>
+    <label>Sweep Axis</label><button style="float: right" class="btn btn-danger" onclick="remove_sweep(parentIdx($(this), 1))">Delete Sweep Axis</button><button style="float:right" class="btn btn-success" onclick="add_sweep_variable(${i});">+ Add Variable</button>
     <table class="table table-condensed" id="vehicleEdit_sweeps_table_${i}">
       <tr class="active">
         <th style="text-align: right"></th>
@@ -202,7 +202,11 @@ function add_sweep_axis() {
         <td></td>
       </tr>
     </table>
-    <button class="btn btn-block btn-secondary" onclick="add_sweep_entry(${i});">+ Add Entries</button>
+    <div class="row">
+      <div class="col-sm-6"><button class="btn btn-block btn-secondary" onclick="add_sweep_entry(${i});">+ Add Entries</button></div>
+      <div class="col-sm-6"><button class="btn btn-block btn-danger" onclick="remove_sweep_entry(${i});">- Remove Last Entry</button></div>
+    </div>
+    <br/>
     </div>`);
 }
 
@@ -231,6 +235,10 @@ function parent(x, n) {
   return x;
 }
 
+function parentIdx(x, n) {
+  return parent(x, n).prevAll().length;
+}
+
 function add_sweep_variable(axis) {
   let rows    = $(`#vehicleEdit_sweeps_table_${axis} tr`);
   let vars    = rows[0].cells.length-1;
@@ -255,10 +263,10 @@ function add_sweep_variable(axis) {
       <div class="btn-group btn-toggle" onclick="togglebtn(this)" >
         <button class="btn btn-xs active btn-info">Replace</button>
         <button class="btn btn-xs btn-default" >Scale</button> 
-      </div> - <div class="btn-group btn-toggle" onclick="togglebtn(this)" >
+      </div> - <div class="btn-group btn-toggle btn-varmode" onclick="togglebtn(this); change_sweep_type(parentIdx($(this), 6), parentIdx($(this), 2));" >
         <button class="btn btn-xs active btn-info" >List</button>
         <button class="btn btn-xs btn-default" >Range</button>
-      </div> - <button class="btn btn-xs btn-danger" onclick="remove_sweep_var(parent($(this), 6).prevAll().length, parent($(this), 2).prevAll().length);">&times; Remove</button>
+      </div> - <button class="btn btn-xs btn-danger" onclick="remove_sweep_var(parentIdx($(this), 6), parentIdx($(this), 2));">&times; Remove</button>
     </div></th>`).prepend(a);
   tc.insertBefore(rows[0].cells[vars]);
 
@@ -276,7 +284,7 @@ function add_sweep_variable(axis) {
       emptytext: "unset",
     }).on('shown', function(ev, editable) {
         setTimeout(function() {
-            editable.input.$$input.select();
+            editable.input.$input.select();
         },0);
     });
 
@@ -293,27 +301,34 @@ function add_sweep_entry(axis) {
   let row = $("<tr></tr>");
   for (let i=0; i<vars; i++) {
     let cell = $(`<td></td>`);
-    let inp  = $(`<a class="editable"></a>`);
-    inp.editable({
-      type: 'text',
-      title: '',
-      mode: 'inline',
-      toggle: 'click',
-      showbuttons: false,
-      placeholder: "undefined",
-      saveonchange: true,
-      emptytext: "unset",
-    }).on('shown', function(ev, editable) {
-        setTimeout(function() {
-            editable.input.$$input.select();
-        },0);
-    });
+
+    let inp = null
+    if (get_var_mode(axis, i) == 'range') {
+      inp = $($(rows[rows.length-1]).children()[i].children[0]).detach()
+      $($(rows[rows.length-1]).children()[i]).html('.');
+    } else {
+      inp  = $(`<a class="editable"></a>`);
+      inp.editable({
+        type: 'text',
+        title: '',
+        mode: 'inline',
+        toggle: 'click',
+        showbuttons: false,
+        placeholder: "undefined",
+        saveonchange: true,
+        emptytext: "unset",
+      }).on('shown', function(ev, editable) {
+          setTimeout(function() {
+              editable.input.$input.select();
+          },0);
+      });
+    }
 
     cell.append(inp);
     row.append(cell);
   }
   row.append($("<td></td>"))
-  $(row).insertBefore(rows[rows.length-1]);
+  $(row).insertAfter(rows[rows.length-1]);
 }
 
 function remove_sweep_var(axis, variable) {
@@ -327,11 +342,67 @@ function remove_sweep_var(axis, variable) {
   }
 }
 
-function remove_sweep_entry(axis, entry) {
-  console.log("remove_sweep_entry", axis, entry);
+function remove_sweep_entry(axis) {
+  console.log("remove_sweep_entry", axis);
+
+  let rows = $(`#vehicleEdit_sweeps_table_${axis} tr`);
+  let vars = rows[0].cells.length-1
+
+  for (let i=0; i<vars; i++) {
+    if (get_var_mode(axis, i) == 'range') {
+      let inp = $($(rows[rows.length-1]).children()[i].children[0]).detach()
+      $($(rows[rows.length-2]).children()[i]).html('');
+      $($(rows[rows.length-2]).children()[i]).append(inp);
+    }
+  }
+  
+  $(rows[rows.length-1]).detach();
 }
 
 function remove_sweep(axis) {
   console.log("remove_sweep", axis);
   $("#vehicleEdit_sweeps").children()[axis].remove()
+}
+
+function get_var_mode(axis, variable) {
+  let btn = $($(`#vehicleEdit_sweeps_table_${axis} tr`)[0].cells[variable]).find(".btn-varmode")
+  return $(btn).find(".btn-primary, .btn-danger, .btn-success, .btn-info").html().toLowerCase();
+}
+
+function change_sweep_type(axis, variable) {
+  mode = get_var_mode(axis, variable);
+  
+  console.log("change_sweep_type", axis, variable, mode)
+
+  let rows = $(`#vehicleEdit_sweeps_table_${axis} tr`);
+  let vars = rows[0].cells.length-1
+
+  if (mode == 'range') {
+    for (let i=2; i<rows.length-1; i++) {
+      $($(rows[i]).children()[variable]).html('.');
+    }
+  } else {
+    for (let i=2; i<rows.length-1; i++) {
+      $($(rows[i]).children()[variable]).html('');
+
+      let inp  = $(`<a class="editable"></a>`);
+      inp.editable({
+        type: 'text',
+        title: '',
+        mode: 'inline',
+        toggle: 'click',
+        showbuttons: false,
+        placeholder: "undefined",
+        saveonchange: true,
+        emptytext: "unset",
+      }).on('shown', function(ev, editable) {
+          setTimeout(function() {
+              editable.input.$input.select();
+          },0);
+      });
+
+      $($(rows[i]).children()[variable]).append(inp);
+    }
+    
+  }
 }
