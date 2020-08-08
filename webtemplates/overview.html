@@ -1,37 +1,64 @@
 $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
 
-<script type="text/javascript" src="/static/overview.js" ></script>
+<script type="text/javascript" src="/static/overview_study.js" ></script>
+<script type="text/javascript" src="/static/overview_vehicle.js" ></script>
+<script type="text/javascript" src="/static/overview_track.js" ></script>
 
 <script>
+
+  function setup_editable() {
+    $$('.editable').editable({
+      type: 'text',
+      title: '',
+      mode: 'inline',
+      toggle: 'click',
+      showbuttons: false,
+      placeholder: "undefined",
+      saveonchange: true,
+      emptytext: 'unset'
+    }).on('shown', function(ev, editable) {
+        setTimeout(function() {
+            editable.input.$$input.select();
+        },0);
+    }).on('save', function(){
+        var that = this;
+        setTimeout(function() {
+          validate_vehicle();
+          x = $$(that).closest('tr').next();
+          //console.log(x, x.is(":visible"));
+          if (x.is(":visible"))
+            x.find('.editable').editable('show');
+        }, 200);
+    });
+  }
+
   $$(document).ready(function() {
                 $$('.tree').treegrid({
                   'initialState': 'collapsed'
                 });
-
-                $$('.editable').editable({
-                  type: 'text',
-                  title: '',
-                  mode: 'inline',
-                  toggle: 'click',
-                  showbuttons: false,
-                  placeholder: "undefined",
-                  saveonchange: true,
-                  emptytext: 'unset'
-                }).on('shown', function(ev, editable) {
-                    setTimeout(function() {
-                        editable.input.$$input.select();
-                    },0);
-                }).on('save', function(){
-                    var that = this;
-                    setTimeout(function() {
-                      validate_vehicle();
-                      x = $$(that).closest('tr').next();
-                      //console.log(x, x.is(":visible"));
-                      if (x.is(":visible"))
-                        x.find('.editable').editable('show');
-                    }, 200);
-                });
+                setup_editable();
             });
+
+  $$('.btn-toggle').click(function() {
+    $$(this).find('.btn').toggleClass('active');  
+    
+    if ($$(this).find('.btn-primary').length>0) {
+      $$(this).find('.btn').toggleClass('btn-primary');
+    }
+    if ($$(this).find('.btn-danger').length>0) {
+      $$(this).find('.btn').toggleClass('btn-danger');
+    }
+    if ($$(this).find('.btn-success').length>0) {
+      $$(this).find('.btn').toggleClass('btn-success');
+    }
+    if ($$(this).find('.btn-info').length>0) {
+      $$(this).find('.btn').toggleClass('btn-info');
+    }
+    
+    $$(this).find('.btn').toggleClass('btn-default');
+       
+  });
+
 </script>
 
 <!-- Modals -->
@@ -302,12 +329,8 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
           </div>
         </div>
 
-        <div class="form-group row">
-          <label for="studyEdit_sweeps" class="col-sm-1 col-form-label text-right">Sweeps</label>
-          <div class="col-sm-11">
-            <textarea id="studyEdit_sweeps" class="textedit" ></textarea>
-          </div>
-        </div>
+        <div id="vehicleEdit_sweeps"></div>
+        <button class="btn btn-block btn-primary" onclick="add_sweep_axis()" >+ Add Sweep Axis</button>
       </div>
       <div class="modal-footer">
         <!--<div class="alert alert-danger" id="studyErrorMsg" role="alert">Placeholder Alert</div>-->
@@ -417,7 +440,7 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
             <td class="align-middle">${track.edit_date_pars}</td>
             <td class="align-middle">
               $if track.status:
-                <button class="btn btn-default btn-sm" onclick="derive_track('${track.name}', '${track.version}', '${tracks[name][0].version+1}')">View/Derive</button>
+                <button class="btn btn-default btn-sm" onclick="edit_track('${track.name}', '${track.version}', '${tracks[name][0].version+1}')">View/Derive</button>
               $else:
                 <button class="btn btn-primary btn-sm" onclick="edit_track('${track.name}', '${track.version}')">Edit</button>
               $if track.log:
@@ -470,21 +493,21 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
           <td class="align-middle">
             <span class="label label-secondary">Submitted<!-- on ${study.submission_date_pars}--></span> 
           </td><td class="align-middle">
-            <button class="btn btn-default btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
+            <button class="btn btn-default btn-sm" onclick="edit_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
           </td>
         $elif study.status == 2:
           <td class="align-middle">
             <span class="label label-primary">Running (${study.runs_complete}/${study.runs_total})</span>
           </td><td class="align-middle">
             <button class="btn btn-sm btn-info" onclick="runlog_study('${study.name}', '${study.version}')">Log</button>
-            <button class="btn btn-default btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
+            <button class="btn btn-default btn-sm" onclick="edit_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
           </td>
         $elif study.status == 3:
           <td class="align-middle">
             <span class="label label-danger">Failed<!-- on (${study.completion_date_pars})--></span>
           </td><td class="align-middle">
             <button class="btn btn-sm btn-warning" onclick="runlog_study('${study.name}', '${study.version}')">Log</button>
-            <button class="btn btn-default btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
+            <button class="btn btn-default btn-sm" onclick="edit_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
           </td>
         $elif study.status == 4:
           <td class="align-middle">
@@ -492,7 +515,7 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
           </td><td class="align-middle">
             <button class="btn btn-sm btn-info" onclick="runlog_study('${study.name}', '${study.version}')">Log</button>
             <button class="btn btn-sm btn-success">Results</button>
-            <button class="btn btn-default btn-sm" onclick="derive_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
+            <button class="btn btn-default btn-sm" onclick="edit_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
           </td>
         $else:
           <td class="align-middle">

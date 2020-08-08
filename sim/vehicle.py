@@ -94,8 +94,7 @@ class Tire:
   """
   def __init__(self, var):
     self.model = var.model.lower() # Should be a string (see below for options)
-    if var.pos:  self.pos   = var.pos           # Optional; should be a list: long, lat, vert
-    if var.mass: self.mass  = Tire(var.mass)    # Optional; should be a Mass object
+    if var.mass: self.mass  = Tire(var.mass)    # Optional; should be a Mass object (also used to control position)
 
     if self.model == 'mu':
       self.mu = var.mu
