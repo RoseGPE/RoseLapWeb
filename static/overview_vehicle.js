@@ -18,7 +18,8 @@ function nested_obj_set(obj, keys, val) {
 }
 
 function ged(edt) {
-  return $("#"+edt).editable("getValue")[edt];
+  let a = edt.editable("getValue");
+  return a[Object.keys(a)[0]];
 }
 
 /* ACTIONS */
@@ -44,7 +45,7 @@ function save_vehicle() {
   let x = 12;
   $("[id^=vehicleEdit_]").each(function(index){
     let varname = $(this).attr('id').substring(x);
-    let v = ged($(this).attr('id'));
+    let v = ged($(this));
     let ptype = $(this).data("parse");
     if(ptype && ptype.includes("list")) {
       if (ptype.includes("str"))
@@ -143,19 +144,19 @@ function errorlog_vehicle(name, version) {
 
 function validate_vehicle() {
   console.log("validating");
-  if (ged("vehicleEdit_brakes-mode") == 'perfect') {
+  if (ged($("#vehicleEdit_brakes-mode")) == 'perfect') {
     $("#vehicleEditRow_brakes-front_bias").hide();
   } else {
     $("#vehicleEditRow_brakes-front_bias").show();
   }
 
-  if (ged("vehicleEdit_front_axle-model") == 'mu') {
+  if (ged($("#vehicleEdit_front_axle-model")) == 'mu') {
     $("#vehicleEditRow_front_axle-mu").show();
   } else {
     $("#vehicleEditRow_front_axle-mu").hide();
   }
 
-  if (ged("vehicleEdit_rear_axle-model") == 'mu') {
+  if (ged($("#vehicleEdit_rear_axle-model")) == 'mu') {
     $("#vehicleEditRow_rear_axle-mu").show();
   } else {
     $("#vehicleEditRow_rear_axle-mu").hide();

@@ -282,13 +282,10 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
             </select>
           </div>
 
-          <label for="studyEdit_model" class="col-sm-2 col-form-label text-right">Mesh Size</label>
+          <label for="studyEdit_model" class="col-sm-2 col-form-label text-right">Mesh Size (m)</label>
           <div class="col-sm-3 align-middle">
             <div class="input-group align-middle">
               <input type="text" class="form-control" id="studyEdit_meshsize" placeholder="Mesh Size">
-              <div class="input-group-append">
-                <div class="input-group-text">m</div>
-              </div>
             </div>
           </div>
         </div>
@@ -308,7 +305,8 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
           </div>
         </div>
 
-        <div id="vehicleEdit_sweeps"></div>
+        <hr/>
+        <div id="studyEdit_sweeps"></div>
         <button class="btn btn-block btn-primary" onclick="add_sweep_axis()" >+ Add Sweep Axis</button>
       </div>
       <div class="modal-footer">
