@@ -133,7 +133,12 @@ def run(study_id):
         Vehicle('object', c_vehicle),
         c_tracks, c_settings)
 
-      print(repr(run))
+      try:
+        run.solve()
+        # run.postproc() # TODO: postproc
+        # run.save()     # TODO: save csv
+      except Exception as e:
+        traceback.print_exc()
 
       study.runs_complete+=1
       db_session.commit()
