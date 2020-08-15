@@ -15,6 +15,7 @@ class Track:
 
   def __init__(self, filetype, filedata, unit):
     self.filetype = filetype.lower()
+    self.dc = np.empty([0,2])
     # self.dc is distance-curvature data; matrix is "tall" (fixed columns variable # rows)
     if self.filetype == 'dxf':
       # DXF data
@@ -32,6 +33,10 @@ class Track:
 
   def __repr__(self):
     return "Track (type=%s, n_datapts=%d)" % (self.filetype, np.size(self.dc, axis=0))
+
+  def scale(self, by):
+    # TODO: mutation, where this track object is scaled by provided factor
+    pass
 
 UCONVS = {
   "mi": 1609,

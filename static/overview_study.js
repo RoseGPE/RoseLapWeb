@@ -28,9 +28,9 @@ function save_study(submit) {
   fdata.tracks   = $("#studyEdit_tracks").tagsinput('items');
   fdata.vehicle  = $("#studyEdit_vehicle").val();
   fdata.sweeps   = [];
-  fdata.model    = {
-    algorithm: $("#studyEdit_model").val(),
-    meshsize:  $("#studyEdit_meshsize").val()
+  fdata.model    = $("#studyEdit_model").val();
+  fdata.settings = {
+    dt:  $("#studyEdit_settings_dt").val()
   };
 
   $("#studyEdit_sweeps").children().each(function(axis){
@@ -134,7 +134,8 @@ function edit_study(name, version, new_version) {
     });
 
     $("#studyEdit_vehicle").val(fdata.vehicle);
-    $("#studyEdit_model").val(fdata.model.algorithm);
+    $("#studyEdit_model").val(fdata.model);
+    $("#studyEdit_settings_dt").val(fdata.settings.dt);
     $("#studyEdit_sweeps").val(fdata.sweeps);
     $("#studyEdit_meshsize").val(fdata.model.meshsize);
 

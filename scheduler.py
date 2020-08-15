@@ -12,6 +12,26 @@ import traceback
 from sim.track import Track
 from sim.vehicle import Vehicle
 import itertools
+import copy
+import sim.run_onetire
+import numpy as np
+
+run_species = {
+  "onetire": sim.run_onetire.Run_Onetire
+}
+
+def rset(obj, keys, value):
+  if len(keys) == 1:
+    setattr(obj, keys[0], value)
+  else:
+    rset(getattr(obj, keys[0]), keys[1:], value)
+
+def rget(obj, keys):
+  if len(keys) == 1:
+    return getattr(obj, keys[0])
+  else:
+    return rget(getattr(obj, keys[0]), keys[1:])
+
 
 def run(study_id):
   print("#### scheduler.run(study_id=%d) STARTED ####" % study_id)
@@ -41,7 +61,8 @@ def run(study_id):
     # Grab latest versions of vehicle and tracks used, set their status to used
     db_vehicle = db_session.query(db.Vehicle).filter(db.Vehicle.name == spec.vehicle).order_by(db.Vehicle.version.desc()).first()
     db_vehicle.status = db.STATUS_SUBMITTED
-    vehicle = Vehicle('yaml', db_vehicle.filedata) # core vehicle object used in sim
+    proto_vehicle = yaml.load(db_vehicle.filedata)
+    #vehicle = Vehicle('yaml', db_vehicle.filedata) # core vehicle object used in sim
 
     # Sort tracks by version (highest first). Then sort out each track uniquely
     raw_tracks = db_session.query(db.Track).filter(db.Track.name.in_(spec.tracks)).order_by(db.Track.version.desc()).all()
@@ -52,13 +73,13 @@ def run(study_id):
       if not track.name in track_names:
         track_names.append(track.name)
         db_tracks.append(track)
-        tracks   .append(Track(track.filedata, track.filetype, track.unit))
+        tracks   .append(Track(track.filetype, track.filedata, track.unit))
         track.status = db.STATUS_SUBMITTED
 
     print("Vehicle: ", repr(db_vehicle))
     print("Tracks: ", repr(db_tracks))
-    print("Sweeps: ", repr(spec.sweeps))
     print("Model: ", repr(spec.model))
+    print("Settings: ", repr(spec.settings))
     print("")
 
     # Figure out how many runs will happen in all
@@ -68,8 +89,8 @@ def run(study_id):
     axis_choices = []
     for axis in spec.sweeps:
       for variable in axis.variables:
-        if type(variable.values) == type({}):
-          variable.values = np.linspace(variable.values.start, variable.values.end, variable.values.length).tolist()
+        if type(variable.values) != type([]):
+          variable.values = np.linspace(float(variable.values.start), float(variable.values.end), int(variable.values.length)).tolist()
       axis_lengths.append(len(axis.variables[0].values))
       axis_choices.append(range(axis_lengths[-1]))
       study.runs_total *= axis_lengths[-1]
@@ -85,8 +106,39 @@ def run(study_id):
     for permutation in itertools.product(*axis_choices):
       print("Permutation ", permutation)
       # TODO: actual dispatch, thread pool, variable parse/edit
-      study.runs_complete++
+
+      # Clone vehicle/settings/tracks
+      c_vehicle  = copy.deepcopy(proto_vehicle)
+      c_settings = copy.deepcopy(spec.settings)
+      c_tracks   = copy.deepcopy(tracks)
+
+      for i, var_num in enumerate(permutation):
+        for var in spec.sweeps[i].variables:
+          # TODO: replace vs. scale
+          v = var.values[var_num]
+          print("%s = %s" % (var.varname, repr(v)))
+          keys = var.varname.split('.')
+          if keys[0] == 'settings':
+            rset(c_settings, keys[1:], v)
+          elif keys[0] == 'model':
+            spec.model = v
+          elif keys[0] == 'track':
+            if keys[1] == 'scale':
+              for track in c_tracks:
+                track.scale(keys[1])
+          else:
+            rset(c_vehicle, keys, v)
+
+      run = run_species[spec.model](
+        Vehicle('object', c_vehicle),
+        c_tracks, c_settings)
+
+      print(repr(run))
+
+      study.runs_complete+=1
       db_session.commit()
+
+      print("")
 
 
     ## Create a manifest file

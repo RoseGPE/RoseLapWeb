@@ -4,7 +4,7 @@ from scipy.interpolate import interp2d
 from scipy.interpolate import interp1d
 from numpy import interp
 
-from run import *
+from sim.run import *
 import logging
 
 import matplotlib.pyplot as plt

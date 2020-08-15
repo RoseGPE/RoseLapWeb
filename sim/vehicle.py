@@ -38,16 +38,19 @@ class Vehicle:
   def __init__(self, filetype, filedata):
     self.filetype = filetype.lower()
     # self.dc is distance-curvature data; matrix is "tall" (fixed columns variable # rows)
-    if self.filetype == 'yaml':
-      # YAML data
+    if self.filetype == 'object':
+      # Raw object data, pre-parsed
+      self.__dict__.update(filedata.__dict__)
 
-      
+    elif self.filetype == 'yaml':
+      # YAML data
       self.__dict__.update(yaml.load(filedata).__dict__)
-      self.mass = Mass(self.mass)
-      self.aero = Aero(self.aero)
-      #self.tires = [Tire(tire) for tire in self.tires]
-      self.powertrain = Powertrain(self.powertrain)
-      self.brakes = Brakes(self.brakes)
+
+    self.mass = Mass(self.mass)
+    self.aero = Aero(self.aero)
+    #self.tires = [Tire(tire) for tire in self.tires]
+    self.powertrain = Powertrain(self.powertrain)
+    self.brakes = Brakes(self.brakes)
 
     self.g = 9.81
     self.v_max = self.powertrain.omega_max
@@ -141,13 +144,13 @@ class Brakes:
   """
     Brakes take parameters:
     - mode: fixed or perfect
-    - front_bias: front brake bias as a fraction of 1
+    - front_bias: front brake bias as a percentage
   """
   def __init__(self, var):
     self.mode = var.mode
     if self.mode == 'fixed':
-      self.front_bias = var.front_bias
-      self.rear_bias  = 1-var.front_bias
+      self.front_bias = float(var.front_bias)/100 # convert from pct
+      self.rear_bias  = 1-self.front_bias
 
 ### Old code not following new OO standard ###
 """

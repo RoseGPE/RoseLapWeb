@@ -85,7 +85,7 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
             <table class="table table-bordered table-striped">
               <tr>
                 <td width="50%">Brake Mode</td>
-                <td width="50%" colspan=2 ><a href="#" data-type="select" id="vehicleEdit_brakes-mode" class="editable" data-source="[{value: 'fixed', text: 'Fixed Bias'}, {value: 'perfect', text: 'Perfect Bias'}]" data-value="perfect"></a></td>
+                <td width="50%" colspan=2 ><a href="#" data-type="select" id="vehicleEdit_brakes-mode" class="editable" data-source="[{value: 'fixed', text: 'Fixed Bias'}, {value: 'perfect', text: 'Perfect Bias'}]" data-value="perfect" data-parse="str"></a></td>
               </tr>
               <tr id="vehicleEditRow_brakes-front_bias">
                 <td>Front Bias</td>
@@ -126,7 +126,7 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
             </tr>
             <tr>
               <td>Tire Model</td>
-              <td colspan=2 ><a data-type="select" id="vehicleEdit_${axle}_axle-model" data-source="[{value: 'mu', text: 'Coloumb'}, {value: 'bs', text: 'Undefined'}]" class="editable"></a></td>
+              <td colspan=2 ><a data-type="select" id="vehicleEdit_${axle}_axle-model" data-source="[{value: 'mu', text: 'Coloumb'}, {value: 'bs', text: 'Undefined'}]" class="editable" data-parse="str"></a></td>
             </tr>
             <tr id="vehicleEditRow_${axle}_axle-mu">
               <td>Coloumb Friction</td>
@@ -162,7 +162,7 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
               </tr>
               <tr>
                 <td>Transmission Type</td>
-                <td><a href="#" data-type="select" id="vehicleEdit_powertrain-trans_type" class="editable" data-source="[{value: 'sequential', text: 'Sequential'}, {value: 'manual', text: 'Manual'}, {value: 'cvt', text: 'CVT'}]" data-value="sequential" ></a></td>
+                <td><a href="#" data-type="select" id="vehicleEdit_powertrain-trans_type" class="editable" data-source="[{value: 'sequential', text: 'Sequential'}, {value: 'manual', text: 'Manual'}, {value: 'cvt', text: 'CVT'}]" data-value="sequential" data-parse="str" ></a></td>
                 <td></td>
               </tr>
               <tr id="vehicleEditRow_powertrain-trans_gears">
@@ -287,10 +287,10 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
             </select>
           </div>
 
-          <label for="studyEdit_model" class="col-sm-2 col-form-label text-right">Mesh Size (m)</label>
+          <label for="studyEdit_settings_dt" class="col-sm-2 col-form-label text-right">Timestep (s)</label>
           <div class="col-sm-3 align-middle">
             <div class="input-group align-middle">
-              <input type="text" class="form-control" id="studyEdit_meshsize" placeholder="Mesh Size">
+              <input type="text" class="form-control" id="studyEdit_settings_dt" placeholder="Timestep (s)">
             </div>
           </div>
         </div>
