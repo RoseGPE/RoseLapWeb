@@ -76,7 +76,11 @@ class Aero:
     # TODO: Moments
     # TODO: DRS
 
-  def force(self, v):
+  def force(self, v=0, beta=0, k=0):
+    # TODO: advanced maps
+    # v:    velocity of vehicle
+    # beta: vehicle overall slip angle
+    # k:    curvature of vehicle path
     return [force*v*v for force in self.force_1ms]
 
 class Mass:
@@ -88,8 +92,8 @@ class Mass:
   """
   def __init__(self, var):
     self.mass  = var.mass # Should be a float
-    if var.moi: self.moi   = var.moi # Optional; should be a list: roll, pitch, yaw
-    if var.cg:  self.cg    = var.cg  # Optional; should be a list: long, lat, vert
+    self.moi   = var.moi if var.moi else [0,0,0] # Optional; should be a list: roll, pitch, yaw
+    self.cg    = var.cg  if var.moi else [0,0,0] # Optional; should be a list: long, lat, vert
 
 class Tire:
   """
@@ -103,11 +107,11 @@ class Tire:
       self.mu = var.mu
     # TODO: other models
 
-  def force_lat_remain(self, N, f_long):
+  def force_lat_remain(self, N=None, f_long=None):
     if self.model == 'mu':
       return math.sqrt((self.mu*N)**2 - f_long**2)
 
-  def force_long_remain(self, N, f_lat):
+  def force_long_remain(self, N=None, f_lat=None):
     if self.model == 'mu':
       return math.sqrt((self.mu*N)**2 - f_lat**2)
 
@@ -128,7 +132,7 @@ class Powertrain:
 
     self.omega_max    = max(self.omega_map)*min(self.trans_gears)
 
-  def state(self, gear, wheel_rpm, traction_limit):
+  def state(self, gear=None, wheel_rpm=None, traction_limit=np.inf):
     """ return: a tuple with
      - Gear Number
      - Throttle Percentage
@@ -137,7 +141,7 @@ class Powertrain:
      - Torque """
     pass
 
-  def ideal_gear(self, wheel_rpm, traction_limit):
+  def ideal_gear(self, wheel_rpm=None, traction_limit=np.inf):
     pass
 
 class Brakes:
@@ -151,6 +155,23 @@ class Brakes:
     if self.mode == 'fixed':
       self.front_bias = float(var.front_bias)/100 # convert from pct
       self.rear_bias  = 1-self.front_bias
+
+  def force(self, f_long_maxs=[]):
+    # TODO: return [array, of, longitudinal, forces]
+    if self.mode == 'perfect':
+      if len(f_long_maxs) == 4:
+        pass # TODO: 4 tires is complex assuming front-rear bias is still a thing
+      else:
+        return [-abs(f) for f in f_long_maxs]
+    if self.mode == 'fixed':
+      if len(f_long_maxs) == 4:
+        pass # TODO: 4 tires is real complex, assuming front-rear bias is still a thing
+      elif len(f_long_maxs) == 2:
+        pass # TODO: 2 tires is complex
+      elif len(f_long_maxs) == 1:
+        return [-abs(f) for f in f_long_maxs]
+
+
 
 ### Old code not following new OO standard ###
 """

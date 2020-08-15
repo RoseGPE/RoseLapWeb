@@ -19,13 +19,13 @@ class Track:
     # self.dc is distance-curvature data; matrix is "tall" (fixed columns variable # rows)
     if self.filetype == 'dxf':
       # DXF data
-      # TODO: units
       self.dc = dxf_to_dc(filedata, UCONVS[unit])
     if self.filetype == 'csv':
-      # TODO: Raw distance-curvature data
-      pass
+      # Raw distance-curvature data
+      self.dc = np.fromiter([[float(y.strip()) for y in x.split(',')] for x in filedata.split('\n')])
+      self.scale(UCONVS[unit])
     if self.filetype == 'log':
-      # TODO: Trackwalker data
+      # TODO: Trackwalker data (this may require special settings... metadata... yay)
       pass
     if self.filetype == 'svg':
       # TODO: Vector graphics
@@ -34,9 +34,11 @@ class Track:
   def __repr__(self):
     return "Track (type=%s, n_datapts=%d)" % (self.filetype, np.size(self.dc, axis=0))
 
-  def scale(self, by):
-    # TODO: mutation, where this track object is scaled by provided factor
-    pass
+  def scale(self, factor):
+    # Mutation, where this track object is scaled by provided factor.
+    # Distances get multiplied by factor, curvatures get divided by factor.
+    self.dc[:,0] *= factor
+    self.dc[:,1] /= factor
 
 UCONVS = {
   "mi": 1609,
