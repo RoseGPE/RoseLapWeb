@@ -1,4 +1,5 @@
 import ezdxf as dxf
+from math import *
 
 doc = dxf.readfile("track2.dxf")
 
@@ -8,11 +9,12 @@ for e in msp.query('LINE'):
     print("LINE on layer: %s" % e.dxf.layer)
     print("start point: %s" % e.dxf.start)
     print("end point: %s" % e.dxf.end)
+    print("length: %s" % hypot(e.dxf.start[0]-e.dxf.end[0], e.dxf.start[1]-e.dxf.end[1]))
     print("")
     
 for e in msp.query('SPLINE'):
     print("SPLINE on layer: %s" % e.dxf.layer)
-    print(e.dxf.n_fit_points)
+    print(e.fit_points)
     print("")
 
 for e in msp.query('ARC'):
