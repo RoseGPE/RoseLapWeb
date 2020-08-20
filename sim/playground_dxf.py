@@ -1,5 +1,6 @@
 import ezdxf as dxf
 from math import *
+import numpy as np
 
 doc = dxf.readfile("track2.dxf")
 
@@ -14,7 +15,23 @@ for e in msp.query('LINE'):
     
 for e in msp.query('SPLINE'):
     print("SPLINE on layer: %s" % e.dxf.layer)
+    ct = e.construction_tool()
     print(e.fit_points)
+    print(e.knots)
+    print(ct.max_t)
+    N = 20
+    ts    = np.linspace(0.0,ct.max_t,N+1)
+    dervs = ct.derivatives(ts)
+    prms  = ct.params(N)
+    ppt = ct.point(0)
+    for t, derv, prm in zip(ts, dervs, prms):
+        pt = derv[0]
+        dx,  dy,  dz  = derv[1]
+        ddx, ddy, ddz = derv[2]
+        k = (dx*ddy - dy*ddx)/pow(dx*dx + dy*dy, 1.5)
+        d = hypot(ppt[0]-pt[0], ppt[1]-pt[1]) # crude...
+        print(t, prm, derv[0], d, k)
+        ppt = pt
     print("")
 
 for e in msp.query('ARC'):
