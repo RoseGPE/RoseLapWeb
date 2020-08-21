@@ -1,4 +1,11 @@
-import ezdxf as dxf
+from track import *
+
+with open('track2.DXF', 'r') as f:
+  print(dxf_to_dc(f.read(), 1))
+
+
+
+"""import ezdxf as dxf
 from math import *
 import numpy as np
 
@@ -16,7 +23,7 @@ for e in msp.query('LINE'):
 for e in msp.query('SPLINE'):
     print("SPLINE on layer: %s" % e.dxf.layer)
     ct = e.construction_tool()
-    print(e.fit_points)
+    print(e.control_points)
     print(e.knots)
     print(ct.max_t)
     N = 20
@@ -39,10 +46,9 @@ for e in msp.query('ARC'):
     print("Start: %s" % repr(e.start_point))
     print("End:   %s" % repr(e.end_point))
     print("Curvature: %f" % (1/float(e.dxf.radius)))
-    angs = [a for a in e.angles(2)]
-    sa   = angs[1] - angs[0]
+    sa   = e.dxf.end_angle - e.dxf.start_angle
     while sa < 0:
         sa += 360
     length = sa*3.1415/180.0*e.dxf.radius
     print("Length: %f" % length)
-    print("")
+    print("")"""

@@ -6,11 +6,14 @@ import time
 #from svgpathtools import *
 from scipy import signal
 from scipy.interpolate import UnivariateSpline
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import ezdxf as dxf
-import cStringIO as StringIO
+import tempfile
 
 from ezdxf.lldxf.tagger import ascii_tags_loader, tag_compiler, binary_tags_loader
+
+from CustomNamedTemporaryFile import *
+#from ezdxf.filemanagement import dxf_file_info
 
 EPSILON = 1e-4 # small amount used for distinguishing points in distance-curvature data, as well as search radius for DXF parsing
 
@@ -54,189 +57,134 @@ UCONVS = {
   "nmi": 1852 #nautical mile
 }
 
-def dxf_read(filedata):
-  info = dxf_file_info(filename)
-  #fp = open(filename, mode='rt', encoding=info.encoding, errors='ignore')
-  with StringIO(filedata) as fp:
-    tagger = ascii_tags_loader(fp) # takes a stream / TextIO
-    tagger = tag_compiler(tagger)
-  return tagger
+def swept_angle(e, s):
+  sa = e-s
+  while sa < 360:
+    sa += 360
+
+class TrackSegment(object):
+  __slots__ = ('dc', 'start', 'end', 'segmnt')
+  def __init__(self, dc, start, end, segmnt=0):
+    self.dc    = dc
+    self.start = start
+    self.end   = end
+    self.segmnt = segmnt
+
+  def reverse(self):
+    self.dc = np.flipud(self.dc)
+    self.dc[:, 0] = -self.dc[:, 0] + self.dc[0, 0] + self.dc[-1, 0]
+    self.dc[:, 1] = -self.dc[:, 1]
+    self.start, self.end = self.end, self.start
+    return self
+
+  def shift(self, amt):
+    self.dc[:, 0] += amt
+    return self
+
+  def length(self):
+    return self.dc[-1, 0] - self.dc[0, 0]
+
+  def __repr__(self):
+    return "TrackSegment from %s to %s" % (repr(self.start), repr(self.end))
+
 
 def dxf_to_dc(filedata, scaling):
-  "Converts DXF into distance-curvature data."
+  "Converts DXF into distance-curvature data. Assumes a DXF in the X-Y plane of only lines, arcs, and splines."
 
-  dcs     = []
-  starts  = []
-  ends    = []
-  doc = dxf_read(filedata)
-  msp = doc.modelspace()
+  with CustomNamedTemporaryFile(mode='w') as tf:
+    tfn = tf.name
+    tf.write(filedata)
+    tf.flush()
+
+    doc = dxf.readfile(tfn)
+    msp = doc.modelspace()
+
+  segs = []
 
   for e in msp.query('LINE'):
-    # handle line
-    # set dcs, starts, ends
-    entities.append(e)
+    l = math.hypot(e.dxf.start[0]-e.dxf.end[0], e.dxf.start[1]-e.dxf.end[1])
+    segs.append(TrackSegment(
+      np.array([[0,0], [l, 0]]),
+      e.dxf.start,
+      e.dxf.end ))
 
   for e in msp.query('ARC'):
-    # set dcs, starts, ends
-    entities.append(e)
+    # Compute swept angle; needs to be in the range of 0->360 so normalize it
+    sa   = e.dxf.end_angle - e.dxf.start_angle
+    while sa < 0:
+        sa += 360
+    l = sa*math.pi/180.0*e.dxf.radius
 
-  for e in msp.query('ELLIPSE'):
-    # set dcs, starts, ends
-    entities.append(e)
+    # todo: signed curvature
+
+    k = 1/float(e.dxf.radius)
+    segs.append(TrackSegment(
+      np.array([[0, k], [l, k]]),
+      e.start_point,
+      e.end_point ))
 
   for e in msp.query('SPLINE'):
-    # set dcs, starts, ends
-    entities.append(e)
+    ct = e.construction_tool()
+
+    # Iterate through the spline with N samples per control point
+    dc = np.empty([0, 2])
+    N  = 50
+    ts    = np.linspace(0.0, ct.max_t, N*ct.count + 1)
+    dervs = ct.derivatives(ts)
+    prms  = ct.params(N*ct.count)
+    ppt   = ct.point(0)
+    for t, derv, prm in zip(ts, dervs, prms):
+      # extract out derivative values (0-th derivative is this particular point)
+      pt = derv[0]
+      dx,  dy,  dz  = derv[1]
+      ddx, ddy, ddz = derv[2]
+
+      # compute the curvature of a parameterized curve
+      k = (dx*ddy - dy*ddx)/math.pow(dx*dx + dy*dy, 1.5)
+      d = math.hypot(ppt[0]-pt[0], ppt[1]-pt[1])
+      dc = np.vstack((dc, np.array([d, k])))
+      ppt = pt
+
+    segs.append(TrackSegment(dc, ct.point(0), ct.point(ct.max_t)))
 
   # build connectivity (refer to old algo)
+  # find an entity whose start point or end is at (0,0)
+  # add the entity's end point to the big DC matrix
+  ## reverse it if the end point was found
+  # go to his other endpoint, and find an entity whose start or endpoint is at his endpoint
+  # add the new entity's end point to the big DC matrix, adding elapsed_distance to the distance column
 
-  # build 
+  for seg in segs:
+    print(repr(seg))
 
+  print("\n\n\n")
 
-def dxf_to_dc_OLD(data, scaling):
-  "Converts DXF data into distance-curvature data. DXF will start at the endpoint which is connected to the origin (0,0)"
-
-  dxf_output = []   # list of elements
-
-  # STEP 1: Iterate through all lines of the DXF and get all the entities
-  lines = [x.strip() for x in data.splitlines()]
-  i=0
-  while i<len(lines):
-    # Lines are called out as AcDbLine entities
-    if lines[i] == 'AcDbLine':
-      # shape_type x1 y1 x2 y2
-      this_shape = ['line',0,0,0,0] 
-
-      # find codes which correspond to line dimensions
-      headers = ['10','20','11','21']
-      while i<len(lines):
-        if lines[i] in headers:
-          this_shape[headers.index(lines[i])+1]=float(lines[i+1])
-        elif lines[i] == '0':
-          break;
-        else:
-          i-=1
-        i+=2;
-
-      dxf_output.append(this_shape)
-
-    # Arcs are called out as AcDbCircle entities
-    elif lines[i] == 'AcDbCircle':
-      # shape_type xc yc radius start_angle end_angle direction x1 y1 x2 y2
-      this_shape = ['arc',0,0,0,0,0,1]
-
-      # find the codes which correspond to arc dimensions
-      headers = ['10','20','40','50','51']
-      while i<len(lines):
-        if lines[i] in headers:
-          this_shape[headers.index(lines[i])+1]=float(lines[i+1])
-        elif lines[i] == '0':
-          break;
-        else:
-          i-=1
-        i+=2;
-
-      # compute the endpoints of the arc
-      this_shape.append(math.cos(math.radians(this_shape[4]))*this_shape[3]+this_shape[1])
-      this_shape.append(math.sin(math.radians(this_shape[4]))*this_shape[3]+this_shape[2])
-      this_shape.append(math.cos(math.radians(this_shape[5]))*this_shape[3]+this_shape[1])
-      this_shape.append(math.sin(math.radians(this_shape[5]))*this_shape[3]+this_shape[2])
-
-      dxf_output.append(this_shape)
-
-    i+=1
-
-  # STEP 2: connect the elements together
-  connectivity = [] # list of which elements are connected to which (since they are in no particular order in the DXF file)
-
-  first_time = True
-  hop = [0,0];
-  if len(dxf_output) == 1:
-    connectivity = [0]
-  else:
-    while len(connectivity) < len(dxf_output):
-      matches_pos = []
-      matches_neg = []
-      for i in range(len(dxf_output)):
-        if len(connectivity) < len(dxf_output)-1:
-          if i in connectivity:
-            continue
-        elif i == connectivity[-1]:
-          continue
-        shape = dxf_output[i];
-        if abs(shape[-4] - hop[0]) < EPSILON and abs(shape[-3] - hop[1]) < EPSILON:
-          matches_pos.append(i)
-        elif abs(shape[-2] - hop[0]) < EPSILON and abs(shape[-1] - hop[1]) < EPSILON:
-          matches_neg.append(i)
-      if first_time:
-        fine = False
-        for mp in matches_pos:
-          if dxf_output[mp][-2] > dxf_output[mp][-1]:
-            connectivity.append(mp)
-            hop = dxf_output[mp][-2:]
-            fine = True
-        for mn in matches_neg:
-          if dxf_output[mn][-4] > dxf_output[mn][-3]:
-            connectivity.append(mn)
-            temp = dxf_output[mn][-2:]
-            dxf_output[mn][-2:] = dxf_output[mn][-4:-2]
-            dxf_output[mn][-4:-2] = temp
-            if dxf_output[mn][0] == 'arc':
-              dxf_output[mn][6]*=-1;
-            hop = dxf_output[mn][-2:]
-            fine = True
-        if fine:
-          continue
-      if len(matches_pos) > 0:
-        connectivity.append(matches_pos[0])
-        hop = dxf_output[matches_pos[0]][-2:]
+  nearpt = (0,0)
+  elapsed_distance = 0
+  dc = np.empty([0, 2])
+  while len(segs) > 0:
+    for i, seg in enumerate(segs):
+      d = math.hypot(seg.start[0]-nearpt[0], seg.start[1]-nearpt[1])
+      # If a match is found, add the DC data to the 
+      if d < EPSILON:
+        print(repr(seg))
+        dc = np.vstack((dc, seg.shift(elapsed_distance).dc))
+        elapsed_distance += seg.length()
+        nearpt = seg.end
+        segs.pop(i)
+        break
+    else:
+      for i, seg in enumerate(segs):
+        d = math.hypot(seg.end[0]-nearpt[0], seg.end[1]-nearpt[1])
+        if d < EPSILON:
+          print(repr(seg))
+          dc = np.vstack((dc, seg.shift(elapsed_distance).reverse().dc))
+          elapsed_distance += seg.length()
+          nearpt = seg.end
+          segs.pop(i)
+          break
       else:
-        connectivity.append(matches_neg[0])
-        temp = dxf_output[matches_neg[0]][-2:]
-        dxf_output[matches_neg[0]][-2:] = dxf_output[matches_neg[0]][-4:-2]
-        dxf_output[matches_neg[0]][-4:-2] = temp
-        #print('flipper', matches_neg[0])
-        if (dxf_output[matches_neg[0]][0] == 'arc'):
-          dxf_output[matches_neg[0]][6]*=-1;
-        hop = dxf_output[matches_neg[0]][-2:]
-      first_time = False
-  open_ended = False
-  if ( (abs(dxf_output[connectivity[-1]][-4] - dxf_output[connectivity[0]][-2]) > EPSILON or abs(dxf_output[connectivity[-1]][-3] - dxf_output[connectivity[0]][-1]) > EPSILON)
-    and (abs(dxf_output[connectivity[-1]][-2] - dxf_output[connectivity[0]][-4]) > EPSILON or abs(dxf_output[connectivity[-1]][-1] - dxf_output[connectivity[0]][-3]) > EPSILON)) :
-    open_ended=True
+        print("Failed to connect segment.") # TODO: Graceful error handling
+        break
 
-  # STEP 3: Turn the entities and connectivity into distance-from-start and curvature data
-  sectors = np.empty([0,2])
-  length  = 0
-  for index in connectivity:
-    shape = dxf_output[index]
-    if shape[0] == 'line':
-      # Add start point of sector
-      sectors = np.vstack((sectors, np.array([length*scaling, 0])))
-
-      # Compute distance of line in straightforward fashion
-      dx=shape[3]-shape[1]
-      dy=shape[4]-shape[2]
-      length = math.hypot(dx, dy)
-
-      # Add a point that has no curvature
-      sectors = np.vstack((sectors, np.array([length*scaling-EPSILON, 0])))
-    elif shape[0] == 'arc':
-      # xc yc radius start_angle end_angle direction x1 y1 x2 y2
-      arc_angle = shape[5] - shape[4]
-      # if shape[6] > 0:
-        # arc_angle = arc_angle-360
-      # arc_angle = arc_angle % 360
-      if shape[6] < 0:
-        arc_angle+=360
-      arc_angle = arc_angle % 360
-
-      # Add start point of sector
-      sectors = np.vstack((sectors, np.array([length*scaling, 1.0/shape[3]/scaling])))
-
-      length = shape[3]*math.radians(arc_angle)
-
-      # Add end point of sector
-      sectors = np.vstack((sectors, np.array([length*scaling-EPSILON, 1.0/shape[3]/scaling])))
-  
-  return sectors
+  return dc
