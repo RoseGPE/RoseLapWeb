@@ -7,6 +7,10 @@ import time
 from scipy import signal
 from scipy.interpolate import UnivariateSpline
 import matplotlib.pyplot as plt
+import ezdxf as dxf
+import cStringIO as StringIO
+
+from ezdxf.lldxf.tagger import ascii_tags_loader, tag_compiler, binary_tags_loader
 
 EPSILON = 1e-4 # small amount used for distinguishing points in distance-curvature data, as well as search radius for DXF parsing
 
@@ -50,7 +54,46 @@ UCONVS = {
   "nmi": 1852 #nautical mile
 }
 
-def dxf_to_dc(data, scaling):
+def dxf_read(filedata):
+  info = dxf_file_info(filename)
+  #fp = open(filename, mode='rt', encoding=info.encoding, errors='ignore')
+  with StringIO(filedata) as fp:
+    tagger = ascii_tags_loader(fp) # takes a stream / TextIO
+    tagger = tag_compiler(tagger)
+  return tagger
+
+def dxf_to_dc(filedata, scaling):
+  "Converts DXF into distance-curvature data."
+
+  dcs     = []
+  starts  = []
+  ends    = []
+  doc = dxf_read(filedata)
+  msp = doc.modelspace()
+
+  for e in msp.query('LINE'):
+    # handle line
+    # set dcs, starts, ends
+    entities.append(e)
+
+  for e in msp.query('ARC'):
+    # set dcs, starts, ends
+    entities.append(e)
+
+  for e in msp.query('ELLIPSE'):
+    # set dcs, starts, ends
+    entities.append(e)
+
+  for e in msp.query('SPLINE'):
+    # set dcs, starts, ends
+    entities.append(e)
+
+  # build connectivity (refer to old algo)
+
+  # build 
+
+
+def dxf_to_dc_OLD(data, scaling):
   "Converts DXF data into distance-curvature data. DXF will start at the endpoint which is connected to the origin (0,0)"
 
   dxf_output = []   # list of elements
