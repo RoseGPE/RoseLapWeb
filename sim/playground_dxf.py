@@ -1,9 +1,10 @@
 from track import *
 
-with open('track2.DXF', 'r') as f:
-  print(dxf_to_dc(f.read(), 1))
-
-
+trk = Track('dxf', open('sample_track.dxf').read(), 'm')
+trk.scale(3)
+print(trk.dc)
+trk.prorate_curvature(1)
+print(trk.dc)
 
 """import ezdxf as dxf
 from math import *

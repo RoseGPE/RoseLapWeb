@@ -15,6 +15,8 @@ from ezdxf.lldxf.tagger import ascii_tags_loader, tag_compiler, binary_tags_load
 from CustomNamedTemporaryFile import *
 #from ezdxf.filemanagement import dxf_file_info
 
+np.seterr(divide='ignore')
+
 EPSILON = 1e-4 # small amount used for distinguishing points in distance-curvature data, as well as search radius for DXF parsing
 
 class Track:
@@ -46,6 +48,12 @@ class Track:
     # Distances get multiplied by factor, curvatures get divided by factor.
     self.dc[:,0] *= factor
     self.dc[:,1] /= factor
+
+  def prorate_curvature(self, r_add):
+    "Modifies the track by an offset r_add to compensate for a wider vehicle. Not perfect, but does capture some of the physics."
+    #for i in range(self.dc.shape[0]):
+    #  self.dc[i,1] = 
+    self.dc[:,1] = np.sign(self.dc[:,1]) * np.true_divide(1, np.true_divide(1, self.dc[:,1]) + r_add)
 
 UCONVS = {
   "mi": 1609,
@@ -154,11 +162,6 @@ def dxf_to_dc(filedata, scaling):
   # go to his other endpoint, and find an entity whose start or endpoint is at his endpoint
   # add the new entity's end point to the big DC matrix, adding elapsed_distance to the distance column
 
-  for seg in segs:
-    print(repr(seg))
-
-  print("\n\n\n")
-
   nearpt = (0,0)
   elapsed_distance = 0
   dc = np.empty([0, 2])
@@ -167,7 +170,6 @@ def dxf_to_dc(filedata, scaling):
       d = math.hypot(seg.start[0]-nearpt[0], seg.start[1]-nearpt[1])
       # If a match is found, add the DC data to the 
       if d < EPSILON:
-        print(repr(seg))
         dc = np.vstack((dc, seg.shift(elapsed_distance).dc))
         elapsed_distance += seg.length()
         nearpt = seg.end
@@ -177,7 +179,6 @@ def dxf_to_dc(filedata, scaling):
       for i, seg in enumerate(segs):
         d = math.hypot(seg.end[0]-nearpt[0], seg.end[1]-nearpt[1])
         if d < EPSILON:
-          print(repr(seg))
           dc = np.vstack((dc, seg.shift(elapsed_distance).reverse().dc))
           elapsed_distance += seg.length()
           nearpt = seg.end
