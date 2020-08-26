@@ -19,3 +19,8 @@
     display: inline-block;
     vertical-align: middle;
 }
+
+.textarea-short {
+	width: 100% !important;
+	font-family: monospace;
+}

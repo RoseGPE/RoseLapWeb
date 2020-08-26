@@ -22,7 +22,8 @@ EPSILON = 1e-4 # small amount used for distinguishing points in distance-curvatu
 class Track:
   "Track object; new to V6"
 
-  def __init__(self, filetype, filedata, unit):
+  def __init__(self, name, filetype, filedata, unit):
+    self.name = name
     self.filetype = filetype.lower()
     self.dc = np.empty([0,2])
     # self.dc is distance-curvature data; matrix is "tall" (fixed columns variable # rows)

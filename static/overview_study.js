@@ -213,6 +213,8 @@ function add_track_to_study() {
   $("#studyEdit_tracks_dropdown").val('');
 }
 
+/* Sweeps */
+
 AXIS_NAMES = ["X", "Y", "Z", "A"]
 VARIABLES  = {
   "aero.force":   "xyz",
@@ -540,4 +542,53 @@ function change_sweep_type(axis, variable) {
     }
     
   }
+}
+
+/* Post Processing */
+function add_postproc(name, scope, script) {
+  let i = $("#studyEdit_postproc").children().length;
+  let x = $(`<div style="font-family: monospace">
+    <div>
+      def <a class="editable studyEdit_postproc_name" data-type="text"></a> ( 
+      <div class="btn-group btn-toggle btn-operation" onclick="togglebtn(this)" >
+        <button class="btn btn-xs ${scope == 'run' ? 'active btn-info':'btn-default'}">run</button>
+        <button class="btn btn-xs ${scope != 'run' ? 'active btn-info':'btn-default'}" >lap</button> 
+      </div>
+      ):
+    </div>
+    <div>
+      <span style="width: 5em;"></span>return 
+      <a class="editable studyEdit_postproc_script textarea-short" data-type="text"></a>
+    </div>
+    <hr/>
+    </div>`);
+  $("#studyEdit_postproc").append(x);
+  x.find(".studyEdit_postproc_name").editable({
+      type: 'text',
+      title: '',
+      mode: 'inline',
+      toggle: 'click',
+      showbuttons: false,
+      placeholder: "UNNAMED FILTER",
+      saveonchange: true,
+      emptytext: "UNNAMED FILTER",
+    }).on('shown', function(ev, editable) {
+        setTimeout(function() {
+            editable.input.$input.select();
+        },0);
+    }).editable('setValue', name);
+  x.find(".studyEdit_postproc_script").editable({
+      type: 'text',
+      title: '',
+      mode: 'inline',
+      toggle: 'click',
+      showbuttons: false,
+      placeholder: "UNWRITTEN SCRIPT",
+      saveonchange: true,
+      emptytext: "UNWRITTEN SCRIPT",
+    }).on('shown', function(ev, editable) {
+        setTimeout(function() {
+            editable.input.$input.select();
+        },0);
+    }).editable('setValue', script);
 }

@@ -25,15 +25,16 @@ class Run:
   def __repr__(self):
     return "Run (%s, %s, %s, %s)" % (repr(self.vehicle), repr(self.tracks), repr(self.settings), "solved" if self.channels else "unsolved")
 
-class ChannelsNotEvenException(Exception):
+class LapNotEvenException(Exception):
   def __init__(self, levels):
     self.levels = levels
 
-
-class Channels():
-  def __init__(self, names):
-    self.map = {}
-    self.names = names
+class Lap():
+  def __init__(self, names, vehicle=None, track=None):
+    self.map     = {}
+    self.names   = names
+    self.vehicle = vehicle
+    self.track   = track
     for i, name in enumerate(names):
       self.map[name] = []
 
