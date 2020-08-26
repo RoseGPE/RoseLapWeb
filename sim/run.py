@@ -25,6 +25,11 @@ class Run:
   def __repr__(self):
     return "Run (%s, %s, %s, %s)" % (repr(self.vehicle), repr(self.tracks), repr(self.settings), "solved" if self.channels else "unsolved")
 
+class ChannelsNotEvenException(Exception):
+  def __init__(self, levels):
+    self.levels = levels
+
+
 class Channels():
   def __init__(self, names):
     self.map = {}
@@ -49,7 +54,6 @@ class Channels():
         break
       i += 1
 
-
     for key in self.names:
       self.map[key] = self.map[key][:i] + new_chnls.map[key]
 
@@ -60,15 +64,25 @@ class Channels():
         i += 1
 
   def __getitem__(self, key):
+    if len(key) == 1:
+      return self.map[key[0]]
     return self.map[key[0]][key[1]]
 
   def __setitem__(self, key, value):
+    if len(key) == 1:
+      return self.map[key[0]]
     self.map[key[0]][key[1]] = value
+
+  def __len__(self):
+    x = [len(self.map[name]) for name in self.names]
+    if min(x) != max(x):
+      raise ChannelsNotEvenException({k:v for (k,v) in zip(self.names, x)})
+    return x[0]
 
   def save_as_csv(self, file):
     writer = csv.DictWriter(file, delimiter=',', fieldnames=self.names)
     writer.writeheader()
-    for i in range(len(self.map[self.names[0]])):
+    for i in range(len(self)):
       writer.writerow({name:self.map[name][i] for name in self.names})
 
 
