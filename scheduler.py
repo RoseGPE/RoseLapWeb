@@ -77,10 +77,11 @@ def run(study_id):
     #vehicle = Vehicle('yaml', db_vehicle.filedata) # core vehicle object used in sim
 
     # Sort tracks by version (highest first). Then sort out each track uniquely
-    raw_tracks = db_session.query(db.Track).filter(db.Track.name.in_(spec.tracks)).order_by(db.Track.version.desc()).all()
-    db_tracks = []
-    tracks    = []
+    raw_tracks  = db_session.query(db.Track).filter(db.Track.name.in_(spec.tracks)).order_by(db.Track.version.desc()).all()
+    db_tracks   = []
+    tracks      = []
     track_names = []
+    stats       = {}
     for track in raw_tracks:
       if not track.name in track_names:
         track_names.append(track.name)
@@ -164,8 +165,8 @@ def run(study_id):
 
       try:
         run.solve()
-        # run.postproc() # @TODO: postproc
-        # run.save()     # @TODO: save csv
+        run.to_files(folder, permutation)
+        stats['_'.join([str(x) for x in permutation])] = run.postprocess(spec.postprocs)
       except Exception as e:
         logging.error(e, exc_info=True)
 
@@ -178,8 +179,25 @@ def run(study_id):
     manifest = {
       "study": study.as_dict(),
       "vehicle": db_vehicle.as_dict(),
-      "tracks":  [track.as_dict() for track in db_tracks]
+      "tracks":  [track.as_dict() for track in db_tracks],
+      "stat": stats
     }
+    """ Postproc is structred like
+      [ # nested permutations, however many deep you need in the matrix
+          {
+            "run": {
+              "filterA": valueA,
+              "filterB": valueB
+            },
+            "laps": {
+              "track": {
+                "filterA": valueA,
+                "filterB": valueB
+              }
+            }
+          }
+        ]
+    """
     # @TODO: Fully build manifest
     # @TODO: Track / vehicle filedata store in external files
     with open(folder+"/manifest.json", "w") as f:

@@ -25,7 +25,7 @@ EPSILON = 1e-4 # small amount used for distinguishing points in distance-curvatu
 
 class Track:
   "Track object; new to V6"
-
+  __slots__ = ["name", "filetype", "unit", "dc"]
   def __init__(self, name, filetype, filedata, unit):
     self.name = name
     self.filetype = filetype.lower()

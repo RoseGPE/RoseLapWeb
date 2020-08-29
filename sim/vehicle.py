@@ -56,7 +56,27 @@ class Vehicle:
 
     self.mass = Mass(self.mass)
     self.aero = Aero(self.aero)
-    #self.tires = [Tire(tire) for tire in self.tires]
+    if hasattr(self, 'tires'):
+      self.tires = [Tire(tire) for tire in self.tires]
+    elif hasattr(self, 'front_axle') and hasattr(self, 'rear_axle'):
+      self.tires = []
+
+      tire = Tire(self.front_axle.tire)
+      tire.mass.cg = [self.front_axle.x/2, self.front_axle.y, 0]
+      self.tires.append(tire)
+      
+      tire = Tire(self.front_axle.tire)
+      tire.mass.cg = [-self.front_axle.x/2, self.front_axle.y, 0]
+      self.tires.append(tire)
+      
+      tire = Tire(self.rear_axle.tire)
+      tire.mass.cg = [self.front_axle.x/2, self.front_axle.y, 0]
+      self.tires.append(tire)
+      
+      tire = Tire(self.rear_axle.tire)
+      tire.mass.cg = [-self.front_axle.x/2, self.front_axle.y, 0]
+      self.tires.append(tire)
+
     self.powertrain = Powertrain(self.powertrain)
     self.brakes = Brakes(self.brakes)
 
@@ -73,13 +93,14 @@ class Aero:
     - force:    Force at specified velocity
     - cp:       list, position of center of pressure relative to vehicle origin
   """
+  __slots__ = ["force_1ms", "cp"]
   def __init__(self, var):
-    if var.force:
+    if hasattr(var, 'force') and hasattr(var, 'force_v'):
       self.force_1ms = [force/var.force_v/var.force_v for force in var.force] # Scale back based on input speed
     else:
       self.force_1ms = [0,0,0]
 
-    if var.cp: self.cp = var.cp
+    self.cp = var.cp if hasattr(var, 'cp') else [0,0,0]
 
     # @TODO: Moments
     # @TODO: DRS
@@ -98,30 +119,39 @@ class Mass:
     - moi  : (optional) list of moments of inertia about CG
     - cg   : (optional) position of CG relative to vehicle origin
   """
+  __slots__ = ["mass", "moi", "cg"]
   def __init__(self, var):
-    self.mass  = var.mass # Should be a float
-    self.moi   = var.moi if var.moi else [0,0,0] # Optional; should be a list: roll, pitch, yaw
-    self.cg    = var.cg  if var.moi else [0,0,0] # Optional; should be a list: long, lat, vert
+    self.mass  = float(var.mass) if hasattr(var, 'mass') else 0.0 # Should be a float
+    self.moi   = var.moi if hasattr(var, 'moi') else [0,0,0]      # Optional; should be a list: roll, pitch, yaw
+    self.cg    = var.cg  if hasattr(var, 'moi') else [0,0,0]      # Optional; should be a list: long, lat, vert
 
 class Tire:
   """
     Tires are really complex.
   """
+  __slots__ = ["model", "mass", "diameter", "mu"]
   def __init__(self, var):
-    self.model = var.model.lower() # Should be a string (see below for options)
-    if var.mass: self.mass  = Tire(var.mass)    # Optional; should be a Mass object (also used to control position)
+    self.model = var.model.lower() # Required. should be a string (see below for options)
+    self.mass = Mass(var.mass) if hasattr(var, 'mass') else Mass(object)   # Optional; should be a Mass object (also used to control position)
+    self.diameter = float(var.diameter) # required
 
     if self.model == 'mu':
-      self.mu = var.mu
+      self.mu = float(var.mu)
     # @TODO: other models
 
   def force_lat_remain(self, N=None, f_long=None):
     if self.model == 'mu':
-      return math.sqrt((self.mu*N)**2 - f_long**2)
+      try:
+        return math.sqrt((self.mu*N)**2 - f_long**2)
+      except:
+        return -np.inf
 
   def force_long_remain(self, N=None, f_lat=None):
     if self.model == 'mu':
-      return math.sqrt((self.mu*N)**2 - f_lat**2)
+      try:
+        return math.sqrt((self.mu*N)**2 - f_lat**2)
+      except:
+        return -np.inf
 
 class Powertrain:
   """
@@ -143,14 +173,19 @@ class Powertrain:
   def state(self, gear=None, wheel_rpm=None, traction_limit=np.inf):
     """ return: a tuple with
      - Gear Number
-     - Throttle Percentage
+     - Throttle Ratio (0->1)
      - Crank RPM
      - Power Consumption
      - Torque """
-    pass
+    crank_rpm = wheel_rpm*self.gear_ratio*self.trans_gears[gear]
+    power     = 0.
+    throttle  = 1.
+    torque    = 12. # @TODO: this is bullshit!
+
+    return gear, throttle, crank_rpm, power, torque
 
   def ideal_gear(self, wheel_rpm=None, traction_limit=np.inf):
-    pass
+    return 0 # @TODO: this is bullshit!
 
 class Brakes:
   """

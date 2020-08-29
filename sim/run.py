@@ -1,5 +1,16 @@
 import numpy as np
 import csv as csv
+import os
+from simpleeval import *
+
+s = EvalWithCompoundTypes()
+s.functions = {
+  "sum": sum, "abs": abs, "all": all, "any": any,
+  "bool": bool, "complex": complex, "dict": dict, "float": float, "filter": filter,
+  "len": len, "list": list, "iter": iter, "map": map, "max": max, "min": min,
+  "next": next, "pow": pow, "range": range, "reversed": reversed, "round": round,
+  "set": set, "slice": slice, "sorted": sorted, "str": str, "sum": sum, "zip": zip, "type": type
+}
 
 class Run:
   "A run is a vehicle, as configured, going through several tracks"
@@ -12,18 +23,38 @@ class Run:
     self.vehicle  = vehicle
     self.tracks   = tracks
     self.settings = settings
-    self.channels = []
+    self.laps     = []
     self.results  = []
+    self.stats = {}
 
   def solve(self):
-    "Solve the run with the given vehicle, track, and solver settings. Raw sim channels go to self.channels; results get stored in self.results"
+    "Solve the run with the given vehicle, track, and solver settings. Raw sim laps go to self.laps; results get stored in self.results"
     pass
 
-  def solve_to_file(self):
-    "Dump the run to a csv file"
-
   def __repr__(self):
-    return "Run (%s, %s, %s, %s)" % (repr(self.vehicle), repr(self.tracks), repr(self.settings), "solved" if self.channels else "unsolved")
+    return "Run (%s, %s, %s, %s)" % (repr(self.vehicle), repr(self.tracks), repr(self.settings), "solved" if self.laps else "unsolved")
+
+  def to_files(self, directory, perm):
+    print('to_files', perm)
+    for lap, track in zip(self.laps, self.tracks):
+      with open(directory+os.sep+'_'.join([str(x) for x in perm])+'_'+track.name+'.csv', 'w') as file:
+        writer = csv.DictWriter(file, delimiter=',', fieldnames=lap.names)
+        writer.writeheader()
+        for i in range(len(lap)):
+          writer.writerow({name:lap.map[name][i] for name in lap.names})
+
+  def postprocess(self, ppspecs):
+    for pp in ppspecs:
+      for lap, track in zip(self.laps, self.tracks):
+        s.names = {'vehicle': self.vehicle, 'lap': lap, 'track': track, 'fname': pp.name}
+        #while True:
+        #  print("My wish is your command.")
+        #  print(s.eval(input()))
+        lap.stats[pp.name] = s.eval(pp.scripts.lap)
+    for pp in ppspecs:
+      s.names   = {'vehicle': self.vehicle, 'run': self, 'laps': self.laps, 'tracks': self.tracks, 'fname': pp.name}
+      self .stats[pp.name] = s.eval(pp.scripts.run)
+    return {"run":self.stats, "laps":{track.name:lap.stats for (track,lap) in zip(self.tracks,self.laps)}}
 
 class LapNotEvenException(Exception):
   def __init__(self, levels):
@@ -31,10 +62,9 @@ class LapNotEvenException(Exception):
 
 class Lap():
   def __init__(self, names, vehicle=None, track=None):
-    self.map     = {}
-    self.names   = names
-    self.vehicle = vehicle
-    self.track   = track
+    self.map      = {}
+    self.names    = names
+    self.stats = {}
     for i, name in enumerate(names):
       self.map[name] = []
 
@@ -46,8 +76,8 @@ class Lap():
 
   def knit(self, new_chnls, knit_by, correction=None):
     """
-    Take the given channels, and knit them onto the end of this set of channels.
-    If correction is specified, the named channel will be knitted together, using this object's channel as the baseline.
+    Take the given laps, and knit them onto the end of this set of laps.
+    If correction is specified, the named lap will be knitted together, using this object's lap as the baseline.
     """
     i = 0
     while i < len(self.map[knit_by]):
@@ -79,12 +109,6 @@ class Lap():
     if min(x) != max(x):
       raise LapNotEvenException({k:v for (k,v) in zip(self.names, x)})
     return x[0]
-
-  def save_as_csv(self, file):
-    writer = csv.DictWriter(file, delimiter=',', fieldnames=self.names)
-    writer.writeheader()
-    for i in range(len(self)):
-      writer.writerow({name:self.map[name][i] for name in self.names})
 
 
 ### HELPER FUNCTIONS ###

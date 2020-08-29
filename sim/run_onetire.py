@@ -8,6 +8,7 @@ from sim.run import *
 import logging
 
 import matplotlib.pyplot as plt
+from sim.vehicle import FL, FR, BL, BR, LONG, LAT, VERT, ROLL, PITCH, YAW
 
 EPSILON = 1e-4
 CHAN_NAMES = ["x","t","v","k","a_long","a_lat","gear","motor_rpm"]
@@ -35,26 +36,33 @@ class Run_Onetire(Run):
 
     s.map_a_fwd  = np.full([N_PTS_V, N_PTS_K], -EPSILON) # for i in range(len(s.map_states))]
     s.map_a_rev  = np.full([N_PTS_V, N_PTS_K], EPSILON) # for i in range(len(s.map_states))]
+    try:
+      r_add = s.vehicle.tires[FL].mass.cg[LAT] + \
+        (s.vehicle.tires[BL].mass.cg[LAT]-s.vehicle.tires[FL].mass.cg[LAT]) / \
+        (s.vehicle.tires[BL].mass.cg[LONG]-s.vehicle.tires[FL].mass.cg[LONG]) * \
+        (0-s.vehicle.tires[FL].mass.cg[LONG])
+    except:
+      r_add = sum([abs(tire.mass.cg[LAT]) for tire in s.vehicle.tires])/len(s.vehicle.tires)
     for i_v in range(0,N_PTS_V):
       for i_k in range(0,N_PTS_K):
         #for i_state in range(0,len(s.map_states)):
         v = s.map_v[i_v]
         #gear = s.map_states[i_state]["gear"]
-        a_lat = v**2 * derate_curvature(s.map_k[i_k], s.vehicle.r_add)
-        F_tire_lat = s.vehicle.mass * a_lat
+        a_lat = v**2 * derate_curvature(s.map_k[i_k], r_add)
+        F_tire_lat = s.vehicle.mass.mass * a_lat
 
         #F_tire_engine_limit, eng_rpm = s.vehicle.eng_force(v, gear)
 
-        N = s.vehicle.mass*s.vehicle.g + s.vehicle.downforce(v, 0) # @TODO: aero mode
-        F_tire_long_available = s.vehicle.f_long_remain(4, N, F_tire_lat)[0]
+        N = s.vehicle.mass.mass*s.vehicle.g + s.vehicle.aero.force(v=v)[VERT] # @TODO: aero mode
+        F_tire_long_available = s.vehicle.tires[0].force_long_remain(N=N, f_lat=F_tire_lat)
 
         # Accel
         F_tire_long = F_tire_long_available #min(F_tire_long_available, F_tire_engine_limit)
-        a_long = (F_tire_long - s.vehicle.drag(v, 0)) / s.vehicle.mass
+        a_long = (F_tire_long - s.vehicle.aero.force(v=v)[LONG]) / s.vehicle.mass.mass
         s.map_a_fwd[i_v, i_k] = a_long if np.isfinite(a_long) else -EPSILON
 
         # Brake
-        a_long = (- F_tire_long_available - s.vehicle.drag(v, 0)) / s.vehicle.mass
+        a_long = (- F_tire_long_available - s.vehicle.tires[0].force_long_remain(N=N, f_lat=F_tire_lat) ) / s.vehicle.mass.mass
         s.map_a_rev[i_v, i_k] = a_long if np.isfinite(a_long) else EPSILON
 
         if np.isnan(s.map_a_fwd[i_v, i_k]) and np.isnan(s.map_a_rev[i_v, i_k]):
@@ -77,8 +85,12 @@ class Run_Onetire(Run):
   def accelerate(self, v, k, gear):
     "Compute maximum acceleration"
     a_tire = interp2d(self.map_k, self.map_v, self.map_a_fwd, kind='linear')(k, v)[0]
-    a_engine, rpm = self.vehicle.eng_force(v, gear)
-    return min(a_tire, a_engine), rpm
+    gear, throttle, crank_rpm, power_cons, torque = self.vehicle.powertrain.state(
+      wheel_rpm      = 0, # @TODO: bullshit!
+      gear           = gear,
+      traction_limit = a_tire
+    )
+    return a_tire, 0 # @TODO: not a rocket engine
 
   def find_local_minima(self, track, start_from):
     "From the start_from x position, move forwards on the track until the steady-state velocity stops decreasing"
@@ -106,12 +118,12 @@ class Run_Onetire(Run):
       v_last = v
       i += 1
 
-
   def solve(self):
     "Solve all tracks"
+    self.build_maps()
     for track in self.tracks:
       out = self.solve_track(track)
-      self.channels.append(out)
+      self.laps.append(out)
 
   def solve_track(self, track):
     "Solve a specific track"
@@ -141,7 +153,7 @@ class Run_Onetire(Run):
       k = interp(x, track.dc[:,0], track.dc[:,1])
       
       # Gearshift delay logic
-      newgear = self.vehicle.best_gear(v, np.inf)
+      newgear = self.vehicle.powertrain.ideal_gear(v, np.inf)
       if t >= t_shift and np.isfinite(gear) and newgear != gear:
         t_shift = t + self.vehicle.shift_time
         shiftgear = newgear
@@ -189,7 +201,7 @@ class Run_Onetire(Run):
         v = chnl['v', -1]
         x = chnl['x', -1] + dt*v
         t = chnl['t', -1] + dt
-        gear = self.vehicle.best_gear(v, np.inf)
+        gear = self.vehicle.powertrain.ideal_gear(v, np.inf)
         continue
 
       # Forward integration

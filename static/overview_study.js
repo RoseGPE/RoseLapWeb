@@ -558,13 +558,9 @@ function change_sweep_type(axis, variable) {
 }
 
 ppscripts = {
-  "points": {
-    "run": "[hahaha please fix this run]",
-    "lap": "[hahaha please fix this lap]"
-  },
-  "energy": {
-    "run": "please clap",
-    "lap": "please lap"
+  "laptime": {
+    "run": "sum([lap.stats[fname] for lap in laps])",
+    "lap": "lap['t', -1]"
   }
 }
 
@@ -590,18 +586,17 @@ function add_postproc(name, scripts) {
       <select class="studyEdit_postproc_selectPre" onchange="select_postproc_preset(parentIdx($(this), 2));">
         <option value="" ${scripts ? '':'selected'}>Select a builtin script...</option>
         <option value="" ${scripts ? 'selected':''}>Custom script</option>
-        <option value="points">Points</option>
-        <option value="energy">Energy</option>
+        <option value="laptime">Lap Time</option>
       </select>
       <button style="float: right;" class="btn btn-danger" onclick="remove_postproc(parentIdx($(this), 2));">Delete Script</button>
     </div>
     <table class="table" style="font-family: monospace">
       <tr>
-        <td width="20em">&lambda;(lap):</td>
+        <td width="120em">&lambda;(lap, vehicle, track):</td>
         <td><textarea class="studyEdit_postproc_script_lap textarea-short" >${scripts ? scripts.lap:''}</textarea></td>
       </tr>
       <tr>
-        <td width="20em">&lambda;(run):</td>
+        <td width="120em">&Lambda;(run, laps, vehicle, tracks):</td>
         <td><textarea class="studyEdit_postproc_script_run textarea-short" >${scripts ? scripts.run:''}</textarea></td>
       </tr>
     </table>

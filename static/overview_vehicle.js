@@ -151,14 +151,14 @@ function validate_vehicle() {
   }
 
   if (ged($("#vehicleEdit_front_axle-model")) == 'mu') {
-    $("#vehicleEditRow_front_axle-mu").show();
+    $("#vehicleEditRow_front_axle-tire-mu").show();
   } else {
-    $("#vehicleEditRow_front_axle-mu").hide();
+    $("#vehicleEditRow_front_axle-tire-mu").hide();
   }
 
   if (ged($("#vehicleEdit_rear_axle-model")) == 'mu') {
-    $("#vehicleEditRow_rear_axle-mu").show();
+    $("#vehicleEditRow_rear_axle-tire-mu").show();
   } else {
-    $("#vehicleEditRow_rear_axle-mu").hide();
+    $("#vehicleEditRow_rear_axle-tire-mu").hide();
   }
 }
