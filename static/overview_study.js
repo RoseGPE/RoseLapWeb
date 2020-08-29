@@ -16,6 +16,7 @@ function new_study() {
 
   $("#studyEdit_sweeps").html('');
   add_sweep_axis();
+  add_postproc();
 }
 
 function discard_study_edit() {
@@ -28,6 +29,7 @@ function save_study(submit) {
   fdata.tracks   = $("#studyEdit_tracks").tagsinput('items');
   fdata.vehicle  = $("#studyEdit_vehicle").val();
   fdata.sweeps   = [];
+  fdata.postprocs = [];
   fdata.model    = $("#studyEdit_model").val();
   fdata.settings = {
     dt:  $("#studyEdit_settings_dt").val()
@@ -70,6 +72,14 @@ function save_study(submit) {
     fdata.sweeps.push({"name": title, "variables": swp});
   });
 
+  $("#studyEdit_postproc").children().each(function(pp){
+    let name = ged($(this).find('.studyEdit_postproc_name'));
+    let script_run = $(this).find('.studyEdit_postproc_script_run').val();
+    let script_lap = $(this).find('.studyEdit_postproc_script_lap').val();
+
+    fdata.postprocs.push({"name": name, "scripts":{"run": script_run, "lap": script_lap}});
+  });
+
   $.post(
       "/study",
       {
@@ -102,6 +112,7 @@ function edit_study(name, version, new_version) {
     }
 
     $("#studyEdit_sweeps").html('');
+    $("#studyEdit_postproc").html('');
 
     $("#studyEditName").prop('disabled', true);
     $("#studyEditVersion").prop('disabled', true);
@@ -136,7 +147,6 @@ function edit_study(name, version, new_version) {
     $("#studyEdit_vehicle").val(fdata.vehicle);
     $("#studyEdit_model").val(fdata.model);
     $("#studyEdit_settings_dt").val(fdata.settings.dt);
-    $("#studyEdit_sweeps").val(fdata.sweeps);
     $("#studyEdit_meshsize").val(fdata.model.meshsize);
 
     $("#studyEdit_tracks_dropdown").val('');
@@ -144,6 +154,9 @@ function edit_study(name, version, new_version) {
     // unpack fdata.sweeps
     for (m in fdata.sweeps) {
       add_sweep_axis(fdata.sweeps[m].name, fdata.sweeps[m].variables);
+    }
+    for (m in fdata.postprocs) {
+      add_postproc(fdata.postprocs[m].name, fdata.postprocs[m].scripts);
     }
   });
 }
@@ -544,22 +557,54 @@ function change_sweep_type(axis, variable) {
   }
 }
 
+ppscripts = {
+  "points": {
+    "run": "[hahaha please fix this run]",
+    "lap": "[hahaha please fix this lap]"
+  },
+  "energy": {
+    "run": "please clap",
+    "lap": "please lap"
+  }
+}
+
+function select_postproc_preset(pp) {
+  let ppdiv = $($("#studyEdit_postproc").children()[pp]);
+  let key = ppdiv.find(".studyEdit_postproc_selectPre").val();
+  if (ppscripts[key]) {
+    ppdiv.find(".studyEdit_postproc_script_lap").val(ppscripts[key].lap);
+    ppdiv.find(".studyEdit_postproc_script_run").val(ppscripts[key].run);
+  }
+}
+
+function remove_postproc(pp) {
+  console.log("remove_postproc", pp);
+}
+
 /* Post Processing */
-function add_postproc(name, scope, script) {
+function add_postproc(name, scripts) {
   let i = $("#studyEdit_postproc").children().length;
-  let x = $(`<div style="font-family: monospace">
+  let x = $(`<div>
     <div>
-      def <a class="editable studyEdit_postproc_name" data-type="text"></a> ( 
-      <div class="btn-group btn-toggle btn-operation" onclick="togglebtn(this)" >
-        <button class="btn btn-xs ${scope == 'run' ? 'active btn-info':'btn-default'}">run</button>
-        <button class="btn btn-xs ${scope != 'run' ? 'active btn-info':'btn-default'}" >lap</button> 
-      </div>
-      ):
+      <a class="editable studyEdit_postproc_name" data-type="text"></a>:
+      <select class="studyEdit_postproc_selectPre" onchange="select_postproc_preset(parentIdx($(this), 2));">
+        <option value="" ${scripts ? '':'selected'}>Select a builtin script...</option>
+        <option value="" ${scripts ? 'selected':''}>Custom script</option>
+        <option value="points">Points</option>
+        <option value="energy">Energy</option>
+      </select>
+      <button style="float: right;" class="btn btn-danger" onclick="remove_postproc(parentIdx($(this), 2));">Delete Script</button>
     </div>
-    <div>
-      <span style="width: 5em;"></span>return 
-      <a class="editable studyEdit_postproc_script textarea-short" data-type="text"></a>
-    </div>
+    <table class="table" style="font-family: monospace">
+      <tr>
+        <td width="20em">&lambda;(lap):</td>
+        <td><textarea class="studyEdit_postproc_script_lap textarea-short" >${scripts ? scripts.lap:''}</textarea></td>
+      </tr>
+      <tr>
+        <td width="20em">&lambda;(run):</td>
+        <td><textarea class="studyEdit_postproc_script_run textarea-short" >${scripts ? scripts.run:''}</textarea></td>
+      </tr>
+    </table>
     <hr/>
     </div>`);
   $("#studyEdit_postproc").append(x);
@@ -577,18 +622,4 @@ function add_postproc(name, scope, script) {
             editable.input.$input.select();
         },0);
     }).editable('setValue', name);
-  x.find(".studyEdit_postproc_script").editable({
-      type: 'text',
-      title: '',
-      mode: 'inline',
-      toggle: 'click',
-      showbuttons: false,
-      placeholder: "UNWRITTEN SCRIPT",
-      saveonchange: true,
-      emptytext: "UNWRITTEN SCRIPT",
-    }).on('shown', function(ev, editable) {
-        setTimeout(function() {
-            editable.input.$input.select();
-        },0);
-    }).editable('setValue', script);
 }
