@@ -77,7 +77,7 @@ class Lap():
   def __len__(self):
     x = [len(self.map[name]) for name in self.names]
     if min(x) != max(x):
-      raise ChannelsNotEvenException({k:v for (k,v) in zip(self.names, x)})
+      raise LapNotEvenException({k:v for (k,v) in zip(self.names, x)})
     return x[0]
 
   def save_as_csv(self, file):

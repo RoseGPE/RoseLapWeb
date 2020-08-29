@@ -121,7 +121,7 @@ class overview:
   def GET(self):
     web.header('Content-type', 'text/html')
     try:
-      # TODO: auth selectors
+      # @TODO: auth selectors
       vehicles = web.ctx.orm.query(Vehicle).order_by(Vehicle.version.desc()).all()
       vehicle_map = {}
       for vehicle in vehicles:
@@ -153,7 +153,7 @@ class overview:
           study_map[study.name].append(study)
         else:
           study_map[study.name] = [study]
-      # TODO: format timestamps
+      # @TODO: format timestamps
 
       return render.overview(vehicle_map, track_map, study_map, json.dumps(list(vehicle_map.keys())), json.dumps(list(track_map.keys())))
     except Exception:
@@ -161,17 +161,17 @@ class overview:
       return json.dumps({'error': 'Server-side error.'})
 
 class user_management:
-  # TODO: user management
+  # @TODO: user management
   def GET(self):
     pass
 
 class view_study:
-  # TODO: study view
+  # @TODO: study view
   def GET(self):
     pass
 
 class view_run:
-  # TODO: run view
+  # @TODO: run view
   def GET(self):
     pass
 
@@ -180,7 +180,7 @@ class view_run:
 class vehicle:
   def GET(self):
     web.header('Content-type', 'application/json')
-    # TODO: auth selectors
+    # @TODO: auth selectors
     try:
       data = web.input()
       vehicle = {}
@@ -200,13 +200,13 @@ class vehicle:
 
   def POST(self):
     web.header('Content-type', 'application/json')
-    # TODO: auth selectors
+    # @TODO: auth selectors
     # edit vehicle if name and version correspond to something of status 0
     # otherwise, create a new vehicle if
     # - name does not exist (and provided version is 1)
     # - name exists, and provided version is 1 + version of the last vehicle with status = 1 (e.g. never have more than one version with status 0)
     # error otherwise
-    # TODO: validate vehicle input
+    # @TODO: validate vehicle input
 
     try:
       data = web.input()
@@ -264,7 +264,7 @@ class vehicle:
 
 class track:
   def GET(self):
-    # TODO: auth selectors
+    # @TODO: auth selectors
     web.header('Content-type', 'application/json')
     try:
       data = web.input()
@@ -284,7 +284,7 @@ class track:
       return json.dumps({'error': 'Server-side error.'})
 
   def POST(self):
-    # TODO: auth selectors
+    # @TODO: auth selectors
     web.header('Content-type', 'application/json')
 
     # edit track if name and version correspond to something of status 0
@@ -292,7 +292,7 @@ class track:
     # - name does not exist (and provided version is 1)
     # - name exists, and provided version is 1 + version of the last track with status = 1 (e.g. never have more than one version with status 0)
     # error otherwise
-    # TODO: validate track input
+    # @TODO: validate track input
 
     try:
       data = web.input()
@@ -358,7 +358,7 @@ class track:
 
 class study:
   def GET(self):
-    # TODO: auth selectors
+    # @TODO: auth selectors
     web.header('Content-type', 'application/json')
     try:
       data = web.input()
@@ -382,7 +382,7 @@ class study:
       return json.dumps({'error': 'Server-side error.'})
 
   def POST(self):
-    # TODO: auth selectors
+    # @TODO: auth selectors
     web.header('Content-type', 'application/json')
 
     # edit study if name and version correspond to something of status 0
@@ -390,7 +390,7 @@ class study:
     # - name does not exist (and provided version is 1)
     # - name exists, and provided version is 1 + version of the last study with status = 1 (e.g. never have more than one version with status 0)
     # error otherwise
-    # TODO: validate study input
+    # @TODO: validate study input
 
     try:
       data = web.input()
@@ -440,7 +440,7 @@ class study:
           study.status = 1
           study.submission_date = datetime.datetime.now().isoformat()
           web.ctx.orm.commit()
-          # TODO: dispatch for processing?
+          # @TODO: dispatch for processing?
           """s = socket.socket()
           s.connect(("localhost", 8100))
           s.sendall("START".encode("utf-8"))

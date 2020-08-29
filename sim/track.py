@@ -12,7 +12,11 @@ import tempfile
 
 from ezdxf.lldxf.tagger import ascii_tags_loader, tag_compiler, binary_tags_loader
 
-from CustomNamedTemporaryFile import *
+try:
+  from CustomNamedTemporaryFile import *
+except:
+  from sim.CustomNamedTemporaryFile import *
+
 #from ezdxf.filemanagement import dxf_file_info
 
 np.seterr(divide='ignore')
@@ -35,10 +39,10 @@ class Track:
       self.dc = np.fromiter([[float(y.strip()) for y in x.split(',')] for x in filedata.split('\n')])
       self.scale(UCONVS[unit])
     if self.filetype == 'log':
-      # TODO: Trackwalker data (this may require special settings... metadata... yay)
+      # @TODO: Trackwalker data (this may require special settings... metadata... yay)
       pass
     if self.filetype == 'svg':
-      # TODO: Vector graphics
+      # @TODO: Vector graphics
       pass
 
   def __repr__(self):
@@ -96,6 +100,9 @@ class TrackSegment(object):
   def __repr__(self):
     return "TrackSegment from %s to %s" % (repr(self.start), repr(self.end))
 
+class DXFStitchingError(Exception):
+  def __init__(self, msg):
+    Exception.__init__("DXFStitchingError(%s)" % repr(msg))
 
 def dxf_to_dc(filedata, scaling):
   "Converts DXF into distance-curvature data. Assumes a DXF in the X-Y plane of only lines, arcs, and splines."
@@ -157,11 +164,11 @@ def dxf_to_dc(filedata, scaling):
     segs.append(TrackSegment(dc, ct.point(0), ct.point(ct.max_t)))
 
   # build connectivity (refer to old algo)
-  # find an entity whose start point or end is at (0,0)
+  # find an entity whose start point or end is at nearpt
   # add the entity's end point to the big DC matrix
   ## reverse it if the end point was found
-  # go to his other endpoint, and find an entity whose start or endpoint is at his endpoint
-  # add the new entity's end point to the big DC matrix, adding elapsed_distance to the distance column
+  # set nearpt to other end of this entity
+  # rinse and repeat
 
   nearpt = (0,0)
   elapsed_distance = 0
@@ -186,7 +193,7 @@ def dxf_to_dc(filedata, scaling):
           segs.pop(i)
           break
       else:
-        print("Failed to connect segment.") # TODO: Graceful error handling
+        raise DXFStitchingError("Failed to connect segment.")
         break
 
   return dc

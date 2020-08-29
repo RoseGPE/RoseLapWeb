@@ -25,6 +25,11 @@ FR = 1
 BL = 2
 BR = 3
 
+class InvalidVehicleDataError(Exception):
+  def __init__(self, data):
+    Exception.__init__(self, "InvalidVehicleDataError(%s)" % repr(data))
+    self.data = data
+
 class Vehicle:
   """
   Vehicles consist of:
@@ -38,13 +43,16 @@ class Vehicle:
   def __init__(self, filetype, filedata):
     self.filetype = filetype.lower()
     # self.dc is distance-curvature data; matrix is "tall" (fixed columns variable # rows)
-    if self.filetype == 'object':
-      # Raw object data, pre-parsed
-      self.__dict__.update(filedata.__dict__)
+    try:
+      if self.filetype == 'object':
+        # Raw object data, pre-parsed
+        self.__dict__.update(filedata.__dict__)
 
-    elif self.filetype == 'yaml':
-      # YAML data
-      self.__dict__.update(yaml.load(filedata).__dict__)
+      elif self.filetype == 'yaml':
+        # YAML data
+        self.__dict__.update(yaml.load(filedata).__dict__)
+    except Exception as e:
+      raise InvalidVehicleDataError(filedata)
 
     self.mass = Mass(self.mass)
     self.aero = Aero(self.aero)
@@ -73,11 +81,11 @@ class Aero:
 
     if var.cp: self.cp = var.cp
 
-    # TODO: Moments
-    # TODO: DRS
+    # @TODO: Moments
+    # @TODO: DRS
 
   def force(self, v=0, beta=0, k=0):
-    # TODO: advanced maps
+    # @TODO: advanced maps
     # v:    velocity of vehicle
     # beta: vehicle overall slip angle
     # k:    curvature of vehicle path
@@ -105,7 +113,7 @@ class Tire:
 
     if self.model == 'mu':
       self.mu = var.mu
-    # TODO: other models
+    # @TODO: other models
 
   def force_lat_remain(self, N=None, f_long=None):
     if self.model == 'mu':
@@ -157,17 +165,17 @@ class Brakes:
       self.rear_bias  = 1-self.front_bias
 
   def force(self, f_long_maxs=[]):
-    # TODO: return [array, of, longitudinal, forces]
+    # @TODO: return [array, of, longitudinal, forces]
     if self.mode == 'perfect':
       if len(f_long_maxs) == 4:
-        pass # TODO: 4 tires is complex assuming front-rear bias is still a thing
+        pass # @TODO: 4 tires is complex assuming front-rear bias is still a thing
       else:
         return [-abs(f) for f in f_long_maxs]
     if self.mode == 'fixed':
       if len(f_long_maxs) == 4:
-        pass # TODO: 4 tires is real complex, assuming front-rear bias is still a thing
+        pass # @TODO: 4 tires is real complex, assuming front-rear bias is still a thing
       elif len(f_long_maxs) == 2:
-        pass # TODO: 2 tires is complex
+        pass # @TODO: 2 tires is complex
       elif len(f_long_maxs) == 1:
         return [-abs(f) for f in f_long_maxs]
 

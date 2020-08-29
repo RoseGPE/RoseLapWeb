@@ -45,7 +45,7 @@ class Run_Onetire(Run):
 
         #F_tire_engine_limit, eng_rpm = s.vehicle.eng_force(v, gear)
 
-        N = s.vehicle.mass*s.vehicle.g + s.vehicle.downforce(v, 0) # TODO: aero mode
+        N = s.vehicle.mass*s.vehicle.g + s.vehicle.downforce(v, 0) # @TODO: aero mode
         F_tire_long_available = s.vehicle.f_long_remain(4, N, F_tire_lat)[0]
 
         # Accel
@@ -116,8 +116,8 @@ class Run_Onetire(Run):
   def solve_track(self, track):
     "Solve a specific track"
 
-    dt   = self.settings['dt']
-    chnl = Channels(CHAN_NAMES)
+    dt   = self.settings.dt
+    chnl = Lap(CHAN_NAMES)
 
     v = 0
     x = 0
@@ -158,7 +158,7 @@ class Run_Onetire(Run):
       if a < -EPSILON:
         # Find where to backup from
         x, v = self.find_local_minima(track, x)
-        chnl_rev = Channels(CHAN_NAMES)
+        chnl_rev = Lap(CHAN_NAMES)
 
         t = 0
 
