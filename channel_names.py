@@ -29,5 +29,6 @@ FT1X - Force on tire 1, X
 FAEX - X Aero Force
 FAEY - Y Aero Force
 FAEZ - Z Aero Force
-FMOD - Aero Mode
+AEMD - Aero Mode
 
+BBIS - Brake Bias
