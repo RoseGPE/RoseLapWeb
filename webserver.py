@@ -16,7 +16,7 @@ urls = (
   '/overview/', 'overview',
   '/overview', 'overview',
   '/track', 'track',
-  '/study', 'study',
+  '/study', 'view_study',
   '/vehicle', 'vehicle',
 
   '/login', 'login',
@@ -168,7 +168,7 @@ class user_management:
 class view_study:
   # @TODO: study view
   def GET(self):
-    pass
+    return render.study([])
 
 class view_run:
   # @TODO: run view
