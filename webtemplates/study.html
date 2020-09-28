@@ -1,16 +1,16 @@
-$def with (study)
+$def with (manifest)
 
 <!-- Load d3.js -->
 <script src="https://d3js.org/d3.v4.js"></script>
 
 <!-- Create a div where the graph will take place -->
-<div id="my_dataviz"></div>
+<div id="studyplot"></div>
 
 <style>
-  #my_dataviz {
+  #studyplot {
     cursor: crosshair;
-  }<
-/style>
+  }
+</style>
 
 <!-- Load color palettes -->
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
@@ -18,12 +18,12 @@ $def with (study)
 <script>
 
 // set the dimensions and margins of the graph
-var margin = {top: 80, right: 25, bottom: 30, left: 40},
-  width = 450 - margin.left - margin.right,
-  height = 450 - margin.top - margin.bottom;
+var margin = {top: 25, right: 25, bottom: 25, left: 25},
+  width = document.getElementsByClassName("container")[0].getBoundingClientRect().width - margin.left - margin.right,
+  height = 600 - margin.top - margin.bottom;
 
 // append the svg object to the body of the page
-var svg = d3.select("#my_dataviz")
+var svg = d3.select("#studyplot")
 .append("svg")
   .attr("width", width + margin.left + margin.right)
   .attr("height", height + margin.top + margin.bottom)
@@ -31,18 +31,43 @@ var svg = d3.select("#my_dataviz")
   .attr("transform",
         "translate(" + margin.left + "," + margin.top + ")");
 
-//Read the data
-d3.csv("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/heatmap_data.csv", function(data) {
+manifest = $:{manifest}
 
-  // Labels of row and columns -> unique identifier of the column called 'group' and 'variable'
-  var myGroups = d3.map(data, function(d){return d.group;}).keys()
-  var myVars = d3.map(data, function(d){return d.variable;}).keys()
+/*data = [
+["0_0", 3, 4, 5],
+["0_1", 4, 5, 6],
+["0_2", 3, 5, 8],
+["1_0", 6, 9, 0],
+["1_1", 5, 4, 3],
+["1_2", 4, 9, 0]
+]*/
+
+function minmax(x) {
+  return [Math.min(...x), Math.max(...x)]
+}
+
+function draw_studyplot(filter, track) { // if track is undefined, do the run
+
+let keys    = Object.keys(manifest.stat)
+let range_x = keys.map(function(x) {return x.split("_")[0]})
+let range_y = keys.map(function(x) {return x.split("_")[1]})
+let range_v = []
+if(track === undefined)
+  range_v = keys.map(function(x) {return manifest.stat[x].run[filter]})
+else
+  range_v = keys.map(function(x) {return manifest.stat[x][track][filter]})
+range_C = []
+for (let i=0; i<range_v.length; i++) {
+  range_C.push({x: range_x[i], y: range_y[i], v: range_v[i]})
+}
+
+console.log(range_x, range_y, range_v, range_C)
 
   // Build X scales and axis:
   var x = d3.scaleBand()
     .range([ 0, width ])
-    .domain(myGroups)
-    .padding(0.05);
+    .domain(range_x)
+    .padding(0);
   svg.append("g")
     .style("font-size", 15)
     .attr("transform", "translate(0," + height + ")")
@@ -52,8 +77,8 @@ d3.csv("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/he
   // Build Y scales and axis:
   var y = d3.scaleBand()
     .range([ height, 0 ])
-    .domain(myVars)
-    .padding(0.05);
+    .domain(range_y)
+    .padding(0);
   svg.append("g")
     .style("font-size", 15)
     .call(d3.axisLeft(y).tickSize(0))
@@ -61,18 +86,18 @@ d3.csv("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/he
 
   // Build color scale
   var myColor = d3.scaleSequential()
-    .interpolator(d3.interpolateInferno)
-    .domain([1,100])
+    .interpolator(d3.interpolateCool)
+    .domain(minmax(range_v))
 
   // create a tooltip
-  var tooltip = d3.select("#my_dataviz")
+  var tooltip = d3.select("#studyplot")
     .append("div")
     .style("opacity", 0)
     .attr("class", "tooltip")
     .style("background-color", "white")
     .style("border", "solid")
     .style("border-width", "2px")
-    .style("border-radius", "5px")
+    .style("border-radius", "2px")
     .style("padding", "5px")
 
   // Three function that change the tooltip when user hover / move / leave a cell
@@ -84,10 +109,11 @@ d3.csv("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/he
       .style("opacity", 1)
   }
   var mousemove = function(d) {
+    console.log(d)
     tooltip
-      .html("The exact value of<br>this cell is: " + d.value)
-      .style("left", d3.event.pageX) //(d3.mouse(this)[0]+70) + "px")
-      .style("top",  d3.event.pageY) //(d3.mouse(this)[1]) + "px")
+      .html("The exact value of<br>this cell is: " + d.v)
+      .style("left", d3.event.pageX+"px")
+      .style("top",  d3.event.pageY+"px")
   }
   var mouseleave = function(d) {
     tooltip
@@ -99,23 +125,23 @@ d3.csv("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/he
 
   // add the squares
   svg.selectAll()
-    .data(data, function(d) {return d.group+':'+d.variable;})
+    .remove()
+    .data(range_C, function(d) {return d.v})
     .enter()
     .append("rect")
-      .attr("x", function(d) { return x(d.group) })
-      .attr("y", function(d) { return y(d.variable) })
-      .attr("rx", 4)
-      .attr("ry", 4)
-      .attr("width", x.bandwidth() )
+      .attr("x", function(d) { return x(d.x) })
+      .attr("y", function(d) { return y(d.y) })
+      .attr("rx", 0)
+      .attr("ry", 0)
+      .attr("width",  x.bandwidth() )
       .attr("height", y.bandwidth() )
-      .style("fill", function(d) { return myColor(d.value)} )
+      .style("fill", function(d) { return myColor(d.v)} )
       .style("stroke-width", 4)
       .style("stroke", "none")
       .style("opacity", 0.8)
     .on("mouseover", mouseover)
     .on("mousemove", mousemove)
     .on("mouseleave", mouseleave)
-})
 
 // Add title to graph
 /*svg.append("text")
@@ -134,6 +160,7 @@ svg.append("text")
         .style("fill", "grey")
         .style("max-width", 400)
         .text("A short description of the take-away message of this chart.");*/
+}
 
-
+draw_studyplot("laptimes");
 </script>

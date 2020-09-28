@@ -7,7 +7,7 @@ from numpy import interp
 from sim.run import *
 import logging
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from sim.vehicle import FL, FR, BL, BR, LONG, LAT, VERT, ROLL, PITCH, YAW
 
 EPSILON = 1e-4

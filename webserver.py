@@ -16,7 +16,8 @@ urls = (
   '/overview/', 'overview',
   '/overview', 'overview',
   '/track', 'track',
-  '/study', 'view_study',
+  '/study', 'study',
+  '/view_study/(.*)', 'view_study',
   '/vehicle', 'vehicle',
 
   '/login', 'login',
@@ -167,8 +168,16 @@ class user_management:
 
 class view_study:
   # @TODO: study view
-  def GET(self):
-    return render.study([])
+  def GET(self, id):
+    web.header('Content-type', 'text/html')
+    try:
+      study = web.ctx.orm.query(Study).filter(Study.id == id).first()
+      with open("studies/%d/manifest.json"%int(study.id), "r") as mff:
+        #mfj = json.loads(mff.read())
+        return render.study(mff.read())
+    except Exception:
+      traceback.print_exc()
+      return json.dumps({'error': 'Server-side error.'})
 
 class view_run:
   # @TODO: run view
