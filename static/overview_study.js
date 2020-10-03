@@ -81,7 +81,7 @@ function save_study(submit) {
   });
 
   $.post(
-      "/study",
+      "/rest/study",
       {
         "name": $("#studyEditName").val(),
         "version": $("#studyEditVersion").data("version"),
@@ -100,7 +100,7 @@ function save_study(submit) {
 }
 
 function edit_study(name, version, new_version) {
-  $.get("/study",
+  $.get("/rest/study",
     {
       "name": name,
       "version": version
@@ -162,7 +162,7 @@ function edit_study(name, version, new_version) {
 }
 
 function errorlog_study(name, version) {
-  $.get("/study",
+  $.get("/rest/study",
     {
       "name": name,
       "version": version
@@ -185,7 +185,7 @@ function errorlog_study(name, version) {
 }
 
 function runlog_study(name, version) {
-  $.get("/study",
+  $.get("/rest/study",
     {
       "name": name,
       "version": version,

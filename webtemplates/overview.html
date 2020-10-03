@@ -501,7 +501,7 @@ $def with (vehicles, tracks, studies, valid_vehicles, valid_tracks)
             <span class="label label-success">Finished<!-- on(${study.completion_date_pars})--></span>
           </td><td class="align-middle">
             <button class="btn btn-sm btn-info" onclick="runlog_study('${study.name}', '${study.version}')">Log</button>
-            <a href="/view_study/${study.id}"><button class="btn btn-sm btn-success">Results</button></a>
+            <a href="/study/${study.id}"><button class="btn btn-sm btn-success">Results</button></a>
             <button class="btn btn-default btn-sm" onclick="edit_study('${study.name}', '${study.version}', '${studies[name][0].version+1}')">View/Derive</button>
           </td>
         $else:

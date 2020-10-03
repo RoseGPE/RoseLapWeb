@@ -67,7 +67,7 @@ function save_vehicle() {
   });
 
   $.post(
-      "/vehicle",
+      "/rest/vehicle",
       {
         "name": $("#vehicleEditName").val(),
         "version": $("#vehicleEditVersion").data("version"),
@@ -85,7 +85,7 @@ function save_vehicle() {
 }
 
 function edit_vehicle(name, version, new_version) {
-  $.get("/vehicle",
+  $.get("/rest/vehicle",
     {
       "name": name,
       "version": version
@@ -127,7 +127,7 @@ function edit_vehicle(name, version, new_version) {
 }
 
 function errorlog_vehicle(name, version) {
-  $.get("/vehicle",
+  $.get("/rest/vehicle",
     {
       "name": name,
       "version": version
@@ -222,7 +222,7 @@ function discard_track_edit() {
 
 function save_track() {
   $.post(
-      "/track",
+      "/rest/track",
       {
         "name": $("#trackEditName").val(),
         "version": $("#trackEditVersion").data("version"),
@@ -242,7 +242,7 @@ function save_track() {
 }
 
 function edit_track(name, version, new_version) {
-  $.get("/track",
+  $.get("/rest/track",
     {
       "name": name,
       "version": version
@@ -278,7 +278,7 @@ function edit_track(name, version, new_version) {
 }
 
 function errorlog_track(name, version) {
-  $.get("/track",
+  $.get("/rest/track",
     {
       "name": name,
       "version": version
@@ -352,7 +352,7 @@ function save_study(submit) {
   };
 
   $.post(
-      "/study",
+      "/rest/study",
       {
         "name": $("#studyEditName").val(),
         "version": $("#studyEditVersion").data("version"),
@@ -371,7 +371,7 @@ function save_study(submit) {
 }
 
 function edit_study(name, version, new_version) {
-  $.get("/study",
+  $.get("/rest/study",
     {
       "name": name,
       "version": version
@@ -420,7 +420,7 @@ function edit_study(name, version, new_version) {
 }
 
 function errorlog_study(name, version) {
-  $.get("/study",
+  $.get("/rest/study",
     {
       "name": name,
       "version": version
@@ -443,7 +443,7 @@ function errorlog_study(name, version) {
 }
 
 function runlog_study(name, version) {
-  $.get("/study",
+  $.get("/rest/study",
     {
       "name": name,
       "version": version,

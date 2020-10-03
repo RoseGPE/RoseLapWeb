@@ -15,10 +15,10 @@ web.config.debug = False
 urls = (
   '/overview/', 'overview',
   '/overview', 'overview',
-  '/track', 'track',
-  '/study', 'study',
-  '/view_study/(.*)', 'view_study',
-  '/vehicle', 'vehicle',
+  '/rest/track', 'track',
+  '/rest/study', 'study',
+  '/study/(.*)', 'view_study',
+  '/rest/vehicle', 'vehicle',
 
   '/login', 'login',
   '/logout', 'logout',
@@ -174,7 +174,7 @@ class view_study:
       study = web.ctx.orm.query(Study).filter(Study.id == id).first()
       with open("studies/%d/manifest.json"%int(study.id), "r") as mff:
         #mfj = json.loads(mff.read())
-        return render.study(mff.read())
+        return render.study(study.name, mff.read())
     except Exception:
       traceback.print_exc()
       return json.dumps({'error': 'Server-side error.'})

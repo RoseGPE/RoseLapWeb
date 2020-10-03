@@ -1,7 +1,13 @@
-$def with (manifest)
+$def with (name, manifest)
 
 <!-- Load d3.js -->
 <script src="https://d3js.org/d3.v4.js"></script>
+
+<h3>Study "${name}"</h3><select id="track_select" class="input-group-text" onchange="updateFilterOptions(); updateStudyPlot();">
+  <option value="">Overall Run</option>
+</select>
+<select id="filter_select" class="input-group-text" onchange="updateStudyPlot();">
+</select>
 
 <!-- Create a div where the graph will take place -->
 <div id="studyplot"></div>
@@ -16,21 +22,6 @@ $def with (manifest)
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 
 <script>
-
-// set the dimensions and margins of the graph
-var margin = {top: 25, right: 25, bottom: 25, left: 25},
-  width = document.getElementsByClassName("container")[0].getBoundingClientRect().width - margin.left - margin.right,
-  height = 600 - margin.top - margin.bottom;
-
-// append the svg object to the body of the page
-var svg = d3.select("#studyplot")
-.append("svg")
-  .attr("width", width + margin.left + margin.right)
-  .attr("height", height + margin.top + margin.bottom)
-.append("g")
-  .attr("transform",
-        "translate(" + margin.left + "," + margin.top + ")");
-
 manifest = $:{manifest}
 
 /*data = [
@@ -48,20 +39,47 @@ function minmax(x) {
 
 function draw_studyplot(filter, track) { // if track is undefined, do the run
 
+$$("#studyplot").html("");
+
+// set the dimensions and margins of the graph
+var margin = {top: 25, right: 25, bottom: 25, left: 25},
+  width = document.getElementsByClassName("container")[0].getBoundingClientRect().width - margin.left - margin.right,
+  height = 600 - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+var svg = d3.select("#studyplot")
+.append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+.append("g")
+  .attr("transform",
+        "translate(" + margin.left + "," + margin.top + ")");
+
+
 let keys    = Object.keys(manifest.stat)
 let range_x = keys.map(function(x) {return x.split("_")[0]})
 let range_y = keys.map(function(x) {return x.split("_")[1]})
 let range_v = []
-if(track === undefined)
+let range_d = []
+console.log(track)
+if(track){
+  range_v = keys.map(function(x) {return manifest.stat[x].laps[track][filter]})
+  range_d = keys.map(function(x) {
+    return manifest.stat[x].laps[track];
+  })
+}
+else{
   range_v = keys.map(function(x) {return manifest.stat[x].run[filter]})
-else
-  range_v = keys.map(function(x) {return manifest.stat[x][track][filter]})
+  range_d = keys.map(function(x) {
+    return manifest.stat[x].run;
+  })
+}
 range_C = []
 for (let i=0; i<range_v.length; i++) {
-  range_C.push({x: range_x[i], y: range_y[i], v: range_v[i]})
+  range_C.push({x: range_x[i], y: range_y[i], v: range_v[i], d: range_d[i]})
 }
 
-console.log(range_x, range_y, range_v, range_C)
+console.log(range_x, range_y, range_v, range_d, range_C)
 
   // Build X scales and axis:
   var x = d3.scaleBand()
@@ -109,9 +127,11 @@ console.log(range_x, range_y, range_v, range_C)
       .style("opacity", 1)
   }
   var mousemove = function(d) {
-    console.log(d)
     tooltip
-      .html("The exact value of<br>this cell is: " + d.v)
+      .html(Object.entries(d.d).map(function(x) {
+          const [key,value]=x;
+          return key+": "+value
+        }).join(", ")) //"The exact value of<br>this cell is: " + d.v)
       .style("left", d3.event.pageX+"px")
       .style("top",  d3.event.pageY+"px")
   }
@@ -143,6 +163,8 @@ console.log(range_x, range_y, range_v, range_C)
     .on("mousemove", mousemove)
     .on("mouseleave", mouseleave)
 
+
+
 // Add title to graph
 /*svg.append("text")
         .attr("x", 0)
@@ -162,5 +184,32 @@ svg.append("text")
         .text("A short description of the take-away message of this chart.");*/
 }
 
-draw_studyplot("laptimes");
+function updateFilterOptions() {
+  $$("#filter_select").find('option').remove();
+  if($$("#filter_select").val() == "") {
+    Object.keys(Object.values(manifest.stat)[0].run).forEach(function(filt){
+      $$("#filter_select").append($$("<option>").val(filt).text(filt));
+    });
+  } else {
+    Object.keys(Object.values(Object.values(manifest.stat)[0].laps)[0]).forEach(function(filt){
+      $$("#filter_select").append($$("<option>").val(filt).text(filt));
+    });
+  }
+}
+
+function updateStudyPlot() {
+  draw_studyplot($$("#filter_select").val(), $$("#track_select").val());
+}
+
+$$(document).ready(function() {
+  $$("#track_select").find('option').remove().end().append('<option value="">Overall</option>').val('');
+  manifest.tracks.forEach(function(trk){
+    $$("#track_select").append($$("<option>").val(trk.name).text(trk.name));
+  });
+
+  updateFilterOptions();
+
+  draw_studyplot("laptimes");
+
+})
 </script>

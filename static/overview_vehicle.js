@@ -60,7 +60,7 @@ function save_vehicle() {
   });
 
   $.post(
-      "/vehicle",
+      "/rest/vehicle",
       {
         "name": $("#vehicleEditName").val(),
         "version": $("#vehicleEditVersion").data("version"),
@@ -78,7 +78,7 @@ function save_vehicle() {
 }
 
 function edit_vehicle(name, version, new_version) {
-  $.get("/vehicle",
+  $.get("/rest/vehicle",
     {
       "name": name,
       "version": version
@@ -120,7 +120,7 @@ function edit_vehicle(name, version, new_version) {
 }
 
 function errorlog_vehicle(name, version) {
-  $.get("/vehicle",
+  $.get("/rest/vehicle",
     {
       "name": name,
       "version": version

@@ -22,7 +22,7 @@ function discard_track_edit() {
 
 function save_track() {
   $.post(
-      "/track",
+      "/rest/track",
       {
         "name": $("#trackEditName").val(),
         "version": $("#trackEditVersion").data("version"),
@@ -42,7 +42,7 @@ function save_track() {
 }
 
 function edit_track(name, version, new_version) {
-  $.get("/track",
+  $.get("/rest/track",
     {
       "name": name,
       "version": version
@@ -78,7 +78,7 @@ function edit_track(name, version, new_version) {
 }
 
 function errorlog_track(name, version) {
-  $.get("/track",
+  $.get("/rest/track",
     {
       "name": name,
       "version": version
